@@ -37,6 +37,7 @@ class AutoTab(QWidget):
             self.setHeaderData(1,Qt.Horizontal,'Parameters')
     class OrderExecutor(QThread):
         updated=pyqtSignal(int)
+        finished=pyqtSignal()
         def __init__(self,order,camera,delay,power):
             super().__init__()
             self.stopped=False
@@ -49,10 +50,12 @@ class AutoTab(QWidget):
             n=0
             for o in self.order:
                 if self.stopped:
+                    self.finished.emit()
                     return
                 self.updated.emit(n)
                 n+=1
                 self.execute(o)
+            self.finished.emit()
         def kill(self):
             with QMutexLocker( self.mutex ):
                 self.stopped = True
@@ -67,6 +70,8 @@ class AutoTab(QWidget):
             c=self.camera
             start=d.get()
             for i in range(params['Loop']):
+                if self.stopped:
+                    return
                 c.startAquire()
                 c.waitForReady()
                 d.set(start+(i+1)*params['Step'])
@@ -157,6 +162,8 @@ class AutoTab(QWidget):
         size=self.__model.rowCount()
         self.__model.setItem(size,0,QStandardItem(name))
         self.__model.setItem(size,1,QStandardItem(str(dic)))
+    def __construct(self,res,obj):
+        pass
     def __startscan(self):
         size=self.__model.rowCount()
         selm=self.__tree.selectionModel()
@@ -167,9 +174,17 @@ class AutoTab(QWidget):
             t0=self.__model.itemFromIndex(index0).text()
             t1=self.__model.itemFromIndex(index1).text()
             res.append(dict(Order=t0,Params=t1))
+        for d in res:
+            print(d)
         self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power)
         self.exe.updated.connect(self.OnUpdate)
+        self.exe.finished.connect(self.OnFinished)
+        self.__start.setEnabled(False)
+        self.__stop.clicked.connect(self.exe.kill)
         self.exe.start()
+    def OnFinished(self):
+        self.__stop.clicked.disconnect(self.exe.kill)
+        self.__start.setEnabled(True)
     def OnUpdate(self,number):
         selm=self.__tree.selectionModel()
         selm.clearSelection()
