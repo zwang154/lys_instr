@@ -4,6 +4,8 @@ from ExtendAnalysis.AnalysisWindow import AnalysisWindow
 import ExtendAnalysis.MainWindow as main
 from Controllers.SingleMotor import *
 from Controllers.Camera import *
+from Controllers.Hardwares.Soloist.SoloistHLE import SoloistHLE
+from Controllers.Hardwares.FEI.TechnaiFemto import TechnaiFemto
 
 class fsTEMMain(AnalysisWindow):
     def __init__(self):
@@ -12,9 +14,9 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        self.delay=SingleMotorInterface()
-        self.power=SingleMotorInterface()
-        self.camera=CameraInterface()
+        self.delay=SoloistHLE('192.168.12.202',8000)
+        self.power=SingleMotorDummy()
+        self.camera=TechnaiFemto('192.168.12.201',7000)
     def __initlayout(self):
         tab=QTabWidget()
         l=QHBoxLayout()
