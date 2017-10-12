@@ -14,9 +14,9 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        self.delay=SoloistHLE('192.168.12.202',8000)
+        self.delay=SingleMotorDummy()#SoloistHLE('192.168.12.202',8000)
         self.power=SingleMotorDummy()
-        self.camera=TechnaiFemto('192.168.12.201',7000)
+        self.camera=TechnaiFemto('192.168.12.201',7000,7001)
     def __initlayout(self):
         tab=QTabWidget()
         l=QHBoxLayout()
