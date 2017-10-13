@@ -14,7 +14,7 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        self.delay=SingleMotorDummy()#SoloistHLE('192.168.12.202',8000)
+        self.delay=SoloistHLE('192.168.12.202',8000)
         self.power=SingleMotorDummy()
         self.camera=TechnaiFemto('192.168.12.201',7000,7001)
     def __initlayout(self):
@@ -70,14 +70,21 @@ class AutoTab(QWidget):
             if params['Scan type']=='Power':
                 d=self.power
             c=self.camera
-            start=d.get()
+            start=params['From']
             for i in range(params['Loop']):
                 if self.stopped:
                     return
-                c.startAquire()
-                c.waitForReady()
+                if params['RefType']=='Delay':
+                    d.set(params['RefValue'])
+                    d.waitForReady()
+                    c.setFolder(params['Folder']+'\\probe')
+                    c.startAquire(params['Name']+str(i))
+                    c.waitForReady()
                 d.set(start+(i+1)*params['Step'])
                 d.waitForReady()
+                c.setFolder(params['Folder']+'\\pump')
+                c.startAquire(params['Name']+str(i))
+                c.waitForReady()
 
     def __init__(self,delay,camera,power):
         super().__init__()
@@ -106,32 +113,70 @@ class AutoTab(QWidget):
         l.addWidget(self.__tree)
         self.setLayout(l)
     def __scantab(self):
-        lv1=QVBoxLayout()
-        lv1.addWidget(QLabel('Scan type'))
+        gl1=QGridLayout()
         self.__scan_mode=QComboBox()
         self.__scan_mode.addItems(['Delay','Power'])
-        lv1.addWidget(self.__scan_mode)
-        gl1=QGridLayout()
-        gl1.addWidget(QLabel('Step'),0,0)
+        gl1.addWidget(QLabel('Scan type'),0,0)
+        gl1.addWidget(self.__scan_mode,0,1)
+
+        self.__scan_from=QDoubleSpinBox()
+        self.__scan_from.setMinimum(-10000000)
+        self.__scan_from.setMaximum(10000000)
         self.__scan_step=QDoubleSpinBox()
         self.__scan_step.setValue(1)
-        gl1.addWidget(self.__scan_step,1,0)
-        gl1.addWidget(QLabel('Loop'),0,1)
+        self.__scan_step.setMinimum(-10000000)
+        self.__scan_step.setMaximum(10000000)
         self.__scan_loop=QSpinBox()
         self.__scan_loop.setValue(100)
-        gl1.addWidget(self.__scan_loop,1,1)
-        lv1.addLayout(gl1)
+        self.__scan_loop.setMinimum(-10000000)
+        self.__scan_loop.setMaximum(10000000)
+        gl1.addWidget(QLabel('From'),1,0)
+        gl1.addWidget(self.__scan_from,2,0)
+        gl1.addWidget(QLabel('Step'),1,1)
+        gl1.addWidget(self.__scan_step,2,1)
+        gl1.addWidget(QLabel('Loop'),1,2)
+        gl1.addWidget(self.__scan_loop,2,2)
+
+        self.__scan_folder=QLineEdit()
+        self.__scan_folder.setText('Scan')
+        self.__scan_name=QLineEdit()
+        self.__scan_name.setText('a')
+        gl1.addWidget(QLabel('Folder'),3,0)
+        gl1.addWidget(QLabel('Filename'),3,1)
+        gl1.addWidget(self.__scan_folder,4,0)
+        gl1.addWidget(self.__scan_name,4,1)
+
+        self.__scan_reftype=QComboBox()
+        self.__scan_reftype.addItems(['Delay'])
+        self.__scan_refval=QDoubleSpinBox()
+        self.__scan_refval.setMinimum(-10000000)
+        self.__scan_refval.setMaximum(10000000)
+        gl1.addWidget(QLabel('Reference'),5,0)
+        gl1.addWidget(self.__scan_reftype,6,0)
+        gl1.addWidget(self.__scan_refval,6,1)
+
         self.__scan_add=QPushButton('Add',clicked=self.addScan)
-        lv1.addWidget(self.__scan_add)
+        self.__scan_addloop=QSpinBox()
+        self.__scan_addloop.setValue(1)
+        gl1.addWidget(self.__scan_add,7,0)
+        gl1.addWidget(self.__scan_addloop,7,1)
+        gl1.addWidget(QLabel(' times'),7,2)
+
         w=QWidget()
-        w.setLayout(lv1)
+        w.setLayout(gl1)
         return w
     def addScan(self):
-        p={}
-        p['Scan type']=self.__scan_mode.currentText()
-        p['Step']=self.__scan_step.value()
-        p['Loop']=self.__scan_loop.value()
-        self.addOrder('Scan',p)
+        for i in range(self.__scan_addloop.value()):
+            p={}
+            p['Scan type']=self.__scan_mode.currentText()
+            p['From']=self.__scan_from.value()
+            p['Step']=self.__scan_step.value()
+            p['Loop']=self.__scan_loop.value()
+            p['Folder']=self.__scan_folder.text()+"_"+str(i)
+            p['Name']=self.__scan_name.text()
+            p['RefType']=self.__scan_reftype.currentText()
+            p['RefValue']=self.__scan_refval.value()
+            self.addOrder('Scan',p)
     def __treeview(self):
         tree=QTreeView()
         tree.setDragDropMode(QAbstractItemView.InternalMove)
@@ -164,8 +209,10 @@ class AutoTab(QWidget):
         size=self.__model.rowCount()
         self.__model.setItem(size,0,QStandardItem(name))
         self.__model.setItem(size,1,QStandardItem(str(dic)))
-    def __construct(self,res,obj):
-        pass
+    def __construct(self,res,obj1,obj2):
+        res.append(dict(Order=obj1.text(),Params=obj2.text()))
+        for i in range(obj1.rowCount()):
+            self.__construct(res,obj1.child(i,0),obj1.child(i,1))
     def __startscan(self):
         size=self.__model.rowCount()
         selm=self.__tree.selectionModel()
@@ -173,11 +220,9 @@ class AutoTab(QWidget):
         for i in range(size):
             index0=self.__model.index(i,0)
             index1=self.__model.index(i,1)
-            t0=self.__model.itemFromIndex(index0).text()
-            t1=self.__model.itemFromIndex(index1).text()
-            res.append(dict(Order=t0,Params=t1))
-        for d in res:
-            print(d)
+            obj1=self.__model.itemFromIndex(index0)
+            obj2=self.__model.itemFromIndex(index1)
+            self.__construct(res,obj1,obj2)
         self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power)
         self.exe.updated.connect(self.OnUpdate)
         self.exe.finished.connect(self.OnFinished)
@@ -187,13 +232,27 @@ class AutoTab(QWidget):
     def OnFinished(self):
         self.__stop.clicked.disconnect(self.exe.kill)
         self.__start.setEnabled(True)
+    def __findIndex(self, obj, sum, number):
+        print(obj.text(),obj.rowCount(),sum,number)
+        for i in range(obj.rowCount()):
+            if sum==number:
+                return (obj.child(i,0),obj.child(i,1))
+            sum+=1
+            res=self.__findIndex(obj.child(i,0),sum,number)
+            if isinstance(res,int):
+                sum=res
+            else:
+                return res
+        return sum
     def OnUpdate(self,number):
+        print('OnUpdate',number)
         selm=self.__tree.selectionModel()
         selm.clearSelection()
-        index0=self.__model.index(number,0)
-        index1=self.__model.index(number,1)
-        selm.select(index0,QItemSelectionModel.Select)
-        selm.select(index1,QItemSelectionModel.Select)
+        sum=0
+        obj=self.__findIndex(self.__model.invisibleRootItem(),sum,number)
+        print('found',obj[0].text(),obj[1].text())
+        selm.select(obj[0].index(),QItemSelectionModel.Select)
+        selm.select(obj[1].index(),QItemSelectionModel.Select)
 
 def create():
     fsTEM=fsTEMMain()
