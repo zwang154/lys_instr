@@ -245,12 +245,10 @@ class AutoTab(QWidget):
                 return res
         return sum
     def OnUpdate(self,number):
-        print('OnUpdate',number)
         selm=self.__tree.selectionModel()
         selm.clearSelection()
         sum=0
         obj=self.__findIndex(self.__model.invisibleRootItem(),sum,number)
-        print('found',obj[0].text(),obj[1].text())
         selm.select(obj[0].index(),QItemSelectionModel.Select)
         selm.select(obj[1].index(),QItemSelectionModel.Select)
 
