@@ -23,6 +23,7 @@ class fsTEMMain(AnalysisWindow):
         lv=QVBoxLayout()
         lv.addWidget(SingleMotorGUI(self.delay,'Delay Stage'))
         lv.addWidget(SingleMotorGUI(self.power,'Pump power'))
+        lv.addWidget(self.camera.SettingGUI())
         l.addLayout(lv)
         l.addWidget(CameraGUI(self.camera,'TEM Image'))
         wid=QWidget()
