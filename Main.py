@@ -1,3 +1,4 @@
+import logging
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from ExtendAnalysis.AnalysisWindow import AnalysisWindow
@@ -5,6 +6,7 @@ import ExtendAnalysis.MainWindow as main
 from Controllers.SingleMotor import *
 from Controllers.Camera import *
 from Controllers.Hardwares.Soloist.SoloistHLE import SoloistHLE
+from Controllers.Hardwares.SRS.DG645 import DG645
 from Controllers.Hardwares.FEI.TechnaiFemto import TechnaiFemto
 
 class fsTEMMain(AnalysisWindow):
@@ -14,7 +16,8 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        self.delay=SoloistHLE('192.168.12.202',8000)
+        #self.delay=SoloistHLE('192.168.12.202',8000)
+        self.delay=DG645('192.168.12.204')
         self.power=SingleMotorDummy()
         self.camera=TechnaiFemto('192.168.12.201',7000,7001)
     def __initlayout(self):
@@ -66,6 +69,7 @@ class AutoTab(QWidget):
             if order['Order']=='Scan':
                 self.scan(eval(order['Params']))
         def scan(self,params):
+            logging.info('[AutoTab.OrderExecutor] Start scan.')
             if params['Scan type']=='Delay':
                 d=self.delay
             if params['Scan type']=='Power':
@@ -76,18 +80,33 @@ class AutoTab(QWidget):
                 if self.stopped:
                     return
                 if params['RefType']=='Delay':
-                    d.set(params['RefValue'])
-                    d.waitForReady()
-                    c.setTime(params['Exposure'])
-                    c.setFolder(params['Folder']+'\\probe')
-                    c.startAquire(params['Name']+str(i))
-                    c.waitForReady()
-                d.set(start+(i+1)*params['Step'])
-                d.waitForReady()
-                c.setFolder(params['Folder']+'\\pump')
-                c.startAquire(params['Name']+str(i))
-                c.waitForReady()
-
+                    self.setDelay(d,params['RefValue'])
+                    self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\probe')
+                self.setDelay(d,start+(i+1)*params['Step'])
+                self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump')
+            logging.info('[AutoTab.OrderExecutor] Finish scan.')
+        def setDelay(self,obj,delay):
+            logging.debug('[AutoTab.OrderExecutor] Start setDelay')
+            try:
+                obj.set(delay)
+                obj.waitForReady()
+            except:
+                logging.warning('[AutoTab.OrderExecutor] Error on setDelay. Try agatin.')
+                self.setDelay(obj,delay)
+                logging.info('[AutoTab.OrderExecutor] setDelay is normally finished in except section.')
+            logging.debug('[AutoTab.OrderExecutor] Finish setDelay')
+        def aquire(self,obj,name,time,folder):
+            logging.debug('[AutoTab.OrderExecutor] Start aquire')
+            try:
+                obj.setTime(time)
+                obj.setFolder(folder)
+                obj.startAquire(name)
+                obj.waitForReady()
+            except:
+                logging.warning('[AutoTab.OrderExecutor] Error on aquire. Try again.')
+                self.aquire(obj,name,time,folder)
+                logging.info('[AutoTab.OrderExecutor] aquire is normally finished in except section.')
+            logging.debug('[AutoTab.OrderExecutor] Finish aquire')
     def __init__(self,delay,camera,power):
         super().__init__()
         self.delay=delay
