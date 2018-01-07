@@ -6,6 +6,7 @@ import ExtendAnalysis.MainWindow as main
 from Controllers.SingleMotor import *
 from Controllers.Camera import *
 from Controllers.Hardwares.Soloist.SoloistHLE import SoloistHLE
+from Controllers.Hardwares.OptoSigma.GSC02 import GSC02
 from Controllers.Hardwares.SRS.DG645 import DG645
 from Controllers.Hardwares.FEI.TechnaiFemto import TechnaiFemto
 
@@ -16,8 +17,9 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        #self.delay=SoloistHLE('192.168.12.202',8000)
-        self.delay=DG645('192.168.12.204')
+        self.delay=SoloistHLE('192.168.12.202',8000)
+        #self.delay=DG645('192.168.12.204')
+        #self.power=GSC02('COM3')
         self.power=SingleMotorDummy()
         self.camera=TechnaiFemto('192.168.12.201',7000,7001)
     def __initlayout(self):
@@ -89,6 +91,7 @@ class AutoTab(QWidget):
             logging.debug('[AutoTab.OrderExecutor] Start setDelay')
             try:
                 obj.set(delay)
+                logging.debug('[AutoTab.OrderExecutor] setDelay middle')
                 obj.waitForReady()
             except:
                 logging.warning('[AutoTab.OrderExecutor] Error on setDelay. Try agatin.')
@@ -99,8 +102,11 @@ class AutoTab(QWidget):
             logging.debug('[AutoTab.OrderExecutor] Start aquire')
             try:
                 obj.setTime(time)
+                logging.debug('[AutoTab.OrderExecutor] set Time')
                 obj.setFolder(folder)
+                logging.debug('[AutoTab.OrderExecutor] set Folder')
                 obj.startAquire(name)
+                logging.debug('[AutoTab.OrderExecutor] start Aquire finished')
                 obj.waitForReady()
             except:
                 logging.warning('[AutoTab.OrderExecutor] Error on aquire. Try again.')
@@ -174,7 +180,7 @@ class AutoTab(QWidget):
         gl1.addWidget(self.__scan_expose,4,2)
 
         self.__scan_reftype=QComboBox()
-        self.__scan_reftype.addItems(['Delay'])
+        self.__scan_reftype.addItems(['Delay','None'])
         self.__scan_refval=QDoubleSpinBox()
         self.__scan_refval.setMinimum(-10000000)
         self.__scan_refval.setMaximum(10000000)
