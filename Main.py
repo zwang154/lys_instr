@@ -17,10 +17,10 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        self.delay=SoloistHLE('192.168.12.202',8000)
-        #self.delay=DG645('192.168.12.204')
-        #self.power=GSC02('COM3')
-        self.power=SingleMotorDummy()
+        #self.delay=SoloistHLE('192.168.12.202',8000)
+        self.delay=DG645('192.168.12.204',mode='ns')
+        self.power=GSC02('COM3')
+        #self.power=SingleMotorDummy()
         self.camera=TechnaiFemto('192.168.12.201',7000,7001)
     def __initlayout(self):
         tab=QTabWidget()
@@ -34,7 +34,7 @@ class fsTEMMain(AnalysisWindow):
         wid=QWidget()
         wid.setLayout(l)
         tab.addTab(wid,'Fundamentals')
-        tab.addTab(AutoTab(self.delay,self.camera,self.power),'Auto')
+        tab.addTab(AutoTab(self.delay,self.camera,self.power,self.camera),'Auto')
         self.setWidget(tab)
 
 class AutoTab(QWidget):
@@ -46,7 +46,7 @@ class AutoTab(QWidget):
     class OrderExecutor(QThread):
         updated=pyqtSignal(int)
         finished=pyqtSignal()
-        def __init__(self,order,camera,delay,power):
+        def __init__(self,order,camera,delay,power,stage):
             super().__init__()
             self.stopped=False
             self.delay=delay
@@ -54,6 +54,7 @@ class AutoTab(QWidget):
             self.power=power
             self.mutex=QMutex()
             self.order=order
+            self.stage=stage
         def run(self):
             n=0
             for o in self.order:
@@ -68,43 +69,98 @@ class AutoTab(QWidget):
             with QMutexLocker( self.mutex ):
                 self.stopped = True
         def execute(self,order):
+            #print(order)
             if order['Order']=='Scan':
                 self.scan(eval(order['Params']))
+            if order['Order']=='Power':
+                self.changePower(eval(order['Params']))
+            if order['Order']=='StagePosition':
+                self.stagePosition(eval(order['Params']))
         def scan(self,params):
             logging.info('[AutoTab.OrderExecutor] Start scan.')
             if params['Scan type']=='Delay':
-                d=self.delay
-            if params['Scan type']=='Power':
-                d=self.power
+                self.scan_delay(params)
+            elif params['Scan type']=='Power':
+                self.scan_power(params)
+            elif params['Scan type'] in ["Stage X","Stage Y","Stage Z","Stage Alpha","Stage Beta"]:
+                self.scan_stage(params)
+        def scan_delay(self,params):
+            logging.info('[AutoTab.OrderExecutor] Start scan.')
+            d=self.delay
             c=self.camera
+            delay=self.delay.get()
             start=params['From']
             for i in range(params['Loop']):
                 if self.stopped:
                     return
                 if params['RefType']=='Delay':
                     self.setDelay(d,params['RefValue'])
-                    self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\probe')
+                    self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\probe',params['Scan type'])
                 self.setDelay(d,start+(i+1)*params['Step'])
-                self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump')
+                self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump',params['Scan type'])
+            logging.info('[AutoTab.OrderExecutor] Finish scan.')
+        def scan_stage(self,params):
+            logging.info('[AutoTab.OrderExecutor] Start scan.')
+            if params['Scan type']=='Stage X':
+                axis="x"
+            if params['Scan type']=='Stage Y':
+                axis="y"
+            if params['Scan type']=='Stage Z':
+                axis="z"
+            if params['Scan type']=='Stage Alpha':
+                axis="a"
+            if params['Scan type']=='Stage Beta':
+                axis="b"
+            delay=self.delay.get()
+            start=params['From']
+            for i in range(params['Loop']):
+                if self.stopped:
+                    return
+                self.stage.setPosition(axis,start+i*params['Step'])
+                if params['RefType']=='Delay':
+                    self.setDelay(self.delay,params['RefValue'])
+                    self.aquire(self.camera,params['Name']+str(i),params['Exposure'],params['Folder']+'\\probe',params['Scan type'])
+                self.setDelay(self.delay,delay)
+                self.aquire(self.camera,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump',params['Scan type'])
+            logging.info('[AutoTab.OrderExecutor] Finish scan.')
+        def scan_power(self,params):
+            logging.info('[AutoTab.OrderExecutor] Start scan.')
+            d=self.power
+            c=self.camera
+            delay=self.delay.get()
+            start=params['From']
+            for i in range(params['Loop']):
+                if self.stopped:
+                    return
+                self.setDelay(self.power,start+i*params['Step'])
+                if params['RefType']=='Delay':
+                    self.setDelay(self.delay,params['RefValue'])
+                    self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\probe',params['Scan type'])
+                self.setDelay(self.delay,delay)
+                self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump',params['Scan type'])
+            logging.info('[AutoTab.OrderExecutor] Finish scan.')
+        def changePower(self,params):
+            logging.info('[AutoTab.OrderExecutor] Start power.')
+            self.setDelay(self.power, params['Value'])
             logging.info('[AutoTab.OrderExecutor] Finish scan.')
         def setDelay(self,obj,delay):
             logging.debug('[AutoTab.OrderExecutor] Start setDelay')
-            try:
-                obj.set(delay)
-                logging.debug('[AutoTab.OrderExecutor] setDelay middle')
-                obj.waitForReady()
-            except:
+            while not obj.set(delay):
                 logging.warning('[AutoTab.OrderExecutor] Error on setDelay. Try agatin.')
-                self.setDelay(obj,delay)
-                logging.info('[AutoTab.OrderExecutor] setDelay is normally finished in except section.')
+            logging.debug('[AutoTab.OrderExecutor] setDelay middle')
+            obj.waitForReady()
             logging.debug('[AutoTab.OrderExecutor] Finish setDelay')
-        def aquire(self,obj,name,time,folder):
+        def aquire(self,obj,name,time,folder,mode='Unknown'):
             logging.debug('[AutoTab.OrderExecutor] Start aquire')
             try:
                 obj.setTime(time)
                 logging.debug('[AutoTab.OrderExecutor] set Time')
-                obj.setFolder(folder)
-                logging.debug('[AutoTab.OrderExecutor] set Folder')
+                obj.setTag('mode',mode)
+                obj.setTag("Laser:delay",self.delay.get())
+                obj.setTag("Laser:power",self.power.get())
+                while not obj.setFolder(folder):
+                    logging.warning('[AutoTab.OrderExecutor] Error on setFolder. Try again.')
+                logging.debug('[AutoTab.OrderExecutor] set Folder finished')
                 obj.startAquire(name)
                 logging.debug('[AutoTab.OrderExecutor] start Aquire finished')
                 obj.waitForReady()
@@ -113,17 +169,23 @@ class AutoTab(QWidget):
                 self.aquire(obj,name,time,folder)
                 logging.info('[AutoTab.OrderExecutor] aquire is normally finished in except section.')
             logging.debug('[AutoTab.OrderExecutor] Finish aquire')
-    def __init__(self,delay,camera,power):
+        def stagePosition(self,params):
+            for key in params.keys():
+                self.stage.setPosition(key,params[key])
+    def __init__(self,delay,camera,power,stage):
         super().__init__()
         self.delay=delay
         self.camera=camera
         self.power=power
+        self.stage=stage
         self.__initlayout()
     def __initlayout(self):
         l=QHBoxLayout()
 
         tab=QTabWidget()
         tab.addTab(self.__scantab(),'Scan')
+        tab.addTab(self.__powertab(),'Power')
+        tab.addTab(self.__stagetab(),'Stage')
 
         lh1=QHBoxLayout()
         self.__start=QPushButton('Start',clicked=self.__startscan)
@@ -142,7 +204,7 @@ class AutoTab(QWidget):
     def __scantab(self):
         gl1=QGridLayout()
         self.__scan_mode=QComboBox()
-        self.__scan_mode.addItems(['Delay','Power'])
+        self.__scan_mode.addItems(['Delay','Power','Stage X','Stage Y','Stage Z','Stage Alpha','Stage Beta'])
         gl1.addWidget(QLabel('Scan type'),0,0)
         gl1.addWidget(self.__scan_mode,0,1)
 
@@ -198,6 +260,48 @@ class AutoTab(QWidget):
         w=QWidget()
         w.setLayout(gl1)
         return w
+    def __powertab(self):
+        gl1=QGridLayout()
+        self.__power_to=QDoubleSpinBox()
+        self.__power_to.setMinimum(-10000000)
+        self.__power_to.setMaximum(10000000)
+        gl1.addWidget(QLabel('To'),1,0)
+        gl1.addWidget(self.__power_to,2,0)
+
+        self.__power_add=QPushButton('Add',clicked=self.addPower)
+        gl1.addWidget(self.__power_add,3,0)
+
+        w=QWidget()
+        w.setLayout(gl1)
+        return w
+    def __stagetab(self):
+        h1=QHBoxLayout()
+        v1=QVBoxLayout()
+        self.__savepos=QPushButton('Save Positions',clicked=self.__savePosition)
+        self.__movepos=QPushButton('Add Move Positions',clicked=self.__addPosition)
+        v1.addWidget(self.__savepos)
+        v1.addWidget(self.__movepos)
+
+        self.__poslist=QListWidget()
+        h1.addLayout(v1)
+        h1.addWidget(self.__poslist)
+
+        w=QWidget()
+        w.setLayout(h1)
+        return w
+    def __savePosition(self):
+        p=self.stage.getPosition()
+        d={}
+        d['x']=p[0]
+        d['y']=p[1]
+        d['z']=p[2]
+        d['a']=p[3]
+        d['b']=p[4]
+        self.__poslist.addItem(str(d))
+    def __addPosition(self):
+        p=eval(self.__poslist.currentItem().text())
+        self.addOrder('StagePosition',p)
+
     def addScan(self):
         for i in range(self.__scan_addloop.value()):
             p={}
@@ -205,12 +309,20 @@ class AutoTab(QWidget):
             p['From']=self.__scan_from.value()
             p['Step']=self.__scan_step.value()
             p['Loop']=self.__scan_loop.value()
-            p['Folder']=self.__scan_folder.text()+"_"+str(i)
+            folder=self.__scan_folder.text()
+            name=folder.split('/')
+            name=name[len(name)-1]
+            p['Folder']=folder+'/'+name+"_"+str(i)
+            #p['Folder']=self.__scan_folder.text()+"_"+str(i)
             p['Exposure']=self.__scan_expose.value()
             p['Name']=self.__scan_name.text()
             p['RefType']=self.__scan_reftype.currentText()
             p['RefValue']=self.__scan_refval.value()
             self.addOrder('Scan',p)
+    def addPower(self):
+        p={}
+        p['Value']=self.__power_to.value()
+        self.addOrder('Power',p)
     def __treeview(self):
         tree=QTreeView()
         tree.setDragDropMode(QAbstractItemView.InternalMove)
@@ -234,7 +346,7 @@ class AutoTab(QWidget):
             self.addOrder('NewGroup',{})
         elif action.text() == 'Delete':
             indexes=self.__tree.selectedIndexes()
-            for i in indexes:
+            for i in reversed(indexes):
                 row=i.row()
                 col=i.column()
                 if col==0:
@@ -257,7 +369,7 @@ class AutoTab(QWidget):
             obj1=self.__model.itemFromIndex(index0)
             obj2=self.__model.itemFromIndex(index1)
             self.__construct(res,obj1,obj2)
-        self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power)
+        self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power,self.stage)
         self.exe.updated.connect(self.OnUpdate)
         self.exe.finished.connect(self.OnFinished)
         self.__start.setEnabled(False)
