@@ -1,14 +1,17 @@
-import logging
+import logging,time,pyautogui
+import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from ExtendAnalysis.AnalysisWindow import AnalysisWindow
 import ExtendAnalysis.MainWindow as main
 from Controllers.SingleMotor import *
+from Controllers.Switch import *
 from Controllers.Camera import *
 from Controllers.Hardwares.Soloist.SoloistHLE import SoloistHLE
 from Controllers.Hardwares.OptoSigma.GSC02 import GSC02
 from Controllers.Hardwares.SRS.DG645 import DG645
 from Controllers.Hardwares.FEI.TechnaiFemto import TechnaiFemto
+from Controllers.Hardwares.Thorlabs.SC10 import SC10
 
 class fsTEMMain(AnalysisWindow):
     def __init__(self):
@@ -17,26 +20,29 @@ class fsTEMMain(AnalysisWindow):
         self.__initlayout()
         self.adjustSize()
     def __initHardware(self):
-        #self.delay=SoloistHLE('192.168.12.202',8000)
-        self.delay=DG645('192.168.12.204',mode='ns')
+        self.delay=SoloistHLE('192.168.12.202',8000)
+        #self.delay=DG645('192.168.12.204',mode='ns')
         self.power=GSC02('COM3')
         #self.power=SingleMotorDummy()
         self.camera=TechnaiFemto('192.168.12.201',7000,7001)
+        self.pumpsw=SC10('COM4')
+        print("Hardwares initialized.")
     def __initlayout(self):
         tab=QTabWidget()
         l=QHBoxLayout()
         lv=QVBoxLayout()
         lv.addWidget(SingleMotorGUI(self.delay,'Delay Stage'))
         lv.addWidget(SingleMotorGUI(self.power,'Pump power'))
+        lv.addWidget(SwitchGUI(self.pumpsw,'Pump on/off'))
         lv.addWidget(self.camera.SettingGUI())
         l.addLayout(lv)
         l.addWidget(CameraGUI(self.camera,'TEM Image'))
         wid=QWidget()
         wid.setLayout(l)
         tab.addTab(wid,'Fundamentals')
-        tab.addTab(AutoTab(self.delay,self.camera,self.power,self.camera),'Auto')
+        tab.addTab(AutoTab(self.delay,self.camera,self.power,self.camera,self.pumpsw),'Auto')
         self.setWidget(tab)
-
+        print("GUIs initialized.")
 class AutoTab(QWidget):
     class _Model(QStandardItemModel):
         def __init__(self):
@@ -46,7 +52,7 @@ class AutoTab(QWidget):
     class OrderExecutor(QThread):
         updated=pyqtSignal(int)
         finished=pyqtSignal()
-        def __init__(self,order,camera,delay,power,stage):
+        def __init__(self,order,camera,delay,power,stage,pumpsw):
             super().__init__()
             self.stopped=False
             self.delay=delay
@@ -55,6 +61,7 @@ class AutoTab(QWidget):
             self.mutex=QMutex()
             self.order=order
             self.stage=stage
+            self.pumpsw=pumpsw
         def run(self):
             n=0
             for o in self.order:
@@ -123,7 +130,7 @@ class AutoTab(QWidget):
                 self.setDelay(self.delay,delay)
                 self.aquire(self.camera,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump',params['Scan type'])
             logging.info('[AutoTab.OrderExecutor] Finish scan.')
-        def scan_power(self,params):
+        def scan_power(self,params,rev=True):
             logging.info('[AutoTab.OrderExecutor] Start scan.')
             d=self.power
             c=self.camera
@@ -138,6 +145,16 @@ class AutoTab(QWidget):
                     self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\probe',params['Scan type'])
                 self.setDelay(self.delay,delay)
                 self.aquire(c,params['Name']+str(i),params['Exposure'],params['Folder']+'\\pump',params['Scan type'])
+            if rev:
+                for i in range(params['Loop']):
+                    if self.stopped:
+                        return
+                    self.setDelay(self.power,start+(params['Loop']-i-1)*params['Step'])
+                    if params['RefType']=='Delay':
+                        self.setDelay(self.delay,params['RefValue'])
+                        self.aquire(c,params['Name']+str(params['Loop']+i),params['Exposure'],params['Folder']+'\\probe',params['Scan type'])
+                    self.setDelay(self.delay,delay)
+                    self.aquire(c,params['Name']+str(params['Loop']+i),params['Exposure'],params['Folder']+'\\pump',params['Scan type'])
             logging.info('[AutoTab.OrderExecutor] Finish scan.')
         def changePower(self,params):
             logging.info('[AutoTab.OrderExecutor] Start power.')
@@ -172,12 +189,14 @@ class AutoTab(QWidget):
         def stagePosition(self,params):
             for key in params.keys():
                 self.stage.setPosition(key,params[key])
-    def __init__(self,delay,camera,power,stage):
+
+    def __init__(self,delay,camera,power,stage,pumpsw):
         super().__init__()
         self.delay=delay
         self.camera=camera
         self.power=power
         self.stage=stage
+        self.pumpsw=pumpsw
         self.__initlayout()
     def __initlayout(self):
         l=QHBoxLayout()
@@ -186,6 +205,7 @@ class AutoTab(QWidget):
         tab.addTab(self.__scantab(),'Scan')
         tab.addTab(self.__powertab(),'Power')
         tab.addTab(self.__stagetab(),'Stage')
+        tab.addTab(self.__pdtab(),'PhaseDiagram')
 
         lh1=QHBoxLayout()
         self.__start=QPushButton('Start',clicked=self.__startscan)
@@ -252,6 +272,7 @@ class AutoTab(QWidget):
 
         self.__scan_add=QPushButton('Add',clicked=self.addScan)
         self.__scan_addloop=QSpinBox()
+        self.__scan_addloop.setMaximum(100000)
         self.__scan_addloop.setValue(1)
         gl1.addWidget(self.__scan_add,7,0)
         gl1.addWidget(self.__scan_addloop,7,1)
@@ -289,6 +310,49 @@ class AutoTab(QWidget):
         w=QWidget()
         w.setLayout(h1)
         return w
+    def __pdtab(self):
+        gl1=QVBoxLayout()
+
+        self.__PD_add=QPushButton('Add',clicked=self.addPD)
+        self.__PD_fold=QLineEdit()
+        self.__PD_time=QDoubleSpinBox()
+        self.__PD_mag=QSpinBox()
+
+        gl1.addWidget(self.__PD_add)
+        gl1.addWidget(QLabel('Folder'))
+        gl1.addWidget(self.__PD_fold)
+        gl1.addWidget(QLabel('Exposure time'))
+        gl1.addWidget(self.__PD_time)
+        gl1.addWidget(QLabel('Magnetic Field'))
+        gl1.addWidget(self.__PD_mag)
+
+        ldbtn=QPushButton('Load positions',clicked=self.__loadPositions)
+        self._lolx=QSpinBox()
+        self._lolx.setMaximum(1000000)
+        self._loly=QSpinBox()
+        self._loly.setMaximum(1000000)
+        hbox1=QHBoxLayout()
+        hbox1.addWidget(QLabel('Lorentz Button'))
+        hbox1.addWidget(self._lolx)
+        hbox1.addWidget(self._loly)
+
+        self._magx=QSpinBox()
+        self._magx.setMaximum(1000000)
+        self._magy=QSpinBox()
+        self._magy.setMaximum(1000000)
+        hbox2=QHBoxLayout()
+        hbox2.addWidget(QLabel('Multifunc Button'))
+        hbox2.addWidget(self._magx)
+        hbox2.addWidget(self._magy)
+
+        gl1.addWidget(ldbtn)
+        gl1.addLayout(hbox1)
+
+        w=QWidget()
+        w.setLayout(gl1)
+        return w
+    def addPD(self):
+        self.phaseDiagram()
     def __savePosition(self):
         p=self.stage.getPosition()
         d={}
@@ -369,7 +433,7 @@ class AutoTab(QWidget):
             obj1=self.__model.itemFromIndex(index0)
             obj2=self.__model.itemFromIndex(index1)
             self.__construct(res,obj1,obj2)
-        self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power,self.stage)
+        self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power,self.stage,self.pumpsw)
         self.exe.updated.connect(self.OnUpdate)
         self.exe.finished.connect(self.OnFinished)
         self.__start.setEnabled(False)
@@ -397,7 +461,63 @@ class AutoTab(QWidget):
         obj=self.__findIndex(self.__model.invisibleRootItem(),sum,number)
         selm.select(obj[0].index(),QItemSelectionModel.Select)
         selm.select(obj[1].index(),QItemSelectionModel.Select)
-
+    def aquire(self,obj,name,time,folder,mode='Unknown'):
+        logging.debug('[AutoTab.OrderExecutor] Start aquire')
+        try:
+            obj.setTime(time)
+            obj.setTag('mode',mode)
+            obj.setTag("Laser:delay",self.delay.get())
+            obj.setTag("Laser:power",self.power.get())
+            while not obj.setFolder(folder): pass
+            obj.startAquire(name)
+            #obj.waitForReady()
+        except:
+            self.aquire(obj,name,time,folder)
+    def __loadPositions(self):
+        QMessageBox.information(None, 'Info', "Move cursor on the \"Lorentz\" button of TEM User Interface and then press enter.")
+        x,y=pyautogui.position()
+        self._lolx.setValue(x)
+        self._loly.setValue(y)
+        QMessageBox.information(None, 'Info', "Move cursor on the \"Multifunc\" button of TEM Control Pads simulator and then press enter.")
+        x,y=pyautogui.position()
+        self._magx.setValue(x)
+        self._magy.setValue(y)
+    def phaseDiagram(self):
+        sw=self.pumpsw
+        pow=self.power
+        cam=self.camera
+        plist=np.linspace(0, 1, 20)
+        alist=np.arcsin(np.sqrt(plist))/2/np.pi*180
+        sw.set(False)
+        for j in range(self.__PD_mag.value()):
+            print("--------------- step"+str(j)+" ---------------")
+            for i, a in enumerate(alist):
+                #QMessageBox.information(None, 'Info', "Reset magnetic field.")
+                pyautogui.click(self._lolx.value(),self._loly.value())
+                time.sleep(2)
+                pyautogui.click(self._lolx.value(),self._loly.value())
+                time.sleep(4)
+                print('Magnetic field was reset by Lorentz-TEM-Lorentz mode changes.')
+                pow.set(a)
+                print('Angle was set to ',a)
+                sw.set(True)
+                print('Shutter opened. Wait 10 seconds.')
+                cam.insertCamera()
+                time.sleep(10)
+                print('Start aquiring (pump)')
+                self.aquire(cam,'data_Mag'+str(j)+'_Pump'+str(i),self.__PD_time.value(),self.__PD_fold.text()+'/pump')
+                time.sleep(self.__PD_time.value()+2)
+                sw.set(False)
+                print('Shutter closed. Wait 10 seconds.')
+                cam.insertCamera()
+                time.sleep(10)
+                print('Start aquiring (nopump)')
+                self.aquire(cam,'data_Mag'+str(j)+'_Pump'+str(i),self.__PD_time.value(),self.__PD_fold.text()+'/probe')
+                time.sleep(self.__PD_time.value()+2)
+            pyautogui.click(self._magx.value(),self._magy.value())
+            print('Magnetic field was changed.')
+            time.sleep(2)
+        QMessageBox.information(None, 'Info', "Finished.")
 def create():
     fsTEM=fsTEMMain()
 
