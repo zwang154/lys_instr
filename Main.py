@@ -11,6 +11,7 @@ from Controllers.Hardwares.Soloist.SoloistHLE import SoloistHLE
 from Controllers.Hardwares.OptoSigma.GSC02 import GSC02
 from Controllers.Hardwares.SRS.DG645 import DG645
 from Controllers.Hardwares.FEI.TechnaiFemto import TechnaiFemto
+from Controllers.Hardwares.QuantumDetector.MerlinEM import MerlinEM
 from Controllers.Hardwares.Thorlabs.SC10 import SC10
 
 class fsTEMMain(AnalysisWindow):
@@ -24,9 +25,12 @@ class fsTEMMain(AnalysisWindow):
         #self.delay=DG645('192.168.12.204',mode='ns')
         self.power=GSC02('COM3')
         #self.power=SingleMotorDummy()
-        self.camera=TechnaiFemto('192.168.12.201',7000,7001)
+        self.tem=TechnaiFemto('192.168.12.201',7000,7001)
+        #self.camera=TechnaiFemto('192.168.12.201',7000,7001)
+        self.camera=MerlinEM('192.168.12.206')
         self.pumpsw=SC10('COM4')
-        print("Hardwares initialized.")
+        self.camera.setBeforeAquireCallback(self.beforeAquire)
+        print("Hardwares initialized."+str(self.tem.getCameraLength()))
     def __initlayout(self):
         tab=QTabWidget()
         l=QHBoxLayout()
@@ -35,6 +39,7 @@ class fsTEMMain(AnalysisWindow):
         lv.addWidget(SingleMotorGUI(self.power,'Pump power'))
         lv.addWidget(SwitchGUI(self.pumpsw,'Pump on/off'))
         lv.addWidget(self.camera.SettingGUI())
+        lv.addWidget(QPushButton("STEM Test",clicked=self.STEMTest))
         l.addLayout(lv)
         l.addWidget(CameraGUI(self.camera,'TEM Image'))
         wid=QWidget()
@@ -43,6 +48,13 @@ class fsTEMMain(AnalysisWindow):
         tab.addTab(AutoTab(self.delay,self.camera,self.power,self.camera,self.pumpsw),'Auto')
         self.setWidget(tab)
         print("GUIs initialized.")
+    def beforeAquire(self,obj):
+        obj.setTag("delay",self.delay.get())
+        obj.setTag("power",self.power.get())
+        obj.setTag("magnification", self.tem.getMagnification())
+        obj.setTag("cameraLength", self.tem.getCameraLength())
+    def STEMTest(self):
+        self.camera.setSTEMParams(1,64)
 class AutoTab(QWidget):
     class _Model(QStandardItemModel):
         def __init__(self):
@@ -443,7 +455,6 @@ class AutoTab(QWidget):
         self.__stop.clicked.disconnect(self.exe.kill)
         self.__start.setEnabled(True)
     def __findIndex(self, obj, sum, number):
-        print(obj.text(),obj.rowCount(),sum,number)
         for i in range(obj.rowCount()):
             if sum==number:
                 return (obj.child(i,0),obj.child(i,1))
