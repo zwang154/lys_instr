@@ -26,7 +26,7 @@ class fsTEMMain(AnalysisWindow):
         self.power=GSC02('COM3')
         #self.power=SingleMotorDummy()
         self.tem=TechnaiFemto('192.168.12.201',7000,7001)
-        #self.camera=TechnaiFemto('192.168.12.201',7000,7001)
+        #self.camera=self.tem
         self.camera=MerlinEM('192.168.12.206')
         self.pumpsw=SC10('COM4')
         self.camera.setBeforeAquireCallback(self.beforeAquire)
@@ -54,7 +54,7 @@ class fsTEMMain(AnalysisWindow):
         obj.setTag("magnification", self.tem.getMagnification())
         obj.setTag("cameraLength", self.tem.getCameraLength())
     def STEMTest(self):
-        self.camera.setSTEMParams(1,64)
+        self.camera.setSTEMParams(1,32)
 class AutoTab(QWidget):
     class _Model(QStandardItemModel):
         def __init__(self):
