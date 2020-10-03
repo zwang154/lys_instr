@@ -33,7 +33,7 @@ class fsTEMMain(AnalysisWindow):
         # self.power=SingleMotorDummy()
 
         self.tem = TechnaiFemto('192.168.12.201', 7000, 7001)
-        # self.camera=self.tem
+        #self.camera = self.tem
         self.camera = MerlinEM('192.168.12.206', mode='STEM', tem=self.tem)
         # self.camera=CameraDummy()
 
@@ -65,10 +65,10 @@ class fsTEMMain(AnalysisWindow):
     def beforeAquire(self, obj):
         obj.setTag("delay", self.delay.get())
         obj.setTag("power", self.power.get())
+        obj.setTag("Laser:delay", self.delay.get())
+        obj.setTag("Laser:power", self.power.get())
         #obj.setTag("magnification", self.tem.getMagnification())
         obj.setTag("cameraLength", self.tem.getCameraLength())
-
-        self.tem.stopSI()
 
 
 class AutoTab(QWidget):
@@ -336,7 +336,6 @@ class OrderExecutor(QThread):
         while not obj.set(delay):
             logging.warning(
                 '[AutoTab.OrderExecutor] Error on setDelay. Try agatin.')
-        logging.debug('[AutoTab.OrderExecutor] setDelay middle')
         obj.waitForReady()
         logging.debug('[AutoTab.OrderExecutor] Finish setDelay')
 
@@ -350,23 +349,15 @@ class OrderExecutor(QThread):
         logging.debug('[AutoTab.OrderExecutor] Start aquire')
         try:
             obj.setTime(time)
-            logging.debug('[AutoTab.OrderExecutor] set Time')
-            obj.setTag('mode', mode)
-            obj.setTag("Laser:delay", self.delay.get())
-            obj.setTag("Laser:power", self.power.get())
             while not obj.setFolder(folder):
                 logging.warning(
                     '[AutoTab.OrderExecutor] Error on setFolder. Try again.')
-            logging.debug('[AutoTab.OrderExecutor] set Folder finished')
             obj.startAquire(name)
-            logging.debug('[AutoTab.OrderExecutor] start Aquire finished')
             obj.waitForReady()
         except:
-            logging.warning(
+            logging.error(
                 '[AutoTab.OrderExecutor] Error on aquire. Try again.')
             self.aquire(obj, name, time, folder)
-            logging.info(
-                '[AutoTab.OrderExecutor] aquire is normally finished in except section.')
         logging.debug('[AutoTab.OrderExecutor] Finish aquire')
 
     def stagePosition(self, params):
