@@ -4,15 +4,15 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from ExtendAnalysis.AnalysisWindow import AnalysisWindow
 import ExtendAnalysis.MainWindow as main
-from Controllers.SingleMotor import *
-from Controllers.Switch import *
-from Controllers.Camera import *
-from Controllers.Hardwares.Soloist.SoloistHLE import SoloistHLE
-from Controllers.Hardwares.OptoSigma.GSC02 import GSC02
-from Controllers.Hardwares.SRS.DG645 import DG645
-from Controllers.Hardwares.FEI.TechnaiFemto import TechnaiFemto
-from Controllers.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-from Controllers.Hardwares.Thorlabs.SC10 import SC10
+from ..PythonHardwares.SingleMotor import *
+from ..PythonHardwares.Switch import *
+from ..PythonHardwares.Camera import *
+from ..PythonHardwares.Hardwares.Soloist.SoloistHLE import SoloistHLE
+from ..PythonHardwares.Hardwares.OptoSigma.GSC02 import GSC02
+from ..PythonHardwares.Hardwares.SRS.DG645 import DG645
+from ..PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto
+from ..PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
+from ..PythonHardwares.Hardwares.Thorlabs.SC10 import SC10
 
 class fsTEMMain(AnalysisWindow):
     def __init__(self):
@@ -23,12 +23,19 @@ class fsTEMMain(AnalysisWindow):
     def __initHardware(self):
         self.delay=SoloistHLE('192.168.12.202',8000)
         #self.delay=DG645('192.168.12.204',mode='ns')
+        #self.delay=SingleMotorDummy()
+
         self.power=GSC02('COM3')
         #self.power=SingleMotorDummy()
+
         self.tem=TechnaiFemto('192.168.12.201',7000,7001)
         #self.camera=self.tem
-        self.camera=MerlinEM('192.168.12.206')
+        self.camera=MerlinEM('192.168.12.206', mode = 'STEM', tem = self.tem)
+        #self.camera=CameraDummy()
+
         self.pumpsw=SC10('COM4')
+        #self.pumpsw=SwitchDummy()
+
         self.camera.setBeforeAquireCallback(self.beforeAquire)
         print("Hardwares initialized."+str(self.tem.getCameraLength()))
     def __initlayout(self):
@@ -39,22 +46,23 @@ class fsTEMMain(AnalysisWindow):
         lv.addWidget(SingleMotorGUI(self.power,'Pump power'))
         lv.addWidget(SwitchGUI(self.pumpsw,'Pump on/off'))
         lv.addWidget(self.camera.SettingGUI())
+        lv.addWidget(self.tem.SettingGUI())
         lv.addWidget(QPushButton("STEM Test",clicked=self.STEMTest))
         l.addLayout(lv)
         l.addWidget(CameraGUI(self.camera,'TEM Image'))
         wid=QWidget()
         wid.setLayout(l)
         tab.addTab(wid,'Fundamentals')
-        tab.addTab(AutoTab(self.delay,self.camera,self.power,self.camera,self.pumpsw),'Auto')
+        tab.addTab(AutoTab(self.delay,self.camera,self.power,self.camera,self.pumpsw,self.tem),'Auto')
         self.setWidget(tab)
         print("GUIs initialized.")
     def beforeAquire(self,obj):
         obj.setTag("delay",self.delay.get())
         obj.setTag("power",self.power.get())
-        obj.setTag("magnification", self.tem.getMagnification())
+        #obj.setTag("magnification", self.tem.getMagnification())
         obj.setTag("cameraLength", self.tem.getCameraLength())
     def STEMTest(self):
-        self.camera.setSTEMParams(1,32)
+        self.tem.stopSI()
 class AutoTab(QWidget):
     class _Model(QStandardItemModel):
         def __init__(self):
@@ -64,7 +72,7 @@ class AutoTab(QWidget):
     class OrderExecutor(QThread):
         updated=pyqtSignal(int)
         finished=pyqtSignal()
-        def __init__(self,order,camera,delay,power,stage,pumpsw):
+        def __init__(self,order,camera,delay,power,stage,pumpsw,tem):
             super().__init__()
             self.stopped=False
             self.delay=delay
@@ -74,6 +82,7 @@ class AutoTab(QWidget):
             self.order=order
             self.stage=stage
             self.pumpsw=pumpsw
+            self.tem=tem
         def run(self):
             n=0
             for o in self.order:
@@ -95,6 +104,10 @@ class AutoTab(QWidget):
                 self.changePower(eval(order['Params']))
             if order['Order']=='StagePosition':
                 self.stagePosition(eval(order['Params']))
+            if order['Order']=='Defocus':
+                self.defocus(eval(order['Params']))
+            if order['Order']=='Magnification':
+                self.magnify(eval(order['Params']))
         def scan(self,params):
             logging.info('[AutoTab.OrderExecutor] Start scan.')
             if params['Scan type']=='Delay':
@@ -111,6 +124,7 @@ class AutoTab(QWidget):
             start=params['From']
             for i in range(params['Loop']):
                 if self.stopped:
+                    c.stop()
                     return
                 if params['RefType']=='Delay':
                     self.setDelay(d,params['RefValue'])
@@ -179,6 +193,10 @@ class AutoTab(QWidget):
             logging.debug('[AutoTab.OrderExecutor] setDelay middle')
             obj.waitForReady()
             logging.debug('[AutoTab.OrderExecutor] Finish setDelay')
+        def defocus(self, params):
+            self.tem.setDefocus(params['Value'])
+        def magnify(self, params):
+            self.tem.setMagnification(params['Value'])
         def aquire(self,obj,name,time,folder,mode='Unknown'):
             logging.debug('[AutoTab.OrderExecutor] Start aquire')
             try:
@@ -202,13 +220,14 @@ class AutoTab(QWidget):
             for key in params.keys():
                 self.stage.setPosition(key,params[key])
 
-    def __init__(self,delay,camera,power,stage,pumpsw):
+    def __init__(self,delay,camera,power,stage,pumpsw,tem):
         super().__init__()
         self.delay=delay
         self.camera=camera
         self.power=power
         self.stage=stage
         self.pumpsw=pumpsw
+        self.tem=tem
         self.__initlayout()
     def __initlayout(self):
         l=QHBoxLayout()
@@ -217,6 +236,7 @@ class AutoTab(QWidget):
         tab.addTab(self.__scantab(),'Scan')
         tab.addTab(self.__powertab(),'Power')
         tab.addTab(self.__stagetab(),'Stage')
+        tab.addTab(self.__lorentztab(),'Lorentz')
         tab.addTab(self.__pdtab(),'PhaseDiagram')
 
         lh1=QHBoxLayout()
@@ -322,6 +342,23 @@ class AutoTab(QWidget):
         w=QWidget()
         w.setLayout(h1)
         return w
+    def __lorentztab(self):
+        self.__mag =QSpinBox()
+        self.__defocus=QDoubleSpinBox()
+        self.__defocus.setRange(-10000, 10000)
+        self.__defocus.setDecimals(5)
+        adddefocus=QPushButton('Add',clicked=self.__addDefocus)
+        addmag=QPushButton('Add',clicked=self.__addMagnification)
+        l = QGridLayout()
+        l.addWidget(QLabel("Defocus (um)"), 0, 0)
+        l.addWidget(self.__defocus, 0, 1)
+        l.addWidget(adddefocus, 0, 2)
+        l.addWidget(QLabel("Magnification"), 1, 0)
+        l.addWidget(self.__mag, 1, 1)
+        l.addWidget(addmag, 1, 2)
+        w=QWidget()
+        w.setLayout(l)
+        return w
     def __pdtab(self):
         gl1=QVBoxLayout()
 
@@ -399,6 +436,14 @@ class AutoTab(QWidget):
         p={}
         p['Value']=self.__power_to.value()
         self.addOrder('Power',p)
+    def __addDefocus(self):
+        p={}
+        p['Value']=self.__defocus.value()
+        self.addOrder('Defocus',p)
+    def __addMagnification(self):
+        p={}
+        p['Value']=self.__mag.value()
+        self.addOrder('Magnification',p)
     def __treeview(self):
         tree=QTreeView()
         tree.setDragDropMode(QAbstractItemView.InternalMove)
@@ -445,7 +490,7 @@ class AutoTab(QWidget):
             obj1=self.__model.itemFromIndex(index0)
             obj2=self.__model.itemFromIndex(index1)
             self.__construct(res,obj1,obj2)
-        self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power,self.stage,self.pumpsw)
+        self.exe=self.OrderExecutor(res,self.camera,self.delay,self.power,self.stage,self.pumpsw,self.tem)
         self.exe.updated.connect(self.OnUpdate)
         self.exe.finished.connect(self.OnFinished)
         self.__start.setEnabled(False)
