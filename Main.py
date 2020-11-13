@@ -1,5 +1,6 @@
 import logging
 import time
+import sys
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -41,7 +42,7 @@ class fsTEMMain(AnalysisWindow):
         # self.pumpsw=SwitchDummy()
 
         self.camera.setBeforeAquireCallback(self.beforeAquire)
-        print("Hardwares initialized."+str(self.tem.getCameraLength()))
+        print("Hardwares initialized.")
 
     def __initlayout(self):
         tab = QTabWidget()
@@ -57,18 +58,19 @@ class fsTEMMain(AnalysisWindow):
         wid = QWidget()
         wid.setLayout(l)
         tab.addTab(wid, 'Fundamentals')
-        tab.addTab(AutoTab(self.delay, self.camera, self.power,
-                           self.tem, self.pumpsw, self.tem), 'Auto')
+        tab.addTab(AutoTab(self.delay, self.camera, self.power, self.tem, self.pumpsw, self.tem), 'Auto')
         self.setWidget(tab)
         print("GUIs initialized.")
 
     def beforeAquire(self, obj):
-        obj.setTag("delay", self.delay.get())
-        obj.setTag("power", self.power.get())
-        obj.setTag("Laser:delay", self.delay.get())
-        obj.setTag("Laser:power", self.power.get())
+        d = self.delay.get()
+        p = self.power.get()
+        obj.setTag("delay", d)
+        obj.setTag("power", p)
+        obj.setTag("Laser:delay", d)
+        obj.setTag("Laser:power", p)
         #obj.setTag("magnification", self.tem.getMagnification())
-        obj.setTag("cameraLength", self.tem.getCameraLength())
+        #obj.setTag("cameraLength", self.tem.getCameraLength())
 
 
 class AutoTab(QWidget):
@@ -240,16 +242,18 @@ class OrderExecutor(QThread):
             self.magnify(eval(order['Params']))
 
     def scan(self, params):
-        logging.info('[AutoTab.OrderExecutor] Start scan.')
+        logging.info('[AutoTab.OrderExecutor] Selecting scan type.')
         if params['Scan type'] == 'Delay':
             self.scan_delay(params)
+        if params['Scan type'] == 'Focus':
+            self.scan_focus(params)
         elif params['Scan type'] == 'Power':
             self.scan_power(params)
         elif params['Scan type'] in ["Stage X", "Stage Y", "Stage Z", "Stage Alpha", "Stage Beta"]:
             self.scan_stage(params)
 
     def scan_delay(self, params):
-        logging.info('[AutoTab.OrderExecutor] Start scan.')
+        logging.info('[AutoTab.OrderExecutor] Start scan (delay).')
         d = self.delay
         c = self.camera
         delay = self.delay.get()
@@ -262,7 +266,27 @@ class OrderExecutor(QThread):
                 self.setDelay(d, params['RefValue'])
                 self.aquire(c, params['Name']+str(i), params['Exposure'],
                             params['Folder']+'\\probe', params['Scan type'])
-            self.setDelay(d, start+(i+1)*params['Step'])
+            self.setDelay(d, start+i*params['Step'])
+            self.aquire(c, params['Name']+str(i), params['Exposure'],
+                        params['Folder']+'\\pump', params['Scan type'])
+        logging.info('[AutoTab.OrderExecutor] Finish scan.')
+
+    def scan_focus(self, params):
+        logging.info('[AutoTab.OrderExecutor] Start scan (focus).')
+        d = self.delay
+        c = self.camera
+        delay = self.delay.get()
+        start = params['From']
+        for i in range(params['Loop']):
+            if self.stopped:
+                c.stop()
+                return
+            if params['RefType'] == 'Delay':
+                self.setDelay(d, params['RefValue'])
+                self.aquire(c, params['Name']+str(i), params['Exposure'],
+                            params['Folder']+'\\probe', params['Scan type'])
+                self.setDelay(d, delay)
+            self.tem.setDefocus(start+i*params['Step'])
             self.aquire(c, params['Name']+str(i), params['Exposure'],
                         params['Folder']+'\\pump', params['Scan type'])
         logging.info('[AutoTab.OrderExecutor] Finish scan.')
