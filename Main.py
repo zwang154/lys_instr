@@ -367,19 +367,14 @@ class OrderExecutor(QThread):
         self.tem.setMagnification(params['Value'])
 
     def aquire(self, obj, name, time, folder, mode='Unknown'):
-        logging.debug('[AutoTab.OrderExecutor] Start aquire')
-        try:
-            obj.setTime(time)
-            while not obj.setFolder(folder):
-                logging.warning(
-                    '[AutoTab.OrderExecutor] Error on setFolder. Try again.')
-            obj.startAquire(name)
-            obj.waitForReady()
-        except:
-            logging.error(
-                '[AutoTab.OrderExecutor] Error on aquire. Try again.')
-            self.aquire(obj, name, time, folder)
-        logging.debug('[AutoTab.OrderExecutor] Finish aquire')
+        logging.info('[AutoTab.OrderExecutor] Start aquire')
+        obj.setTime(time)
+        while not obj.setFolder(folder):
+            logging.warning('[AutoTab.OrderExecutor] Error on setFolder. Try again.')
+        obj.startAquire(name)
+        logging.info('[AutoTab.OrderExecutor] Wait for Camera ready')
+        obj.waitForReady()
+        logging.info('[AutoTab.OrderExecutor] Finish aquire')
 
     def stagePosition(self, params):
         for key in params.keys():
