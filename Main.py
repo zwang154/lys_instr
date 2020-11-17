@@ -264,11 +264,9 @@ class OrderExecutor(QThread):
                 return
             if params['RefType'] == 'Delay':
                 self.setDelay(d, params['RefValue'])
-                self.aquire(c, params['Name']+str(i), params['Exposure'],
-                            params['Folder']+'\\probe', params['Scan type'])
+                self.aquire(c, params['Name']+str(i), params['Exposure'], params['Folder']+'\\probe', params['Scan type'])
             self.setDelay(d, start+i*params['Step'])
-            self.aquire(c, params['Name']+str(i), params['Exposure'],
-                        params['Folder']+'\\pump', params['Scan type'])
+            self.aquire(c, params['Name']+str(i), params['Exposure'], params['Folder']+'\\pump', params['Scan type'])
         logging.info('[AutoTab.OrderExecutor] Finish scan.')
 
     def scan_focus(self, params):
@@ -358,8 +356,7 @@ class OrderExecutor(QThread):
     def setDelay(self, obj, delay):
         logging.debug('[AutoTab.OrderExecutor] Start setDelay')
         while not obj.set(delay):
-            logging.warning(
-                '[AutoTab.OrderExecutor] Error on setDelay. Try agatin.')
+            logging.warning('[AutoTab.OrderExecutor] Error on setDelay. Try agatin.')
         obj.waitForReady()
         logging.debug('[AutoTab.OrderExecutor] Finish setDelay')
 
