@@ -44,7 +44,7 @@ class ScanTab(QWidget):
         self.__scan_expose.setMaximum(10000)
         gl1.addWidget(QLabel('Folder'), 3, 0)
         gl1.addWidget(QLabel('Filename'), 3, 1)
-        gl1.addWidget(QLabel('Exposure'), 3, 2)
+        gl1.addWidget(QLabel('Exposure (s)'), 3, 2)
         gl1.addWidget(self.__scan_folder, 4, 0)
         gl1.addWidget(self.__scan_name, 4, 1)
         gl1.addWidget(self.__scan_expose, 4, 2)
