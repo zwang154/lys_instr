@@ -1,10 +1,13 @@
 import logging
 import time
 import sys
+import threading
 import numpy as np
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+
 from ExtendAnalysis.AnalysisWindow import AnalysisWindow
+from .DataStorage import DataStorage, DataStorageGUI
 from .AutoTabs import *
 import ExtendAnalysis.MainWindow as main
 from ..PythonHardwares.SingleMotor import *
@@ -26,52 +29,57 @@ class fsTEMMain(AnalysisWindow):
         self.adjustSize()
 
     def __initHardware(self):
-        self.delay = SoloistHLE('192.168.12.202', 8000)
-        #self.delay = DG645('192.168.12.204', mode='fs', frequency=25000)
-        # self.delay=SingleMotorDummy()
+        #self.delay = SoloistHLE('192.168.12.202', 8000)
+        self.delay = DG645('192.168.12.204', mode='fs', frequency=25000)
+        #self.delay = SingleMotorDummy()
 
         #self.probe = self.delay.getPowerModule()
         self.probe = SingleMotorDummy()
-        self.power = GSC02('COM3')
-        # self.power=SingleMotorDummy()
+        #self.power = GSC02('COM3')
+        self.power = SingleMotorDummy()
 
         self.tem = TechnaiFemto('192.168.12.201', 7000, 7001)
         #self.camera = self.tem
-        self.camera = MerlinEM('192.168.12.206', mode='STEM', tem=self.tem)
-        # self.camera=CameraDummy()
+        self.camera = MerlinEM('192.168.12.206', tem=self.tem)
+        #self.camera = CameraDummy()
 
         self.pumpsw = SC10('COM4')
         # self.pumpsw=SwitchDummy()
-
-        self.camera.setBeforeAquireCallback(self.beforeAquire)
         print("Hardwares initialized.")
+
+        self._data = DataStorage()
+        self._data.tagRequest.connect(self._setParams)
 
     def __initlayout(self):
         tab = QTabWidget()
-        l = QHBoxLayout()
-        lv = QVBoxLayout()
-        lv.addWidget(SingleMotorGUI(self.delay, 'Delay Stage'))
-        lv.addWidget(SingleMotorGUI(self.power, 'Pump power'))
-        lv.addWidget(SingleMotorGUI(self.probe, 'Probe power'))
-        lv.addWidget(SwitchGUI(self.pumpsw, 'Pump on/off'))
-        lv.addWidget(self.camera.SettingGUI())
-        lv.addWidget(self.tem.SettingGUI())
-        l.addLayout(lv)
-        l.addWidget(CameraGUI(self.camera, 'TEM Image'))
+
+        g = QGridLayout()
+        g.addWidget(DataStorageGUI(self._data), 0, 0, 1, 2)
+        g.addWidget(SingleMotorGUI(self.delay, 'Delay Stage'), 1, 0)
+        g.addWidget(SingleMotorGUI(self.power, 'Pump power'), 2, 0)
+        g.addWidget(SingleMotorGUI(self.probe, 'Probe power'), 2, 1)
+        g.addWidget(SwitchGUI(self.pumpsw, 'Pump on/off'), 3, 0)
+        g.addWidget(self.camera.SettingGUI(), 4, 0)
+        g.addWidget(self.tem.SettingGUI(), 4, 1)
+        g.addWidget(DataStorageGUI(self._data), 5, 0, 1, 2)
+
+        h1 = QHBoxLayout()
+        h1.addLayout(g)
+        h1.addWidget(CameraGUI(self.camera, 'TEM Image'))
         wid = QWidget()
-        wid.setLayout(l)
+        wid.setLayout(h1)
         tab.addTab(wid, 'Fundamentals')
         tab.addTab(AutoTab(self.delay, self.camera, self.power, self.tem, self.pumpsw, self.tem), 'Auto')
         self.setWidget(tab)
         print("GUIs initialized.")
 
-    def beforeAquire(self, obj):
+    def _setParams(self, dic):
         d = self.delay.get()
         p = self.power.get()
-        obj.setTag("delay", d)
-        obj.setTag("power", p)
-        obj.setTag("Laser:delay", d)
-        obj.setTag("Laser:power", p)
+        dic["delay"] = d
+        dic["power"] = p
+        dic["Laser:delay"] = d
+        dic["Laser:power"] = p
         #obj.setTag("magnification", self.tem.getMagnification())
         #obj.setTag("cameraLength", self.tem.getCameraLength())
 
