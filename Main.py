@@ -27,9 +27,11 @@ class fsTEMMain(AnalysisWindow):
 
     def __initHardware(self):
         self.delay = SoloistHLE('192.168.12.202', 8000)
-        # self.delay=DG645('192.168.12.204',mode='ns')
+        #self.delay = DG645('192.168.12.204', mode='fs', frequency=25000)
         # self.delay=SingleMotorDummy()
 
+        #self.probe = self.delay.getPowerModule()
+        self.probe = SingleMotorDummy()
         self.power = GSC02('COM3')
         # self.power=SingleMotorDummy()
 
@@ -50,6 +52,7 @@ class fsTEMMain(AnalysisWindow):
         lv = QVBoxLayout()
         lv.addWidget(SingleMotorGUI(self.delay, 'Delay Stage'))
         lv.addWidget(SingleMotorGUI(self.power, 'Pump power'))
+        lv.addWidget(SingleMotorGUI(self.probe, 'Probe power'))
         lv.addWidget(SwitchGUI(self.pumpsw, 'Pump on/off'))
         lv.addWidget(self.camera.SettingGUI())
         lv.addWidget(self.tem.SettingGUI())
@@ -330,7 +333,7 @@ class OrderExecutor(QThread):
                 self.setDelay(self.delay, params['RefValue'])
                 self.aquire(c, params['Name']+str(i), params['Exposure'],
                             params['Folder']+'\\probe', params['Scan type'])
-            self.setDelay(self.delay, delay)
+                self.setDelay(self.delay, delay)
             self.aquire(c, params['Name']+str(i), params['Exposure'],
                         params['Folder']+'\\pump', params['Scan type'])
         if rev:
