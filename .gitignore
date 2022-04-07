@@ -9,3 +9,5 @@ valtest
 *.dic
 *.val
 *.str
+*__pycache__
+*.egg-info

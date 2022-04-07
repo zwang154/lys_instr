@@ -1,87 +1,70 @@
 import logging
-import time
-import sys
-import threading
-import numpy as np
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
-from ExtendAnalysis.AnalysisWindow import AnalysisWindow
+from lys.widgets import LysSubWindow
+
+from PythonHardwares.SingleMotor import SingleMotorGUI
+from PythonHardwares.Camera import CameraGUI
+from PythonHardwares.Switch import SwitchGUI
+
 from .DataStorage import DataStorage, DataStorageGUI
 from .AutoTabs import *
-import ExtendAnalysis.MainWindow as main
-from ..PythonHardwares.SingleMotor import *
-from ..PythonHardwares.Switch import *
-from ..PythonHardwares.Camera import *
-from ..PythonHardwares.Hardwares.Soloist.SoloistHLE import SoloistHLE
-from ..PythonHardwares.Hardwares.OptoSigma.GSC02 import GSC02
-from ..PythonHardwares.Hardwares.SRS.DG645 import DG645
-from ..PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto
-from ..PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-from ..PythonHardwares.Hardwares.Thorlabs.SC10 import SC10
 
 
-class fsTEMMain(AnalysisWindow):
-    def __init__(self):
-        super().__init__(title="Ultrafast Electron Diffraction/Microscopy Measurements")
-        self.__initHardware()
-        self.__initlayout()
-        self.adjustSize()
+class fsTEMMain(LysSubWindow):
+    tagRequest = pyqtSignal(dict)
 
-    def __initHardware(self):
-        #self.delay = SoloistHLE('192.168.12.202', 8000)
-        self.delay = DG645('192.168.12.204', mode='fs', frequency=25000)
-        #self.delay = SingleMotorDummy()
+    def __init__(self, hardwares, lay_others):
+        super().__init__()
+        self.setWindowTitle("Ultrafast Electron Diffraction/Microscopy Measurements")
 
-        #self.probe = self.delay.getPowerModule()
-        self.probe = SingleMotorDummy()
-        #self.power = GSC02('COM3')
-        self.power = SingleMotorDummy()
-
-        self.tem = TechnaiFemto('192.168.12.201', 7000, 7001)
-        #self.camera = self.tem
-        self.camera = MerlinEM('192.168.12.206', tem=self.tem)
-        #self.camera = CameraDummy()
-
-        self.pumpsw = SC10('COM4')
-        # self.pumpsw=SwitchDummy()
-        print("Hardwares initialized.")
+        self.delay = hardwares["Delay Stage"]
+        self.probe = hardwares["Probe Power"]
+        self.power = hardwares["Pump Power"]
+        self.camera = hardwares["Camera"]
+        self.pumpsw = hardwares["Pump Shutter"]
+        self.probesw = hardwares["Probe Shutter"]
 
         self._data = DataStorage()
-        self._data.tagRequest.connect(self._setParams)
+        self._data.tagRequest.connect(self.tagRequest)
+        self.__initlayout(hardwares, lay_others)
+        self.adjustSize()
 
-    def __initlayout(self):
-        tab = QTabWidget()
-
+    def __initlayout(self, hardwares, lay_other):
         g = QGridLayout()
         g.addWidget(DataStorageGUI(self._data), 0, 0, 1, 2)
-        g.addWidget(SingleMotorGUI(self.delay, 'Delay Stage'), 1, 0)
-        g.addWidget(SingleMotorGUI(self.power, 'Pump power'), 2, 0)
-        g.addWidget(SingleMotorGUI(self.probe, 'Probe power'), 2, 1)
-        g.addWidget(SwitchGUI(self.pumpsw, 'Pump on/off'), 3, 0)
-        g.addWidget(self.camera.SettingGUI(), 4, 0)
-        g.addWidget(self.tem.SettingGUI(), 4, 1)
-        g.addWidget(DataStorageGUI(self._data), 5, 0, 1, 2)
+        if "Delay Stage" in hardwares:
+            g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 1, 0)
+        if "Pump Power" in hardwares:
+            g.addWidget(SingleMotorGUI(hardwares["Pump Power"], 'Pump power'), 2, 0)
+        if "Probe Power" in hardwares:
+            g.addWidget(SingleMotorGUI(hardwares["Probe Power"], 'Probe power'), 2, 1)
+        if "Pump Shutter" in hardwares:
+            g.addWidget(SwitchGUI(hardwares["Pump Shutter"], 'Pump on/off'), 3, 0)
+        if "Probe Shutter" in hardwares:
+            g.addWidget(SwitchGUI(hardwares["Probe Shutter"], 'Probe on/off'), 3, 1)
+        g.setColumnStretch(0, 1)
+        g.setColumnStretch(1, 1)
+
+        v1 = QVBoxLayout()
+        v1.addLayout(g)
+        v1.addLayout(lay_other)
 
         h1 = QHBoxLayout()
-        h1.addLayout(g)
-        h1.addWidget(CameraGUI(self.camera, 'TEM Image'))
+        h1.addLayout(v1)
+        if "Camera" in hardwares:
+            h1.addWidget(CameraGUI(hardwares["Camera"], 'TEM Image'))
+
         wid = QWidget()
         wid.setLayout(h1)
+
+        tab = QTabWidget()
         tab.addTab(wid, 'Fundamentals')
-        tab.addTab(AutoTab(self.delay, self.camera, self.power, self.tem, self.pumpsw, self.tem), 'Auto')
+        #tab.addTab(AutoTab(self.delay, self.camera, self.power, self.tem, self.pumpsw, self.tem), 'Auto')
         self.setWidget(tab)
         print("GUIs initialized.")
-
-    def _setParams(self, dic):
-        d = self.delay.get()
-        p = self.power.get()
-        dic["delay"] = d
-        dic["power"] = p
-        dic["Laser:delay"] = d
-        dic["Laser:power"] = p
-        #obj.setTag("magnification", self.tem.getMagnification())
-        #obj.setTag("cameraLength", self.tem.getCameraLength())
 
 
 class AutoTab(QWidget):
@@ -390,10 +373,3 @@ class OrderExecutor(QThread):
     def stagePosition(self, params):
         for key in params.keys():
             self.stage.setPosition(key, params[key])
-
-
-def create():
-    fsTEM = fsTEMMain()
-
-
-main.addMainMenu(['fs-TEM and UED', 'Measurements'], create)
