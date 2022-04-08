@@ -8,6 +8,7 @@ from lys.widgets import LysSubWindow
 from PythonHardwares.SingleMotor import SingleMotorGUI
 from PythonHardwares.Camera import CameraGUI
 from PythonHardwares.Switch import SwitchGUI
+from PythonHardwares.Stage import StageGUI
 
 from .DataStorage import DataStorage, DataStorageGUI
 from .AutoTabs import *
@@ -26,6 +27,7 @@ class fsTEMMain(LysSubWindow):
         self.camera = hardwares["Camera"]
         self.pumpsw = hardwares["Pump Shutter"]
         self.probesw = hardwares["Probe Shutter"]
+        self.stage = hardwares["Stage"]
 
         self._data = DataStorage()
         self._data.tagRequest.connect(self.tagRequest)
@@ -35,16 +37,12 @@ class fsTEMMain(LysSubWindow):
     def __initlayout(self, hardwares, lay_other):
         g = QGridLayout()
         g.addWidget(DataStorageGUI(self._data), 0, 0, 1, 2)
-        if "Delay Stage" in hardwares:
-            g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 1, 0)
-        if "Pump Power" in hardwares:
-            g.addWidget(SingleMotorGUI(hardwares["Pump Power"], 'Pump power'), 2, 0)
-        if "Probe Power" in hardwares:
-            g.addWidget(SingleMotorGUI(hardwares["Probe Power"], 'Probe power'), 2, 1)
-        if "Pump Shutter" in hardwares:
-            g.addWidget(SwitchGUI(hardwares["Pump Shutter"], 'Pump on/off'), 3, 0)
-        if "Probe Shutter" in hardwares:
-            g.addWidget(SwitchGUI(hardwares["Probe Shutter"], 'Probe on/off'), 3, 1)
+        g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 1, 0)
+        g.addWidget(SingleMotorGUI(hardwares["Pump Power"], 'Pump power'), 2, 0)
+        g.addWidget(SingleMotorGUI(hardwares["Probe Power"], 'Probe power'), 2, 1)
+        g.addWidget(SwitchGUI(hardwares["Pump Shutter"], 'Pump on/off'), 3, 0)
+        g.addWidget(SwitchGUI(hardwares["Probe Shutter"], 'Probe on/off'), 3, 1)
+        g.addWidget(StageGUI(hardwares["Stage"], "Stage"), 4, 0, 1, 2)
         g.setColumnStretch(0, 1)
         g.setColumnStretch(1, 1)
 

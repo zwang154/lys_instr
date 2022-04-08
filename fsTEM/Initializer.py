@@ -23,7 +23,6 @@ def initialize(dic, generator, layout):
     with open(savepath, mode='w') as f:
         f.write(str(res))
     hardwares = {key: generator(item) for key, item in res.items()}
-    print(hardwares)
     return fsTEMMain(hardwares, layout())
 
 
