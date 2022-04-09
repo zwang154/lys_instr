@@ -14,7 +14,7 @@ dic = {
     "Probe Power": ["DummyProbe"],
     "Pump Shutter": ["SC10", "DummySwitch"],
     "Probe Shutter": ["DummySwitch"],
-    "Stage": ["DummyStage"]}
+    "Stage": ["SingleTilt", "DoubleTilt", "DummyStage"]}
 
 
 class GlobalInitializer:
@@ -70,6 +70,8 @@ class GlobalInitializer:
         elif instr == "DummyStage":
             from PythonHardwares.Stage import StageDummy
             return StageDummy()
+        elif instr == "SingleTilt":
+            return self.tem.getStage()
 
     def layout(self):
         h = QHBoxLayout()
