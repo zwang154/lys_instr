@@ -17,6 +17,8 @@ class DataStorage(QObject):
         self._enabled = True
         self._useNumber = True
         self._threads = []
+        self._tags = []
+        self._paths = []
 
     def setBaseFolder(self, folder):
         self._base = folder
@@ -41,9 +43,11 @@ class DataStorage(QObject):
 
     def useNumber(self, b):
         self._useNumber = b
+        self.pathChanged.emit(self)
 
     def setEnabled(self, b):
         self._enabled = b
+        self.pathChanged.emit(self)
 
     def enabled(self):
         return self._enabled
@@ -52,21 +56,33 @@ class DataStorage(QObject):
         if self._useNumber:
             i = 0
             f = self.__getPath()
-            reserved = [t.path for t in self._threads]
+            reserved = [t.path for t in self._threads] + self._paths
             while os.path.exists(f + "/" + self.getFilename() + str(i) + ".npz") or f + "/" + self.getFilename() + str(i) + ".npz" in reserved:
                 i += 1
             return i
         else:
             return None
 
-    def saveImage(self, wave):
+    def reserve(self):
         if self._enabled:
+            d = {}
+            self.tagRequest.emit(d)
             folder = self.__getPath()
-            os.makedirs(folder, exist_ok=True)
             if self.getNumber() is not None:
                 path = folder + "/" + self.getFilename() + str(self.getNumber()) + ".npz"
             else:
                 path = folder + "/" + self.getFilename() + ".npz"
+            self._tags.append(d)
+            self._paths.append(path)
+            os.makedirs(folder, exist_ok=True)
+        self.stateChanged.emit(self.state())
+
+    def saveImage(self, wave):
+        if self._enabled:
+            wave.note = self._tags[0]
+            path = self._paths[0]
+            self._tags.pop(0)
+            self._paths.pop(0)
             t = _saveThread(wave, path)
             t.finished.connect(self._finished)
             self._threads.append(t)
@@ -87,10 +103,10 @@ class DataStorage(QObject):
         return folder
 
     def state(self):
-        if len(self._threads) == 0:
+        if len(self._threads) == 0 and len(self._paths) == 0:
             return "Status: Waiting"
         else:
-            return "Status: Saving " + str(len(self._threads)) + " files..."
+            return "Status: " + str(len(self._paths)) + " files reserved, " + str(len(self._threads)) + " files being saved"
 
 
 class _saveThread(QThread):
@@ -130,8 +146,8 @@ class DataStorageGUI(QGroupBox):
         g.addWidget(self._folder, 1, 1)
         g.addWidget(self._name, 1, 2)
         g.addWidget(self._number, 1, 3)
-        g.addWidget(self._enabled, 2, 0)
-        g.addWidget(self._status, 2, 1, 1, 2)
+        g.addWidget(self._status, 2, 0, 1, 3)
+        g.addWidget(self._enabled, 2, 3)
         self.setLayout(g)
 
     def _editPath(self):
@@ -150,6 +166,7 @@ class DataStorageGUI(QGroupBox):
     def _pathChanged(self):
         if self._flg:
             return
+        self._flg = True
         self._base.setText(self._obj.getBaseFolder())
         self._folder.setText(self._obj.getFolder())
         self._name.setText(self._obj.getFilename())
@@ -159,3 +176,4 @@ class DataStorageGUI(QGroupBox):
         else:
             self._useNumber.setChecked(True)
             self._number.setValue(self._obj.getNumber())
+        self._flg = False

@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
+
+from PythonHardwares.Interfaces import HardwareInterface
 from .Initializer import initialize
 from lys import home
 
@@ -19,52 +21,46 @@ class GlobalInitializer:
     def __init__(self):
         from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto
         self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
+        self.merlin = None
 
     def init(self):
-        initialize(root, dic, self.generate, self.layout)
+        gui = initialize(root, dic, self.generate, self.layout)
+        gui.tagRequest.connect(self._setParams)
+        gui.closed.connect(self._closed)
 
     def generate(self, instr):
         if instr is None:
             return None
         elif instr == "Merlin":
             from PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-            self.camera = MerlinEM('192.168.12.206', stem=self.tem.getSTEM())
-            return self.camera
+            self.merlin = MerlinEM('192.168.12.206', stem=self.tem.getSTEM())
+            return self.merlin
         elif instr == 'Digital Micrograph':
-            self.camera = self.tem.getCamera()
-            return self.camera
+            return self.tem.getCamera()
         elif instr == 'DummyCamera':
             from PythonHardwares.Camera import CameraDummy
-            self.camera = CameraDummy()
-            return self.camera
+            return CameraDummy()
         elif instr == 'fs-fs':
             from PythonHardwares.Hardwares.Soloist.SoloistHLE import SoloistHLE
-            self.delay = SoloistHLE('192.168.12.202', 8000)
-            return self.delay
+            return SoloistHLE('192.168.12.202', 8000)
         elif instr == 'fs-ns':
             from PythonHardwares.Hardwares.SRS.DG645 import DG645
-            self.delay = DG645('192.168.12.204', mode='fs', frequency=25000)
-            return self.delay
+            return DG645('192.168.12.204', mode='fs', frequency=25000)
         elif instr == 'ns-ns':
             from PythonHardwares.Hardwares.SRS.DG645 import DG645
-            self.delay = DG645('192.168.12.204', mode='ns')
-            return self.delay
+            return DG645('192.168.12.204', mode='ns')
         elif instr == 'DummyDelay':
             from PythonHardwares.SingleMotor import SingleMotorDummy
-            self.delay = SingleMotorDummy()
-            return self.delay
+            return SingleMotorDummy()
         elif instr == "DummyPump":
             from PythonHardwares.SingleMotor import SingleMotorDummy
-            self.pump = SingleMotorDummy()
-            return self.pump
+            return SingleMotorDummy()
         elif instr == "DummyProbe":
             from PythonHardwares.SingleMotor import SingleMotorDummy
-            self.probe = SingleMotorDummy()
-            return self.probe
+            return SingleMotorDummy()
         elif instr == "GSC02":
             from PythonHardwares.Hardwares.OptoSigma.GSC02 import GSC02
-            self.pump = GSC02('COM3')
-            return self.pump
+            return GSC02('COM3')
         elif instr == "SC10":
             from PythonHardwares.Hardwares.Thorlabs.SC10 import SC10
             return SC10('COM4')
@@ -77,7 +73,8 @@ class GlobalInitializer:
 
     def layout(self):
         h = QHBoxLayout()
-        h.addWidget(self.camera.SettingGUI())
+        if self.merlin is not None:
+            h.addWidget(self.camera.SettingGUI())
         h.addWidget(self.tem.SettingGUI())
 
         w = QWidget()
@@ -85,12 +82,11 @@ class GlobalInitializer:
         return w
 
     def _setParams(self, dic):
-        d = self.delay.get()
-        p = self.pump.get()
-        dic["delay"] = d
-        dic["power"] = p
-        dic["Laser:delay"] = d
-        dic["Laser:power"] = p
+        pass
+
+    def _closed(self):
+        HardwareInterface.killAll()
+        self.tem = None
 
 
 def _makeMenu():

@@ -22,7 +22,8 @@ def initialize(root, dic, generator, layout):
     with open(savepath, mode='w') as f:
         f.write(str(res))
     hardwares = {key: generator(item) for key, item in res.items()}
-    return fsTEMMain(root, hardwares, layout())
+    gui = fsTEMMain(root, hardwares, layout())
+    return gui
 
 
 class GUIInit(QDialog):
