@@ -2,12 +2,11 @@ import os
 
 from PyQt5.QtWidgets import QDialog, QGridLayout, QComboBox, QLabel, QDialogButtonBox, QVBoxLayout
 from PyQt5.QtCore import Qt
-from lys import home
 
 from .Main import fsTEMMain
 
 
-def initialize(dic, generator, layout):
+def initialize(root, dic, generator, layout):
     os.makedirs(".lys/fsTEM", exist_ok=True)
     savepath = ".lys/fsTEM/hardwares.dic"
     if os.path.exists(savepath):
@@ -23,7 +22,7 @@ def initialize(dic, generator, layout):
     with open(savepath, mode='w') as f:
         f.write(str(res))
     hardwares = {key: generator(item) for key, item in res.items()}
-    return fsTEMMain(hardwares, layout())
+    return fsTEMMain(root, hardwares, layout())
 
 
 class GUIInit(QDialog):
@@ -39,11 +38,11 @@ class GUIInit(QDialog):
             if key in sav:
                 self._combo[key].setCurrentText(sav[key])
             if i % 2 == 0:
-                g.addWidget(QLabel(key), 2*int(i/2), 0)
-                g.addWidget(self._combo[key], 2*int(i/2) + 1, 0)
+                g.addWidget(QLabel(key), 2 * int(i / 2), 0)
+                g.addWidget(self._combo[key], 2 * int(i / 2) + 1, 0)
             else:
-                g.addWidget(QLabel(key), 2*int(i/2), 1)
-                g.addWidget(self._combo[key], 2*int(i/2) + 1, 1)
+                g.addWidget(QLabel(key), 2 * int(i / 2), 1)
+                g.addWidget(self._combo[key], 2 * int(i / 2) + 1, 1)
             i += 1
 
         btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, self)

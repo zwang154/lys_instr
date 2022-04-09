@@ -1,5 +1,9 @@
-from PyQt5.QtWidgets import QHBoxLayout
+from PyQt5.QtWidgets import QHBoxLayout, QWidget
 from .Initializer import initialize
+from lys import home
+
+#root = "\\\\192.168.12.203\\smb\\data2\\"
+root = home() + "/data"
 
 dic = {
     "Camera": ["Merlin", "Digital Micrograph", "DummyCamera"],
@@ -17,7 +21,7 @@ class GlobalInitializer:
         self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
 
     def init(self):
-        initialize(dic, self.generate, self.layout)
+        initialize(root, dic, self.generate, self.layout)
 
     def generate(self, instr):
         if instr is None:
@@ -75,7 +79,10 @@ class GlobalInitializer:
         h = QHBoxLayout()
         h.addWidget(self.camera.SettingGUI())
         h.addWidget(self.tem.SettingGUI())
-        return h
+
+        w = QWidget()
+        w.setLayout(h)
+        return w
 
     def _setParams(self, dic):
         d = self.delay.get()

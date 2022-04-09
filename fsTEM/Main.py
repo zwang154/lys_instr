@@ -1,4 +1,5 @@
 import logging
+import os
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -15,11 +16,13 @@ from .AutoTabs import *
 
 
 class fsTEMMain(LysSubWindow):
+    _path = ".lys/fsTEM/settings.dic"
     tagRequest = pyqtSignal(dict)
 
-    def __init__(self, hardwares, lay_others):
+    def __init__(self, root, hardwares, lay_others):
         super().__init__()
         self.setWindowTitle("Ultrafast Electron Diffraction/Microscopy Measurements")
+        os.makedirs(".lys/fsTEM", exist_ok=True)
 
         self.delay = hardwares["Delay Stage"]
         self.probe = hardwares["Probe Power"]
@@ -29,31 +32,29 @@ class fsTEMMain(LysSubWindow):
         self.probesw = hardwares["Probe Shutter"]
         self.stage = hardwares["Stage"]
 
-        self._data = DataStorage()
+        self._data = DataStorage(root)
         self._data.tagRequest.connect(self.tagRequest)
         self.__initlayout(hardwares, lay_others)
+        self.restoreSettings(self._path)
+        self.closed.connect(lambda: self.saveSettings(self._path))
+        self.camera.aquireFinished.connect(self._data.saveImage)
+        print("[fsTEM] Hardwares initialized. Data are storaged in", root)
         self.adjustSize()
 
     def __initlayout(self, hardwares, lay_other):
-        g = QGridLayout()
-        g.addWidget(DataStorageGUI(self._data), 0, 0, 1, 2)
-        g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 1, 0)
-        g.addWidget(SingleMotorGUI(hardwares["Pump Power"], 'Pump power'), 2, 0)
-        g.addWidget(SingleMotorGUI(hardwares["Probe Power"], 'Probe power'), 2, 1)
-        g.addWidget(SwitchGUI(hardwares["Pump Shutter"], 'Pump on/off'), 3, 0)
-        g.addWidget(SwitchGUI(hardwares["Probe Shutter"], 'Probe on/off'), 3, 1)
-        g.addWidget(StageGUI(hardwares["Stage"], "Stage"), 4, 0, 1, 2)
-        g.setColumnStretch(0, 1)
-        g.setColumnStretch(1, 1)
+        tab = QTabWidget()
+        tab.addTab(self.__laserTab(hardwares), "Laser")
+        tab.addTab(StageGUI(hardwares["Stage"], "Stage"), "Stage")
+        tab.addTab(lay_other, "Other")
 
         v1 = QVBoxLayout()
-        v1.addLayout(g)
-        v1.addLayout(lay_other)
+        self.__data = DataStorageGUI(self._data)
+        v1.addWidget(self.__data)
+        v1.addWidget(tab)
 
         h1 = QHBoxLayout()
         h1.addLayout(v1)
-        if "Camera" in hardwares:
-            h1.addWidget(CameraGUI(hardwares["Camera"], 'TEM Image'))
+        h1.addWidget(CameraGUI(hardwares["Camera"], 'TEM Image'))
 
         wid = QWidget()
         wid.setLayout(h1)
@@ -62,7 +63,19 @@ class fsTEMMain(LysSubWindow):
         tab.addTab(wid, 'Fundamentals')
         #tab.addTab(AutoTab(self.delay, self.camera, self.power, self.tem, self.pumpsw, self.tem), 'Auto')
         self.setWidget(tab)
-        print("GUIs initialized.")
+
+    def __laserTab(self, hardwares):
+        g = QGridLayout()
+        g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 0, 0)
+        g.addWidget(SingleMotorGUI(hardwares["Pump Power"], 'Pump power'), 1, 0)
+        g.addWidget(SingleMotorGUI(hardwares["Probe Power"], 'Probe power'), 1, 1)
+        g.addWidget(SwitchGUI(hardwares["Pump Shutter"], 'Pump on/off'), 2, 0)
+        g.addWidget(SwitchGUI(hardwares["Probe Shutter"], 'Probe on/off'), 2, 1)
+        g.setColumnStretch(0, 1)
+        g.setColumnStretch(1, 1)
+        w = QWidget()
+        w.setLayout(g)
+        return w
 
 
 class AutoTab(QWidget):
@@ -256,9 +269,9 @@ class OrderExecutor(QThread):
                 return
             if params['RefType'] == 'Delay':
                 self.setDelay(d, params['RefValue'])
-                self.aquire(c, params['Name']+str(i), params['Exposure'], params['Folder']+'\\probe', params['Scan type'])
-            self.setDelay(d, start+i*params['Step'])
-            self.aquire(c, params['Name']+str(i), params['Exposure'], params['Folder']+'\\pump', params['Scan type'])
+                self.aquire(c, params['Name'] + str(i), params['Exposure'], params['Folder'] + '\\probe', params['Scan type'])
+            self.setDelay(d, start + i * params['Step'])
+            self.aquire(c, params['Name'] + str(i), params['Exposure'], params['Folder'] + '\\pump', params['Scan type'])
         logging.info('[AutoTab.OrderExecutor] Finish scan.')
 
     def scan_focus(self, params):
@@ -273,12 +286,12 @@ class OrderExecutor(QThread):
                 return
             if params['RefType'] == 'Delay':
                 self.setDelay(d, params['RefValue'])
-                self.aquire(c, params['Name']+str(i), params['Exposure'],
-                            params['Folder']+'\\probe', params['Scan type'])
+                self.aquire(c, params['Name'] + str(i), params['Exposure'],
+                            params['Folder'] + '\\probe', params['Scan type'])
                 self.setDelay(d, delay)
-            self.tem.setDefocus(start+i*params['Step'])
-            self.aquire(c, params['Name']+str(i), params['Exposure'],
-                        params['Folder']+'\\pump', params['Scan type'])
+            self.tem.setDefocus(start + i * params['Step'])
+            self.aquire(c, params['Name'] + str(i), params['Exposure'],
+                        params['Folder'] + '\\pump', params['Scan type'])
         logging.info('[AutoTab.OrderExecutor] Finish scan.')
 
     def scan_stage(self, params):
@@ -298,14 +311,14 @@ class OrderExecutor(QThread):
         for i in range(params['Loop']):
             if self.stopped:
                 return
-            self.stage.setPosition(axis, start+i*params['Step'])
+            self.stage.setPosition(axis, start + i * params['Step'])
             if params['RefType'] == 'Delay':
                 self.setDelay(self.delay, params['RefValue'])
-                self.aquire(self.camera, params['Name']+str(
-                    i), params['Exposure'], params['Folder']+'\\probe', params['Scan type'])
+                self.aquire(self.camera, params['Name'] + str(
+                    i), params['Exposure'], params['Folder'] + '\\probe', params['Scan type'])
             self.setDelay(self.delay, delay)
-            self.aquire(self.camera, params['Name']+str(
-                i), params['Exposure'], params['Folder']+'\\pump', params['Scan type'])
+            self.aquire(self.camera, params['Name'] + str(
+                i), params['Exposure'], params['Folder'] + '\\pump', params['Scan type'])
         logging.info('[AutoTab.OrderExecutor] Finish scan.')
 
     def scan_power(self, params, rev=True):
@@ -317,27 +330,27 @@ class OrderExecutor(QThread):
         for i in range(params['Loop']):
             if self.stopped:
                 return
-            self.setDelay(self.power, start+i*params['Step'])
+            self.setDelay(self.power, start + i * params['Step'])
             if params['RefType'] == 'Delay':
                 self.setDelay(self.delay, params['RefValue'])
-                self.aquire(c, params['Name']+str(i), params['Exposure'],
-                            params['Folder']+'\\probe', params['Scan type'])
+                self.aquire(c, params['Name'] + str(i), params['Exposure'],
+                            params['Folder'] + '\\probe', params['Scan type'])
                 self.setDelay(self.delay, delay)
-            self.aquire(c, params['Name']+str(i), params['Exposure'],
-                        params['Folder']+'\\pump', params['Scan type'])
+            self.aquire(c, params['Name'] + str(i), params['Exposure'],
+                        params['Folder'] + '\\pump', params['Scan type'])
         if rev:
             for i in range(params['Loop']):
                 if self.stopped:
                     return
                 self.setDelay(self.power, start +
-                              (params['Loop']-i-1)*params['Step'])
+                              (params['Loop'] - i - 1) * params['Step'])
                 if params['RefType'] == 'Delay':
                     self.setDelay(self.delay, params['RefValue'])
-                    self.aquire(c, params['Name']+str(params['Loop']+i),
-                                params['Exposure'], params['Folder']+'\\probe', params['Scan type'])
+                    self.aquire(c, params['Name'] + str(params['Loop'] + i),
+                                params['Exposure'], params['Folder'] + '\\probe', params['Scan type'])
                 self.setDelay(self.delay, delay)
-                self.aquire(c, params['Name']+str(params['Loop']+i),
-                            params['Exposure'], params['Folder']+'\\pump', params['Scan type'])
+                self.aquire(c, params['Name'] + str(params['Loop'] + i),
+                            params['Exposure'], params['Folder'] + '\\pump', params['Scan type'])
         logging.info('[AutoTab.OrderExecutor] Finish scan.')
 
     def changePower(self, params):
