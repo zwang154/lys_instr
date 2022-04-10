@@ -45,6 +45,7 @@ class fsTEMMain(LysSubWindow):
 
     def __initlayout(self, hardwares, lay_other):
         scan = {"delay": self.delay, "pump": self.power, "probe": self.probe}
+        scan.update(self.stage.getScans())
         proc = {"Camera": RefCameraWidget(self.camera, self.delay)}
         self._scan = ScanTab(self._data, scan, proc)
         tab = QTabWidget()
