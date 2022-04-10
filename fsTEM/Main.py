@@ -50,7 +50,8 @@ class fsTEMMain(LysSubWindow):
         self._scan = ScanTab(self._data, scan, proc)
         tab = QTabWidget()
         tab.addTab(self.__laserTab(hardwares), "Laser")
-        tab.addTab(StageGUI(hardwares["Stage"], "Stage"), "Stage")
+        stage = StageGUI(hardwares["Stage"], "Stage")
+        tab.addTab(self.__wrapWidget(stage), "Stage")
         for key, widget in lay_other.items():
             tab.addTab(widget, key)
         tab.addTab(self._scan, "Scan")
@@ -71,6 +72,17 @@ class fsTEMMain(LysSubWindow):
         tab.addTab(wid, 'Fundamentals')
         self.setWidget(tab)
 
+    def __wrapWidget(self, w, layout=False):
+        v = QVBoxLayout()
+        if layout:
+            v.addLayout(w)
+        else:
+            v.addWidget(w)
+        v.addStretch()
+        wid = QWidget()
+        wid.setLayout(v)
+        return wid
+
     def __laserTab(self, hardwares):
         g = QGridLayout()
         g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 0, 0)
@@ -80,9 +92,8 @@ class fsTEMMain(LysSubWindow):
         g.addWidget(SwitchGUI(hardwares["Probe Shutter"], 'Probe on/off'), 2, 1)
         g.setColumnStretch(0, 1)
         g.setColumnStretch(1, 1)
-        w = QWidget()
-        w.setLayout(g)
-        return w
+
+        return self.__wrapWidget(g, layout=True)
 
     def _setParams(self, dic):
         d = self.delay.get()
