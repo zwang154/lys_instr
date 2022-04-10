@@ -19,7 +19,7 @@ class fsTEMMain(LysSubWindow):
     _path = ".lys/fsTEM/settings.dic"
     tagRequest = pyqtSignal(dict)
 
-    def __init__(self, root, hardwares, wid_others):
+    def __init__(self, root, hardwares, wid_others={}):
         super().__init__()
         self.setWindowTitle("Ultrafast Electron Diffraction/Microscopy Measurements")
         os.makedirs(".lys/fsTEM", exist_ok=True)
@@ -50,7 +50,8 @@ class fsTEMMain(LysSubWindow):
         tab = QTabWidget()
         tab.addTab(self.__laserTab(hardwares), "Laser")
         tab.addTab(StageGUI(hardwares["Stage"], "Stage"), "Stage")
-        tab.addTab(lay_other, "Other")
+        for key, widget in lay_other.items():
+            tab.addTab(widget, key)
         tab.addTab(self._scan, "Scan")
 
         v1 = QVBoxLayout()

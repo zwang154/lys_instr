@@ -74,14 +74,13 @@ class GlobalInitializer:
             return self.tem.getStage()
 
     def layout(self):
-        h = QHBoxLayout()
+        d = {}
+        if self.tem is not None:
+            #d["TEM"] = self.tem.SettingGUI()
+            d["Vacuum"] = self.tem.getVacuum()
         if self.merlin is not None:
-            h.addWidget(self.camera.SettingGUI())
-        h.addWidget(self.tem.SettingGUI())
-
-        w = QWidget()
-        w.setLayout(h)
-        return w
+            d["Merlin"] = self.merlin.SettingGUI()
+        return d
 
     def _setParams(self, dic):
         pass
