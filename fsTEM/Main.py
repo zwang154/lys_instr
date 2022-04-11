@@ -4,6 +4,7 @@ import numpy as np
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QTabWidget, QWidget, QGridLayout, QDoubleSpinBox, QLabel, QComboBox
 from PyQt5.QtCore import pyqtSignal, QObject
 
+from lys import glb
 from lys.widgets import LysSubWindow
 
 from PythonHardwares.SingleMotor import SingleMotorGUI
@@ -38,6 +39,7 @@ class fsTEMMain(LysSubWindow):
         self.__initlayout(hardwares, wid_others, scans)
         self.restoreSettings(self._path)
         self.closed.connect(lambda: self.saveSettings(self._path))
+        glb.mainWindow().closed.connect(lambda: self.saveSettings(self._path))
         self.camera.aquireStarted.connect(self._data.reserve)
         self.camera.aquireFinished.connect(self._data.saveImage)
         print("[fsTEM] Hardwares initialized. Data are storaged in", root)
