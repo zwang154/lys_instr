@@ -19,7 +19,7 @@ class fsTEMMain(LysSubWindow):
     _path = ".lys/fsTEM/settings.dic"
     tagRequest = pyqtSignal(dict)
 
-    def __init__(self, root, hardwares, wid_others={}):
+    def __init__(self, root, hardwares, wid_others={}, scans={}):
         super().__init__()
         self.setWindowTitle("Ultrafast Electron Diffraction/Microscopy Measurements")
         os.makedirs(".lys/fsTEM", exist_ok=True)
@@ -35,7 +35,7 @@ class fsTEMMain(LysSubWindow):
         self._data = DataStorage(root)
         self._data.tagRequest.connect(self.tagRequest)
         self._data.tagRequest.connect(self._setParams)
-        self.__initlayout(hardwares, wid_others)
+        self.__initlayout(hardwares, wid_others, scans)
         self.restoreSettings(self._path)
         self.closed.connect(lambda: self.saveSettings(self._path))
         self.camera.aquireStarted.connect(self._data.reserve)
@@ -43,9 +43,10 @@ class fsTEMMain(LysSubWindow):
         print("[fsTEM] Hardwares initialized. Data are storaged in", root)
         self.adjustSize()
 
-    def __initlayout(self, hardwares, lay_other):
+    def __initlayout(self, hardwares, lay_other, scan_other):
         scan = {"delay": self.delay, "pump": self.power, "probe": self.probe}
         scan.update(self.stage.getScans())
+        scan.update(scan_other)
         proc = {"Camera": RefCameraWidget(self.camera, self.delay)}
         self._scan = ScanTab(self._data, scan, proc)
         tab = QTabWidget()
@@ -67,10 +68,7 @@ class fsTEMMain(LysSubWindow):
 
         wid = QWidget()
         wid.setLayout(h1)
-
-        tab = QTabWidget()
-        tab.addTab(wid, 'Fundamentals')
-        self.setWidget(tab)
+        self.setWidget(wid)
 
     def __wrapWidget(self, w, layout=False):
         v = QVBoxLayout()
@@ -96,10 +94,9 @@ class fsTEMMain(LysSubWindow):
         return self.__wrapWidget(g, layout=True)
 
     def _setParams(self, dic):
-        d = self.delay.get()
-        p = self.power.get()
-        dic["delay"] = d
-        dic["power"] = p
+        dic["delay"] = self.delay.get()
+        dic["power"] = self.power.get()
+        dic["stage"] = tuple(self.stage.get())
 
 
 class RefCameraProcess(QObject):

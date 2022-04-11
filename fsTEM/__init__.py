@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QHBoxLayout, QWidget
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout
 
 from PythonHardwares.Interfaces import HardwareInterface
+from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto, DMGUI
 from .Initializer import initialize
 from lys import home
 
@@ -19,12 +20,14 @@ dic = {
 
 class GlobalInitializer:
     def __init__(self):
-        from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto
         self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self.merlin = None
+        self._info = self.tem.getInfo()
 
     def init(self):
-        gui = initialize(root, dic, self.generate, self.layout)
+        gui = initialize(root, dic, self.generate, self.layout, self.scan)
+        if gui is None:
+            return
         gui.tagRequest.connect(self._setParams)
         gui.closed.connect(self._closed)
 
@@ -76,14 +79,24 @@ class GlobalInitializer:
     def layout(self):
         d = {}
         if self.tem is not None:
-            #d["TEM"] = self.tem.SettingGUI()
-            d["Vacuum"] = self.tem.getVacuum()
+            v1 = QVBoxLayout()
+            v1.addWidget(DMGUI(self._info))
+            v1.addWidget(self.tem.getVacuum())
+            v1.addStretch()
+            w = QWidget()
+            w.setLayout(v1)
+            d["TEM"] = w
         if self.merlin is not None:
             d["Merlin"] = self.merlin.SettingGUI()
         return d
 
+    def scan(self):
+        if self._info is not None:
+            return self._info.getScan()
+
     def _setParams(self, dic):
-        pass
+        if self._info is not None:
+            dic["TEM"] = self._info.get()
 
     def _closed(self):
         HardwareInterface.killAll()

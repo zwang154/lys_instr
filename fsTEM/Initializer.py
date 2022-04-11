@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 from .Main import fsTEMMain
 
 
-def initialize(root, dic, generator, layout):
+def initialize(root, dic, generator, layout, scan):
     os.makedirs(".lys/fsTEM", exist_ok=True)
     savepath = ".lys/fsTEM/hardwares.dic"
     if os.path.exists(savepath):
@@ -22,7 +22,7 @@ def initialize(root, dic, generator, layout):
     with open(savepath, mode='w') as f:
         f.write(str(res))
     hardwares = {key: generator(item) for key, item in res.items()}
-    gui = fsTEMMain(root, hardwares, layout())
+    gui = fsTEMMain(root, hardwares, layout(), scan())
     return gui
 
 
