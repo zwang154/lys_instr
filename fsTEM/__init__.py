@@ -5,8 +5,8 @@ from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto, DMGUI
 from .Initializer import initialize
 from lys import home
 
-#root = "\\\\192.168.12.203\\smb\\data2\\"
-root = home() + "/data"
+root = "\\\\192.168.12.203\\smb\\data2\\"
+#root = home() + "/data"
 
 dic = {
     "Camera": ["Merlin", "Digital Micrograph", "DummyCamera"],
@@ -36,7 +36,7 @@ class GlobalInitializer:
             return None
         elif instr == "Merlin":
             from PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-            self.merlin = MerlinEM('192.168.12.206', stem=self.tem.getSTEM())
+            self.merlin = MerlinEM('192.168.12.206', tem=self._info, stem=self.tem.getSTEM())
             return self.merlin
         elif instr == 'Digital Micrograph':
             return self.tem.getCamera()

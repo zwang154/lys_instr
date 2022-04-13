@@ -47,11 +47,17 @@ class ScanRangeLayout(QGridLayout):
         self._freeLabel.hide()
 
     def _changeType(self, text):
-        b = text != "None"
+        b = text not in ["None", "loop"]
+        if text == "None":
+            self._loop.setEnabled(False)
+        elif text == "loop":
+            self._scan.setCurrentIndex(0)
+            self._loop.setEnabled(True)
+        else:
+            self._loop.setEnabled(True)
         self._scan.setEnabled(b)
         self._from.setEnabled(b)
         self._step.setEnabled(b)
-        self._loop.setEnabled(b)
         self._free.setEnabled(b)
 
     def _changeScan(self, text):
@@ -96,7 +102,8 @@ class ScanTab(QWidget):
     def __initlayout(self, scan, process):
         self._text = QLabel("[Status] Waiting...")
 
-        self._scans = [ScanRangeLayout("Scan " + str(i), scan.keys()) for i in range(2)]
+        scan["loop"] = Loop()
+        self._scans = [ScanRangeLayout("Scan " + str(i), scan.keys()) for i in range(3)]
         v1 = QVBoxLayout()
         for s in self._scans:
             v1.addLayout(s)
@@ -220,3 +227,11 @@ class Executor(QThread):
 
     def kill(self):
         self.process.stop()
+
+
+class Loop(QObject):
+    def set(self, value, *args, **kwargs):
+        self._value = value
+
+    def get(self):
+        return self._value
