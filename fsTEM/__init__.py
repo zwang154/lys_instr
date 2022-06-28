@@ -1,12 +1,11 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout
+from lys.Qt import QtWidgets
 
 from PythonHardwares.Interfaces import HardwareInterface
 from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto, DMGUI
 from .Initializer import initialize
-from lys import home
 
-#root = "\\\\192.168.12.203\\smb\\data2\\"
-root = home() + "/data"
+root = "\\\\192.168.12.203\\smb\\data2\\"
+#root = home() + "/data"
 
 dic = {
     "Camera": ["Merlin", "Digital Micrograph", "DummyCamera"],
@@ -36,7 +35,7 @@ class GlobalInitializer:
             return None
         elif instr == "Merlin":
             from PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-            self.merlin = MerlinEM('192.168.12.206', stem=self.tem.getSTEM())
+            self.merlin = MerlinEM('192.168.12.206', tem=self._info, stem=self.tem.getSTEM())
             return self.merlin
         elif instr == 'Digital Micrograph':
             return self.tem.getCamera()
@@ -79,11 +78,11 @@ class GlobalInitializer:
     def layout(self):
         d = {}
         if self.tem is not None:
-            v1 = QVBoxLayout()
+            v1 = QtWidgets.QVBoxLayout()
             v1.addWidget(DMGUI(self._info))
             v1.addWidget(self.tem.getVacuum())
             v1.addStretch()
-            w = QWidget()
+            w = QtWidgets.QWidget()
             w.setLayout(v1)
             d["TEM"] = w
         if self.merlin is not None:

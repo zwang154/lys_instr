@@ -1,10 +1,8 @@
 import os
 import numpy as np
 
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QTabWidget, QWidget, QGridLayout, QDoubleSpinBox, QLabel, QComboBox
-from PyQt5.QtCore import pyqtSignal, QObject
-
 from lys import glb
+from lys.Qt import QtCore, QtWidgets
 from lys.widgets import LysSubWindow
 
 from PythonHardwares.SingleMotor import SingleMotorGUI
@@ -18,7 +16,7 @@ from .Scan import ScanTab
 
 class fsTEMMain(LysSubWindow):
     _path = ".lys/fsTEM/settings.dic"
-    tagRequest = pyqtSignal(dict)
+    tagRequest = QtCore.pyqtSignal(dict)
 
     def __init__(self, root, hardwares, wid_others={}, scans={}):
         super().__init__()
@@ -51,7 +49,7 @@ class fsTEMMain(LysSubWindow):
         scan.update(scan_other)
         proc = {"Camera": RefCameraWidget(self.camera, self.delay)}
         self._scan = ScanTab(self._data, scan, proc)
-        tab = QTabWidget()
+        tab = QtWidgets.QTabWidget()
         tab.addTab(self.__laserTab(hardwares), "Laser")
         stage = StageGUI(hardwares["Stage"], "Stage")
         tab.addTab(self.__wrapWidget(stage), "Stage")
@@ -59,32 +57,32 @@ class fsTEMMain(LysSubWindow):
             tab.addTab(widget, key)
         tab.addTab(self._scan, "Scan")
 
-        v1 = QVBoxLayout()
+        v1 = QtWidgets.QVBoxLayout()
         self.__data = DataStorageGUI(self._data)
         v1.addWidget(self.__data)
         v1.addWidget(tab)
 
-        h1 = QHBoxLayout()
+        h1 = QtWidgets.QHBoxLayout()
         h1.addLayout(v1)
         h1.addWidget(CameraGUI(hardwares["Camera"], 'TEM Image'))
 
-        wid = QWidget()
+        wid = QtWidgets.QWidget()
         wid.setLayout(h1)
         self.setWidget(wid)
 
     def __wrapWidget(self, w, layout=False):
-        v = QVBoxLayout()
+        v = QtWidgets.QVBoxLayout()
         if layout:
             v.addLayout(w)
         else:
             v.addWidget(w)
         v.addStretch()
-        wid = QWidget()
+        wid = QtWidgets.QWidget()
         wid.setLayout(v)
         return wid
 
     def __laserTab(self, hardwares):
-        g = QGridLayout()
+        g = QtWidgets.QGridLayout()
         g.addWidget(SingleMotorGUI(hardwares["Delay Stage"], 'Delay Stage'), 0, 0)
         g.addWidget(SingleMotorGUI(hardwares["Pump Power"], 'Pump power'), 1, 0)
         g.addWidget(SingleMotorGUI(hardwares["Probe Power"], 'Probe power'), 1, 1)
@@ -101,8 +99,8 @@ class fsTEMMain(LysSubWindow):
         dic["stage"] = tuple(self.stage.get())
 
 
-class RefCameraProcess(QObject):
-    updated = pyqtSignal(str)
+class RefCameraProcess(QtCore.QObject):
+    updated = QtCore.pyqtSignal(str)
 
     def __init__(self, camera, exposure, delay=None, reference=None):
         super().__init__()
@@ -129,28 +127,28 @@ class RefCameraProcess(QObject):
         pass
 
 
-class RefCameraWidget(QWidget):
+class RefCameraWidget(QtWidgets.QWidget):
     def __init__(self, camera, delay):
         super().__init__()
         self._camera = camera
         self._delay = delay
-        self._exposure = QDoubleSpinBox(objectName="RefCamera_exposure")
+        self._exposure = QtWidgets.QDoubleSpinBox(objectName="RefCamera_exposure")
         self._exposure.setRange(0, np.inf)
         self._exposure.setDecimals(4)
 
-        self._refType = QComboBox(objectName="RefCamera_refType")
+        self._refType = QtWidgets.QComboBox(objectName="RefCamera_refType")
         self._refType.addItems(["None", "Delay"])
         self._refType.currentTextChanged.connect(lambda text: self._reference.setEnabled(text != "None"))
 
-        self._reference = QDoubleSpinBox(objectName="RefCamera_reference")
+        self._reference = QtWidgets.QDoubleSpinBox(objectName="RefCamera_reference")
         self._reference.setRange(-np.inf, np.inf)
         self._reference.setDecimals(4)
         self._reference.setEnabled(False)
 
-        g = QGridLayout()
-        g.addWidget(QLabel("Exposure (s)"), 0, 0)
-        g.addWidget(QLabel("Reference"), 0, 1)
-        g.addWidget(QLabel("Ref. Delay"), 0, 2)
+        g = QtWidgets.QGridLayout()
+        g.addWidget(QtWidgets.QLabel("Exposure (s)"), 0, 0)
+        g.addWidget(QtWidgets.QLabel("Reference"), 0, 1)
+        g.addWidget(QtWidgets.QLabel("Ref. Delay"), 0, 2)
         g.addWidget(self._exposure, 1, 0)
         g.addWidget(self._refType, 1, 1)
         g.addWidget(self._reference, 1, 2)
