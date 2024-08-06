@@ -1,37 +1,36 @@
 import numpy as np
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QLabel, QDoubleSpinBox, QSpinBox, QLineEdit, QComboBox, QHBoxLayout, QPushButton, QGroupBox
-from PyQt5.QtCore import QThread, QMutex, QMutexLocker, pyqtSignal, QObject
+from lys.Qt import QtWidgets, QtCore
 
 
-class ScanRangeLayout(QGridLayout):
+class ScanRangeLayout(QtWidgets.QGridLayout):
     def __init__(self, title, items):
         super().__init__()
         self.__initlayout(title, items)
         self._scan.currentTextChanged.connect(self._changeScan)
 
     def __initlayout(self, title, items):
-        self._type = QComboBox(objectName="ScanRange_type_" + title)
+        self._type = QtWidgets.QComboBox(objectName="ScanRange_type_" + title)
         self._type.addItems(list(items) + ["None"])
         self._type.currentTextChanged.connect(self._changeType)
-        self._scan = QComboBox(objectName="ScanRange_scan_" + title)
+        self._scan = QtWidgets.QComboBox(objectName="ScanRange_scan_" + title)
         self._scan.addItems(["Linear", "Free"])
-        self._from = QDoubleSpinBox(objectName="ScanRange_from_" + title)
-        self._step = QDoubleSpinBox(objectName="ScanRange_step_" + title)
-        self._loop = QSpinBox(objectName="ScanRange_loop_" + title)
+        self._from = QtWidgets.QDoubleSpinBox(objectName="ScanRange_from_" + title)
+        self._step = QtWidgets.QDoubleSpinBox(objectName="ScanRange_step_" + title)
+        self._loop = QtWidgets.QSpinBox(objectName="ScanRange_loop_" + title)
         self._from.setRange(-np.inf, np.inf)
         self._step.setRange(-np.inf, np.inf)
         self._from.setDecimals(4)
         self._step.setDecimals(4)
         self._loop.setRange(1, 100000)
-        self._free = QLineEdit(objectName="ScanRange_free_" + title)
+        self._free = QtWidgets.QLineEdit(objectName="ScanRange_free_" + title)
 
-        self._fromLabel = QLabel("From")
-        self._stepLabel = QLabel("Step")
-        self._loopLabel = QLabel("Loop")
-        self._freeLabel = QLabel("Expression")
+        self._fromLabel = QtWidgets.QLabel("From")
+        self._stepLabel = QtWidgets.QLabel("Step")
+        self._loopLabel = QtWidgets.QLabel("Loop")
+        self._freeLabel = QtWidgets.QLabel("Expression")
 
-        self.addWidget(QLabel(title), 0, 0)
-        self.addWidget(QLabel("Type"), 0, 1)
+        self.addWidget(QtWidgets.QLabel(title), 0, 0)
+        self.addWidget(QtWidgets.QLabel("Type"), 0, 1)
         self.addWidget(self._fromLabel, 0, 2)
         self.addWidget(self._stepLabel, 0, 3)
         self.addWidget(self._loopLabel, 0, 4)
@@ -91,7 +90,7 @@ class ScanRangeLayout(QGridLayout):
         return values
 
 
-class ScanTab(QWidget):
+class ScanTab(QtWidgets.QWidget):
     def __init__(self, storage, scan, process):
         super().__init__()
         self._storage = storage
@@ -100,34 +99,34 @@ class ScanTab(QWidget):
         self.__initlayout(scan, process)
 
     def __initlayout(self, scan, process):
-        self._text = QLabel("[Status] Waiting...")
+        self._text = QtWidgets.QLabel("[Status] Waiting...")
 
         scan["loop"] = Loop()
         self._scans = [ScanRangeLayout("Scan " + str(i), scan.keys()) for i in range(3)]
-        v1 = QVBoxLayout()
+        v1 = QtWidgets.QVBoxLayout()
         for s in self._scans:
             v1.addLayout(s)
-        g1 = QGroupBox("Scan")
+        g1 = QtWidgets.QGroupBox("Scan")
         g1.setLayout(v1)
 
-        self._type = QComboBox(objectName="ScanTab_type")
+        self._type = QtWidgets.QComboBox(objectName="ScanTab_type")
         self._type.addItems(process.keys())
         self._type.currentTextChanged.connect(self._changeProcess)
-        v2 = QVBoxLayout()
-        v2.addWidget(QLabel("Type"))
+        v2 = QtWidgets.QVBoxLayout()
+        v2.addWidget(QtWidgets.QLabel("Type"))
         v2.addWidget(self._type)
         for item in process.values():
             v2.addWidget(item)
-        g2 = QGroupBox("Process")
+        g2 = QtWidgets.QGroupBox("Process")
         g2.setLayout(v2)
 
-        buttons = QHBoxLayout()
-        self.__start = QPushButton('Start', clicked=self.__startscan)
-        self.__stop = QPushButton('Stop', clicked=self.__stopscan)
+        buttons = QtWidgets.QHBoxLayout()
+        self.__start = QtWidgets.QPushButton('Start', clicked=self.__startscan)
+        self.__stop = QtWidgets.QPushButton('Stop', clicked=self.__stopscan)
         buttons.addWidget(self.__start)
         buttons.addWidget(self.__stop)
 
-        layout = QVBoxLayout()
+        layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self._text)
         layout.addWidget(g1)
         layout.addWidget(g2)
@@ -167,8 +166,8 @@ class ScanTab(QWidget):
         self._text.setText("[Status] Finished. Waiting...")
 
 
-class Scanner(QObject):
-    updated = pyqtSignal(str)
+class Scanner(QtCore.QObject):
+    updated = QtCore.pyqtSignal(str)
 
     def __init__(self, name, obj, values, process, addFolder=False, addName=False):
         super().__init__()
@@ -180,7 +179,7 @@ class Scanner(QObject):
         self._process = process
         self._process.updated.connect(self._update)
         self._stopped = False
-        self.mutex = QMutex()
+        self.mutex = QtCore.QMutex()
 
     def execute(self, storage):
         folder_old, name_old = storage.getFolder(), storage.getFilename()
@@ -197,7 +196,7 @@ class Scanner(QObject):
         storage.setFilename(name_old)
 
     def stop(self):
-        with QMutexLocker(self.mutex):
+        with QtCore.QMutexLocker(self.mutex):
             self._stopped = True
         self._process.stop()
 
@@ -206,8 +205,8 @@ class Scanner(QObject):
         self.updated.emit(state)
 
 
-class DummyProcess(QObject):
-    updated = pyqtSignal(str)
+class DummyProcess(QtCore.QObject):
+    updated = QtCore.pyqtSignal(str)
 
     def execute(self, storage):
         self.updated.emit("execute: " + storage.getFolder() + " " + storage.getFilename())
@@ -216,7 +215,7 @@ class DummyProcess(QObject):
         pass
 
 
-class Executor(QThread):
+class Executor(QtCore.QThread):
     def __init__(self, process, storage):
         super().__init__()
         self.process = process

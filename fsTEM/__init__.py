@@ -115,11 +115,11 @@ class GlobalInitializer:
     def layout(self):
         d = {}
         if self.tem is not None:
-            v1 = QVBoxLayout()
+            v1 = QtWidgets.QVBoxLayout()
             v1.addWidget(DMGUI(self._info))
             v1.addWidget(self.tem.getVacuum())
             v1.addStretch()
-            w = QWidget()
+            w = QtWidgets.QWidget()
             w.setLayout(v1)
             d["TEM"] = w
         if self.merlin is not None:

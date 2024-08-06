@@ -1,12 +1,12 @@
 import os
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
-from PyQt5.QtWidgets import QGroupBox, QGridLayout, QLabel, QLineEdit, QSpinBox, QCheckBox
+
+from lys.Qt import QtCore, QtWidgets
 
 
-class DataStorage(QObject):
-    pathChanged = pyqtSignal(QObject)
-    stateChanged = pyqtSignal(str)
-    tagRequest = pyqtSignal(dict)
+class DataStorage(QtCore.QObject):
+    pathChanged = QtCore.pyqtSignal(QtCore.QObject)
+    stateChanged = QtCore.pyqtSignal(str)
+    tagRequest = QtCore.pyqtSignal(dict)
 
     def __init__(self, root):
         super().__init__()
@@ -109,7 +109,7 @@ class DataStorage(QObject):
             return "Status: " + str(len(self._paths)) + " files reserved, " + str(len(self._threads)) + " files being saved"
 
 
-class _saveThread(QThread):
+class _saveThread(QtCore.QThread):
     def __init__(self, wave, path):
         super().__init__()
         self.wave = wave
@@ -119,7 +119,7 @@ class _saveThread(QThread):
         self.wave.export(self.path)
 
 
-class DataStorageGUI(QGroupBox):
+class DataStorageGUI(QtWidgets.QGroupBox):
     def __init__(self, obj):
         super().__init__("Data Storage")
         self._flg = False
@@ -129,18 +129,18 @@ class DataStorageGUI(QGroupBox):
         self._obj.stateChanged.connect(self._status.setText)
 
     def __initlayout(self):
-        self._status = QLabel("Status: Waiting")
-        self._base = QLineEdit(textChanged=self._editPath, objectName="DataStorage_base")
-        self._folder = QLineEdit(textChanged=self._editPath, objectName="DataStorage_folder")
-        self._name = QLineEdit(textChanged=self._editPath, objectName="DataStorage_name")
-        self._number = QSpinBox()
+        self._status = QtWidgets.QLabel("Status: Waiting")
+        self._base = QtWidgets.QLineEdit(textChanged=self._editPath, objectName="DataStorage_base")
+        self._folder = QtWidgets.QLineEdit(textChanged=self._editPath, objectName="DataStorage_folder")
+        self._name = QtWidgets.QLineEdit(textChanged=self._editPath, objectName="DataStorage_name")
+        self._number = QtWidgets.QSpinBox()
         self._number.setEnabled(False)
-        self._useNumber = QCheckBox("Number", toggled=self._editPath, objectName="DataStorage_useNumber")
-        self._enabled = QCheckBox("Enabled", toggled=self._editPath, objectName="DataStrage_enabled")
-        g = QGridLayout()
-        g.addWidget(QLabel("Base Folder"), 0, 0)
-        g.addWidget(QLabel("Data Folder"), 0, 1)
-        g.addWidget(QLabel("Filename"), 0, 2)
+        self._useNumber = QtWidgets.QCheckBox("Number", toggled=self._editPath, objectName="DataStorage_useNumber")
+        self._enabled = QtWidgets.QCheckBox("Enabled", toggled=self._editPath, objectName="DataStrage_enabled")
+        g = QtWidgets.QGridLayout()
+        g.addWidget(QtWidgets.QLabel("Base Folder"), 0, 0)
+        g.addWidget(QtWidgets.QLabel("Data Folder"), 0, 1)
+        g.addWidget(QtWidgets.QLabel("Filename"), 0, 2)
         g.addWidget(self._useNumber, 0, 3)
         g.addWidget(self._base, 1, 0)
         g.addWidget(self._folder, 1, 1)
