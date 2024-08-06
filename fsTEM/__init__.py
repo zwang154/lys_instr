@@ -1,20 +1,22 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout
+from tokenize import Single
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PythonHardwares.Hardwares.OptoSigma.RMC102 import RMC102
 
 from PythonHardwares.Interfaces import HardwareInterface
+from PythonHardwares.SingleMotor import SingleMotorGUI
 from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto, DMGUI
 from .Initializer import initialize
-from lys import home
 
 root = "\\\\192.168.12.203\\smb\\data2\\"
 #root = home() + "/data"
 
 dic = {
-    "Camera": ["Merlin", "Digital Micrograph", "DummyCamera"],
-    "Delay Stage": ["fs-fs", "fs-ns", "ns-ns", "DummyDelay"],
-    "Pump Power": ["GSC02", "DummyPump"],
-    "Probe Power": ["DummyProbe"],
-    "Pump Shutter": ["SC10", "DummySwitch"],
-    "Probe Shutter": ["DummySwitch"],
+    "Camera": ["Merlin", "Digital Micrograph", "EELS map", "DummyCamera"],
+    "Delay Stage": ["fs-fs", "fs-ns", "ns-ns", "fs-pump2", "ns-current", "DummyDelay"],
+    "Pump Power": ["Pump1.Power", "Pump2.Power", "Pump Voltage", "DummyPump"],
+    "Probe Power": ["Probe.Power", "DummyProbe"],
+    "Pump Shutter": ["Pump1", "Pump2", "DummySwitch"],
+    "Probe Shutter": ["Probe", "DummySwitch"],
     "Stage": ["SingleTilt", "DoubleTilt", "DummyStage"]}
 
 
@@ -22,7 +24,10 @@ class GlobalInitializer:
     def __init__(self):
         self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self.merlin = None
+        self._eels = None
+        self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
         self._info = self.tem.getInfo()
+        self._dg645 = None
 
     def init(self):
         gui = initialize(root, dic, self.generate, self.layout, self.scan)
@@ -36,10 +41,13 @@ class GlobalInitializer:
             return None
         elif instr == "Merlin":
             from PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-            self.merlin = MerlinEM('192.168.12.206', tem=self._info, stem=self.tem.getSTEM())
+            self.merlin = MerlinEM('192.168.12.206', info=self._info, tem=self.tem, stem=self.tem.getSTEM())
             return self.merlin
         elif instr == 'Digital Micrograph':
             return self.tem.getCamera()
+        elif instr == 'EELS map':
+            self._eels = self.tem.getEELSMap()
+            return self._eels
         elif instr == 'DummyCamera':
             from PythonHardwares.Camera import CameraDummy
             return CameraDummy()
@@ -52,6 +60,11 @@ class GlobalInitializer:
         elif instr == 'ns-ns':
             from PythonHardwares.Hardwares.SRS.DG645 import DG645
             return DG645('192.168.12.204', mode='ns')
+        elif instr == 'ns-current':
+            if self._dg645 is None:
+                from PythonHardwares.Hardwares.SRS.DG645 import DG645
+                self._dg645 = DG645('192.168.12.204', mode='current')
+            return self._dg645
         elif instr == 'DummyDelay':
             from PythonHardwares.SingleMotor import SingleMotorDummy
             return SingleMotorDummy()
@@ -61,12 +74,35 @@ class GlobalInitializer:
         elif instr == "DummyProbe":
             from PythonHardwares.SingleMotor import SingleMotorDummy
             return SingleMotorDummy()
-        elif instr == "GSC02":
+        elif instr == "Pump2.Power":
             from PythonHardwares.Hardwares.OptoSigma.GSC02 import GSC02
-            return GSC02('COM3')
+            return GSC02('COM3', channel=2)
+        elif instr == "Probe.Power":
+            from PythonHardwares.Hardwares.OptoSigma.GSC02 import GSC02
+            return GSC02('COM3', channel=1)
+        elif instr == "fs-pump2":
+            from PythonHardwares.Hardwares.OptoSigma.SHOT702H import SHOT702H
+            return SHOT702H('COM4', channel=1, rate=15, offset=0, max=100000000, min=-100000000)
         elif instr == "SC10":
             from PythonHardwares.Hardwares.Thorlabs.SC10 import SC10
             return SC10('COM4')
+        elif instr == "Pump1":
+            from PythonHardwares.Hardwares.Thorlabs import KSC101
+            return KSC101('68001089')
+        elif instr == "Pump2":
+            from PythonHardwares.Hardwares.Thorlabs import KSC101
+            return KSC101('68001101')
+        elif instr == "Pump Voltage":
+            if self._dg645 is None:
+                from PythonHardwares.Hardwares.SRS.DG645 import DG645
+                self._dg645 = DG645('192.168.12.204', mode='current')
+            return self._dg645.getPumpVoltageModule()
+        elif instr == "Probe":
+            from PythonHardwares.Hardwares.Thorlabs import KSC101
+            return KSC101('68001109')
+        elif instr == "Pump1.Power":
+            from PythonHardwares.Hardwares.Thorlabs import K10CR1
+            return K10CR1('55273464', offset=0)
         elif instr == "DummySwitch":
             from PythonHardwares.Switch import SwitchDummy
             return SwitchDummy()
@@ -88,6 +124,24 @@ class GlobalInitializer:
             d["TEM"] = w
         if self.merlin is not None:
             d["Merlin"] = self.merlin.SettingGUI()
+        if self._eels is not None:
+            d["EELS"] = self._eels.SettingGUI()
+        if self._rmc is not None:
+            w1 = SingleMotorGUI(self._rmc[0], 'Laser x')
+            w2 = SingleMotorGUI(self._rmc[1], 'Laser y')
+
+            v2 = QVBoxLayout()
+            v2.addWidget(w1)
+            v2.addWidget(w2)
+            v2.addStretch()
+
+            w = QWidget()
+            w.setLayout(v2)
+            d["LaserPos"] = w
+        if self._dg645 is not None:
+            from PythonHardwares.Hardwares.SRS.DG645 import DG645GUI
+            gui = DG645GUI(self._dg645)
+            d["Delay Gen."] = gui
         return d
 
     def scan(self):

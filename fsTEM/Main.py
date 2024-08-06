@@ -66,7 +66,9 @@ class fsTEMMain(LysSubWindow):
 
         h1 = QHBoxLayout()
         h1.addLayout(v1)
-        h1.addWidget(CameraGUI(hardwares["Camera"], 'TEM Image'))
+        cgui = CameraGUI(hardwares["Camera"], 'TEM Image')
+        cgui.continuous.connect(lambda b: self._data.setEnabled(not b))
+        h1.addWidget(cgui)
 
         wid = QWidget()
         wid.setLayout(h1)

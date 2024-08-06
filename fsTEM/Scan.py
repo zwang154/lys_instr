@@ -86,7 +86,7 @@ class ScanRangeLayout(QGridLayout):
     def getScanRange(self):
         if self._scan.currentText() == "Linear":
             values = [self._from.value() + i * self._step.value() for i in range(self._loop.value())]
-        elif self._Scan.currenText() == "Free":
+        elif self._scan.currentText() == "Free":
             values = eval(self._free.text())
         return values
 

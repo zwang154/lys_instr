@@ -78,7 +78,7 @@ class DataStorage(QObject):
         self.stateChanged.emit(self.state())
 
     def saveImage(self, wave):
-        if self._enabled:
+        if self._enabled and len(self._paths) > 0:
             wave.note = self._tags[0]
             path = self._paths[0]
             self._tags.pop(0)
