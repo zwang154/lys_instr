@@ -1,5 +1,5 @@
 from tokenize import Single
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from lys.Qt import QtWidgets
 from PythonHardwares.Hardwares.OptoSigma.RMC102 import RMC102
 
 from PythonHardwares.Interfaces import HardwareInterface
@@ -130,12 +130,12 @@ class GlobalInitializer:
             w1 = SingleMotorGUI(self._rmc[0], 'Laser x')
             w2 = SingleMotorGUI(self._rmc[1], 'Laser y')
 
-            v2 = QVBoxLayout()
+            v2 = QtWidgets.QVBoxLayout()
             v2.addWidget(w1)
             v2.addWidget(w2)
             v2.addStretch()
 
-            w = QWidget()
+            w = QtWidgets.QWidget()
             w.setLayout(v2)
             d["LaserPos"] = w
         if self._dg645 is not None:

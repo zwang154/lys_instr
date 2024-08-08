@@ -228,7 +228,7 @@ class Executor(QtCore.QThread):
         self.process.stop()
 
 
-class Loop(QObject):
+class Loop(QtCore.QObject):
     def set(self, value, *args, **kwargs):
         self._value = value
 
