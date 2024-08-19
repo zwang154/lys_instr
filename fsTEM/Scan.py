@@ -99,6 +99,10 @@ class ScanTab(QtWidgets.QWidget):
         self.__initlayout(scan, process)
 
     def __initlayout(self, scan, process):
+        self.setStyleSheet("QComboBox {font-size: 14pt}"
+                           "QDoubleSpinBox {font-size: 14pt}"
+                           "QSpinBox {font-size: 14pt}"
+                           "QPushButton {font-size: 14pt}")
         self._text = QtWidgets.QLabel("[Status] Waiting...")
 
         scan["loop"] = Loop()

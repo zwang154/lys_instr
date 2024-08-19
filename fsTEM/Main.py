@@ -44,6 +44,26 @@ class fsTEMMain(LysSubWindow):
         self.adjustSize()
 
     def __initlayout(self, hardwares, lay_other, scan_other):
+        self.setStyleSheet("QDoubleSpinBox,QSpinBox,QLineEdit,QComboBox {"
+                           "border-radius: 4px;"
+                           "border:1px solid gray;"
+                           "}"
+                           "QGroupBox {"
+                           "border: 1px solid;"
+                           "border-color: #d2e1fc;"
+                           "font-size: 12pt;"
+                           "margin-top: 1.3em;"
+                           "border-top-right-radius: 6px;"
+                           "border-bottom-left-radius: 6px;"
+                           "border-bottom-right-radius: 6px;"
+                           "}"
+                           "QGroupBox::title {"
+                           "background-color: #ebf1fc;"
+                           "subcontrol-origin: margin;"
+                           "padding: 0.2em 0.3em;"
+                           "border-top-left-radius: 6px;"
+                           "border-top-right-radius: 6px;"
+                           "}")
         scan = {"delay": self.delay, "pump": self.power, "probe": self.probe}
         scan.update(self.stage.getScans())
         scan.update(scan_other)
