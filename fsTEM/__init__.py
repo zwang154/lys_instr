@@ -22,14 +22,18 @@ dic = {
 
 class GlobalInitializer:
     def __init__(self):
-        self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
+        self.tem = None
         self.merlin = None
         self._eels = None
-        self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
-        self._info = self.tem.getInfo()
+        self._rmc = None  # RMC102('COM12', channel=1), RMC102('COM12', channel=2)
+        self._info = None
         self._dg645 = None
 
     def init(self):
+        self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
+        self._info = self.tem.getInfo()
+        self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
+
         gui = initialize(root, dic, self.generate, self.layout, self.scan)
         if gui is None:
             return
@@ -37,6 +41,7 @@ class GlobalInitializer:
         gui.closed.connect(self._closed)
 
     def generate(self, instr):
+
         if instr is None:
             return None
         elif instr == "Merlin":
@@ -155,6 +160,7 @@ class GlobalInitializer:
     def _closed(self):
         HardwareInterface.killAll()
         self.tem = None
+        self._rmc = None
 
 
 def _makeMenu():
