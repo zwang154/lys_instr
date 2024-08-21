@@ -27,7 +27,10 @@ def initialize(root, dic, generator, layout, scan):
 class GUIInit(QtWidgets.QDialog):
     def __init__(self, dic, sav):
         super().__init__()
-
+        self.setStyleSheet("QComboBox {"
+                           "border-radius: 4px;"
+                           "border:1px solid gray;"
+                           "}")
         g = QtWidgets.QGridLayout()
         self._combo = {}
         i = 0
