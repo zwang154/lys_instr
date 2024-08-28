@@ -117,8 +117,11 @@ class ScanTab(QtWidgets.QWidget):
         self._type.addItems(process.keys())
         self._type.currentTextChanged.connect(self._changeProcess)
         v2 = QtWidgets.QVBoxLayout()
-        v2.addWidget(QtWidgets.QLabel("Type"))
-        v2.addWidget(self._type)
+        f = QtWidgets.QFormLayout()
+        f.addRow("Type", self._type)
+#        v2.addWidget(QtWidgets.QLabel("Type"))
+#        v2.addWidget(self._type)
+        v2.addLayout(f)
         for item in process.values():
             v2.addWidget(item)
         g2 = QtWidgets.QGroupBox("Process")
@@ -134,8 +137,8 @@ class ScanTab(QtWidgets.QWidget):
         layout.addWidget(self._text)
         layout.addWidget(g1)
         layout.addWidget(g2)
-        layout.addStretch()
         layout.addLayout(buttons)
+        layout.addStretch()
 
         self.setLayout(layout)
 
@@ -149,7 +152,7 @@ class ScanTab(QtWidgets.QWidget):
         for i, s in enumerate(reversed(scans)):
             process = Scanner(s.getScanName(), self._scan[s.getScanName()], s.getScanRange(), process, addFolder=i != 0, addName=i == 0)
         process.updated.connect(lambda s: self._text.setText("[Scanning...] " + s))
-        self._text.setText("[Status] Staring...")
+        self._text.setText("[Status] Starting...")
         self._storage.useNumber(False)
         self._storage.setEnabled(True)
         self.thread = Executor(process, self._storage)

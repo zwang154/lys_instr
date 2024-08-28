@@ -4,7 +4,7 @@ from PythonHardwares.Hardwares.OptoSigma.RMC102 import RMC102
 
 from PythonHardwares.Interfaces import HardwareInterface
 from PythonHardwares.SingleMotor import SingleMotorGUI
-from PythonHardwares.Hardwares.FEI.TechnaiFemto import TechnaiFemto, DMGUI
+from PythonHardwares.Hardwares.FEI.TecnaiFemto import TecnaiFemto, DMGUI
 from .Initializer import initialize
 
 root = "\\\\192.168.12.203\\smb\\data2\\"
@@ -30,7 +30,7 @@ class GlobalInitializer:
         self._dg645 = None
 
     def init(self):
-        self.tem = TechnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
+        self.tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self._info = self.tem.getInfo()
         self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
 

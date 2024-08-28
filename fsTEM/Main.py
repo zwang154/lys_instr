@@ -52,7 +52,7 @@ class fsTEMMain(LysSubWindow):
                            "border: 1px solid;"
                            "border-color: #d2e1fc;"
                            "font-size: 12pt;"
-                           "margin-top: 1.3em;"
+                           "margin-top: 1em;"
                            "border-top-right-radius: 6px;"
                            "border-bottom-left-radius: 6px;"
                            "border-bottom-right-radius: 6px;"
@@ -60,7 +60,7 @@ class fsTEMMain(LysSubWindow):
                            "QGroupBox::title {"
                            "background-color: #ebf1fc;"
                            "subcontrol-origin: margin;"
-                           "padding: 0.2em 0.3em;"
+                           "padding: 0.1em 0.1em;"
                            "border-top-left-radius: 6px;"
                            "border-top-right-radius: 6px;"
                            "}")
