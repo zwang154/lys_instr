@@ -102,7 +102,8 @@ class ScanTab(QtWidgets.QWidget):
         self.setStyleSheet("QComboBox {font-size: 14pt}"
                            "QDoubleSpinBox {font-size: 14pt}"
                            "QSpinBox {font-size: 14pt}"
-                           "QPushButton {font-size: 14pt}")
+                           "QPushButton {font-size: 14pt}"
+                           "QLineEdit {font-size: 14pt}")
         self._text = QtWidgets.QLabel("[Status] Waiting...")
 
         scan["loop"] = Loop()

@@ -4,7 +4,7 @@ from PythonHardwares.Hardwares.OptoSigma.RMC102 import RMC102
 
 from PythonHardwares.Interfaces import HardwareInterface
 from PythonHardwares.SingleMotor import SingleMotorGUI
-from PythonHardwares.Hardwares.FEI.TecnaiFemto import TecnaiFemto, DMGUI
+from PythonHardwares.Hardwares.FEI.TecnaiFemto import TecnaiFemto
 from .Initializer import initialize
 
 root = "\\\\192.168.12.203\\smb\\data2\\"
