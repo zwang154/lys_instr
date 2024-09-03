@@ -45,8 +45,8 @@ class GlobalInitializer:
         if instr is None:
             return None
         elif instr == "Merlin":
-            from PythonHardwares.Hardwares.QuantumDetector.MerlinEM import MerlinEM
-            self.merlin = MerlinEM('192.168.12.206', info=self._info, tem=self.tem, stem=self.tem.getSTEM())
+            from PythonHardwares.Hardwares.QuantumDetector.TEMCamera import TEMCamera
+            self.merlin = TEMCamera('192.168.12.206', info=self._info, tem=self.tem, stem=self.tem.getSTEM())
             return self.merlin
         elif instr == 'Digital Micrograph':
             return self.tem.getCamera()
