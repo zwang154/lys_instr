@@ -31,21 +31,14 @@ class GUIInit(QtWidgets.QDialog):
                            "border-radius: 4px;"
                            "border:1px solid gray;"
                            "}")
-        g = QtWidgets.QGridLayout()
+        g = QtWidgets.QFormLayout()
         self._combo = {}
-        i = 0
         for key, val in dic.items():
             self._combo[key] = QtWidgets.QComboBox()
             self._combo[key].addItems(val)
             if key in sav:
                 self._combo[key].setCurrentText(sav[key])
-            if i % 2 == 0:
-                g.addWidget(QtWidgets.QLabel(key), 2 * int(i / 2), 0)
-                g.addWidget(self._combo[key], 2 * int(i / 2) + 1, 0)
-            else:
-                g.addWidget(QtWidgets.QLabel(key), 2 * int(i / 2), 1)
-                g.addWidget(self._combo[key], 2 * int(i / 2) + 1, 1)
-            i += 1
+            g.addRow(key, self._combo[key])
 
         btns = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel, QtCore.Qt.Horizontal, self)
         btns.accepted.connect(self.accept)

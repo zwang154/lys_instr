@@ -15,6 +15,7 @@ dic = {
     "Delay Stage": ["fs-fs", "fs-ns", "ns-ns", "fs-pump2", "ns-current", "DummyDelay"],
     "Pump Power": ["Pump1.Power", "Pump2.Power", "Pump Voltage", "DummyPump"],
     "Probe Power": ["Probe.Power", "DummyProbe"],
+    "Probe Align": ["Probe.Align", "DummyProbe"],
     "Pump Shutter": ["Pump1", "Pump2", "DummySwitch"],
     "Probe Shutter": ["Probe", "DummySwitch"],
     "Stage": ["SingleTilt", "DoubleTilt", "DummyStage"]}
@@ -25,14 +26,13 @@ class GlobalInitializer:
         self.tem = None
         self.merlin = None
         self._eels = None
-        self._rmc = None  # RMC102('COM12', channel=1), RMC102('COM12', channel=2)
+        self._rmc = None
         self._info = None
         self._dg645 = None
 
     def init(self):
         self.tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self._info = self.tem.getInfo()
-        self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
 
         gui = initialize(root, dic, self.generate, self.layout, self.scan)
         if gui is None:
@@ -46,7 +46,7 @@ class GlobalInitializer:
             return None
         elif instr == "Merlin":
             from PythonHardwares.Hardwares.QuantumDetector.TEMCamera import TEMCamera
-            self.merlin = TEMCamera('192.168.12.206', info=self._info, tem=self.tem, stem=self.tem.getSTEM())
+            self.merlin = TEMCamera("Merlin", '192.168.12.206', info=self._info, tem=self.tem, stem=self.tem.getSTEM())
             return self.merlin
         elif instr == 'Digital Micrograph':
             return self.tem.getCamera()
@@ -116,13 +116,16 @@ class GlobalInitializer:
             return StageDummy()
         elif instr == "SingleTilt":
             return self.tem.getStage()
+        elif instr == "Probe.Align":
+            self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
+            return self._rmc
 
     def layout(self):
         d = {}
         if self.tem is not None:
             d["TEM"] = self.tem.getWidget()
         if self.merlin is not None:
-            d["Merlin"] = self.merlin.SettingGUI()
+            d["TEMCamera"] = self.merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
         if self._rmc is not None:
