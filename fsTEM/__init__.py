@@ -23,35 +23,35 @@ dic = {
 
 class GlobalInitializer:
     def __init__(self):
-        self.tem = None
-        self.merlin = None
+        self._tem = None
+        self._merlin = None
         self._eels = None
         self._rmc = None
         self._info = None
         self._dg645 = None
 
     def init(self):
-        self.tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
-        self._info = self.tem.getInfo()
+        self._tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
+        self._info = self._tem.getInfo()
 
-        gui = initialize(root, dic, self.generate, self.layout, self.scan)
+        gui = initialize(root, dic, self._generate, self._layout, self._scan)
         if gui is None:
             return
         gui.tagRequest.connect(self._setParams)
         gui.closed.connect(self._closed)
 
-    def generate(self, instr):
+    def _generate(self, instr):
 
         if instr is None:
             return None
         elif instr == "Merlin":
             from PythonHardwares.Hardwares.QuantumDetector.TEMCamera import TEMCamera
-            self.merlin = TEMCamera("Merlin", '192.168.12.206', info=self._info, tem=self.tem, stem=self.tem.getSTEM())
-            return self.merlin
+            self._merlin = TEMCamera("Merlin", '192.168.12.206', info=self._info, tem=self._tem, stem=self._tem.getSTEM())
+            return self._merlin
         elif instr == 'Digital Micrograph':
-            return self.tem.getCamera()
+            return self._tem.getCamera()
         elif instr == 'EELS map':
-            self._eels = self.tem.getEELSMap()
+            self._eels = self._tem.getEELSMap()
             return self._eels
         elif instr == 'DummyCamera':
             from PythonHardwares.Camera import CameraDummy
@@ -115,17 +115,17 @@ class GlobalInitializer:
             from PythonHardwares.Stage import StageDummy
             return StageDummy()
         elif instr == "SingleTilt":
-            return self.tem.getStage()
+            return self._tem.getStage()
         elif instr == "Probe.Align":
             self._rmc = RMC102('COM12', channel=1), RMC102('COM12', channel=2)
             return self._rmc
 
-    def layout(self):
+    def _layout(self):
         d = {}
-        if self.tem is not None:
-            d["TEM"] = self.tem.getWidget()
-        if self.merlin is not None:
-            d["TEMCamera"] = self.merlin.SettingGUI()
+        if self._tem is not None:
+            d["TEM"] = self._tem.getWidget()
+        if self._merlin is not None:
+            d["Merlin"] = self._merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
         if self._rmc is not None:
@@ -146,7 +146,7 @@ class GlobalInitializer:
             d["Delay Gen."] = gui
         return d
 
-    def scan(self):
+    def _scan(self):
         if self._info is not None:
             return self._info.getScan()
 
@@ -156,7 +156,7 @@ class GlobalInitializer:
 
     def _closed(self):
         HardwareInterface.killAll()
-        self.tem = None
+        self._tem = None
         self._rmc = None
 
 

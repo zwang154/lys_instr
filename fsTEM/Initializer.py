@@ -12,7 +12,7 @@ def initialize(root, dic, generator, layout, scan):
             sav = eval(f.read())
     else:
         sav = {}
-    dialog = GUIInit(dic, sav)
+    dialog = _GUIInit(dic, sav)
     result = dialog.exec_()
     if result == QtWidgets.QDialog.Rejected:
         return
@@ -24,7 +24,7 @@ def initialize(root, dic, generator, layout, scan):
     return gui
 
 
-class GUIInit(QtWidgets.QDialog):
+class _GUIInit(QtWidgets.QDialog):
     def __init__(self, dic, sav):
         super().__init__()
         self.setStyleSheet("QComboBox {"

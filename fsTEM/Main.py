@@ -23,13 +23,13 @@ class fsTEMMain(LysSubWindow):
         self.setWindowTitle("Ultrafast Electron Diffraction/Microscopy Measurements")
         os.makedirs(".lys/fsTEM", exist_ok=True)
 
-        self.delay = hardwares["Delay Stage"]
-        self.probe = hardwares["Probe Power"]
-        self.power = hardwares["Pump Power"]
-        self.camera = hardwares["Camera"]
-        self.pumpsw = hardwares["Pump Shutter"]
-        self.probesw = hardwares["Probe Shutter"]
-        self.stage = hardwares["Stage"]
+        self._delay = hardwares["Delay Stage"]
+        self._probe = hardwares["Probe Power"]
+        self._power = hardwares["Pump Power"]
+        self._camera = hardwares["Camera"]
+        self._pumpsw = hardwares["Pump Shutter"]
+        self._probesw = hardwares["Probe Shutter"]
+        self._stage = hardwares["Stage"]
 
         self._data = DataStorage(root)
         self._data.tagRequest.connect(self.tagRequest)
@@ -38,8 +38,8 @@ class fsTEMMain(LysSubWindow):
         self.restoreSettings(self._path)
         self.closed.connect(lambda: self.saveSettings(self._path))
         glb.mainWindow().closed.connect(lambda: self.saveSettings(self._path))
-        self.camera.aquireStarted.connect(self._data.reserve)
-        self.camera.aquireFinished.connect(self._data.saveImage)
+        self._camera.aquireStarted.connect(self._data.reserve)
+        self._camera.aquireFinished.connect(self._data.saveImage)
         print("[fsTEM] Hardwares initialized. Data are storaged in", root)
         self.adjustSize()
 
@@ -64,10 +64,10 @@ class fsTEMMain(LysSubWindow):
                            "border-top-left-radius: 6px;"
                            "border-top-right-radius: 6px;"
                            "}")
-        scan = {"delay": self.delay, "pump": self.power, "probe": self.probe}
-        scan.update(self.stage.getScans())
+        scan = {"delay": self._delay, "pump": self._power, "probe": self._probe}
+        scan.update(self._stage.getScans())
         scan.update(scan_other)
-        proc = {"Camera": RefCameraWidget(self.camera, self.delay)}
+        proc = {"Camera": RefCameraWidget(self._camera, self._delay)}
         self._scan = ScanTab(self._data, scan, proc)
         tab = QtWidgets.QTabWidget()
         tab.addTab(self.__laserTab(hardwares), "Laser")
@@ -116,9 +116,9 @@ class fsTEMMain(LysSubWindow):
         return self.__wrapWidget(g, layout=True)
 
     def _setParams(self, dic):
-        dic["delay"] = self.delay.get()
-        dic["power"] = self.power.get()
-        dic["stage"] = tuple(self.stage.get())
+        dic["delay"] = self._delay.get()
+        dic["power"] = self._power.get()
+        dic["stage"] = tuple(self._stage.get())
 
 
 class RefCameraProcess(QtCore.QObject):
