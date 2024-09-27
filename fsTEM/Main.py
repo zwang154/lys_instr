@@ -38,8 +38,8 @@ class fsTEMMain(LysSubWindow):
         self.restoreSettings(self._path)
         self.closed.connect(lambda: self.saveSettings(self._path))
         glb.mainWindow().closed.connect(lambda: self.saveSettings(self._path))
-        self._camera.aquireStarted.connect(self._data.reserve)
-        self._camera.aquireFinished.connect(self._data.saveImage)
+        self._camera.acquireStarted.connect(self._data.reserve)
+        self._camera.acquireFinished.connect(self._data.saveImage)
         print("[fsTEM] Hardwares initialized. Data are storaged in", root)
         self.adjustSize()
 
@@ -135,13 +135,13 @@ class RefCameraProcess(QtCore.QObject):
         folder = storage.getFolder()
         storage.setFolder(folder + "/pump")
         self.updated.emit("Aquiring pump image: " + storage.getFilename())
-        self._camera.startAquire(self._exposure, wait=True)
+        self._camera.startAcquire(self._exposure, wait=True)
         if self._reference is not None:
             storage.setFolder(folder + "/probe")
             self.updated.emit("Going to reference delay")
             self._delay.set(self._reference, wait=True)
             self.updated.emit("Aquiring reference image: " + storage.getFilename())
-            self._camera.startAquire(self._exposure, wait=True)
+            self._camera.startAcquire(self._exposure, wait=True)
         self.updated.emit("Going to next point")
         storage.setFolder(folder)
 
