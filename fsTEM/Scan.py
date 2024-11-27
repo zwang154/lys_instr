@@ -51,6 +51,8 @@ class ScanRangeLayout(QtWidgets.QGridLayout):
             self._loop.setEnabled(False)
         elif text == "loop":
             self._scan.setCurrentIndex(0)
+            self._from.setValue(0)
+            self._step.setValue(1)
             self._loop.setEnabled(True)
         else:
             self._loop.setEnabled(True)
