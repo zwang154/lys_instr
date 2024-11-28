@@ -3,6 +3,8 @@ from lys.Qt import QtWidgets
 from PythonHardwares.Hardwares.OptoSigma.RMC102 import RMC102
 
 from PythonHardwares.Interfaces import HardwareInterface
+from PythonHardwares import Dummy
+
 from PythonHardwares.SingleMotor import SingleMotorGUI
 from PythonHardwares.Hardwares.FEI.TecnaiFemto import TecnaiFemto
 from .Initializer import initialize
@@ -54,8 +56,7 @@ class GlobalInitializer:
             self._eels = self._tem.getEELSMap()
             return self._eels
         elif instr == 'DummyCamera':
-            from PythonHardwares.Camera import CameraDummy
-            return CameraDummy()
+            return Dummy.CameraDummy()
         elif instr == 'fs-fs':
             from PythonHardwares.Hardwares.Soloist.SoloistHLE import SoloistHLE
             return SoloistHLE('192.168.12.202', 8000)
