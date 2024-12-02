@@ -41,6 +41,7 @@ class GlobalInitializer:
             return
         gui.tagRequest.connect(self._setParams)
         gui.closed.connect(self._closed)
+        gui._camera.acquireFinished.connect(self._tem.driftCorrector.setData)
 
     def _generate(self, instr):
 
