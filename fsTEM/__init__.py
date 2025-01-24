@@ -8,6 +8,7 @@ from PythonHardwares import Dummy
 from PythonHardwares.SingleMotor import SingleMotorGUI
 from PythonHardwares.Hardwares.FEI.TecnaiFemto import TecnaiFemto
 from .Initializer import initialize
+from .DriftCorrection import DriftCorrector, DriftCorrectionGUI
 
 root = "\\\\192.168.12.203\\smb\\data2\\"
 #root = home() + "/data"
@@ -35,16 +36,16 @@ class GlobalInitializer:
     def init(self):
         self._tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self._info = self._tem.getInfo()
+        self._drift = DriftCorrector(self._tem)
 
         gui = initialize(root, dic, self._generate, self._layout, self._scan)
         if gui is None:
             return
         gui.tagRequest.connect(self._setParams)
         gui.closed.connect(self._closed)
-        gui._camera.acquireFinished.connect(self._tem.driftCorrector.setData)
+        self._drift.setCamera(gui._camera)
 
     def _generate(self, instr):
-
         if instr is None:
             return None
         elif instr == "Merlin":
@@ -127,9 +128,12 @@ class GlobalInitializer:
         if self._tem is not None:
             d["TEM"] = self._tem.getWidget()
         if self._merlin is not None:
+            self._merlin.setDrift(self._drift)
             d["Merlin"] = self._merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
+        if self._drift is not None:
+            d["Drift"] = DriftCorrectionGUI(self._drift)
         if self._rmc is not None:
             w1 = SingleMotorGUI(self._rmc[0], 'Laser x')
             w2 = SingleMotorGUI(self._rmc[1], 'Laser y')
