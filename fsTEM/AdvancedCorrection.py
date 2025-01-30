@@ -34,45 +34,48 @@ class AdvancedCorrector(QtCore.QObject):
 
     def addCurrentValues(self, correctParams):
         #        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
-        rng = np.random.default_rng()
-        scanParams = {param: rng.integers(5) for param in self._scanParams}
+        rng = np.random.default_rng()  # for test
+        scanParams = {param: rng.integers(20) * 18 for param in self._scanParams}  # for test
 
-        for param in correctParams:
-            w = self._correctParams[param][0]
-            if w.data.shape == ():
-                if "Shift" in param:
+        if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
+            scanParamsList = [scanParams, scanParams.copy()]
+            scanParamsList[1]["Beam Phi"] = 360
+        else:
+            scanParamsList = [scanParams]
+        for scanParams in scanParamsList:
+            for param in correctParams:
+                w = self._correctParams[param][0]
+                # value = self._allCorrectParams[param].get()
+                if "Shift" in param:  # for test
                     value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
+                else:  # for test
+                    value = rng.uniform(-1000, 1000)
+                if w.data.shape == ():
+                    shape = np.ones(len(self._scanParams), dtype=int)
+                    if hasattr(value, "__iter__"):
+                        shape = np.append(shape, *np.array(value).shape)
+                    w = Wave(data=np.zeros(shape, dtype=float))
+                    if hasattr(value, "__iter__"):
+                        w.data[..., 0, :] = value
+                    else:
+                        w.data[..., 0] = value
+                    for i in range(len(self._scanParams)):
+                        w.axes[i][0] = scanParams[self._scanParams[i]]
                 else:
-                    value = rng.uniform(-1000, 1000)  # self._allScanParams[param].get()
-                shape = np.ones(len(self._scanParams), dtype=int)
-                if "Shift" in param:
-                    shape = np.append(shape, *np.array(value).shape)
-                w = Wave(data=np.zeros(shape, dtype=float))
-                if "Shift" in param:
-                    w.data[..., 0, :] = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]  # self._allScanParams[param].get()
-                else:
-                    w.data[..., 0] = rng.uniform(-1000, 1000)  # self._allScanParams[param].get()
-                for i in range(len(self._scanParams)):
-                    w.axes[i][0] = scanParams[self._scanParams[i]]
-            else:
-                w = w.duplicate()
-                idxs = []
-                for i in range(len(self._scanParams)):
-                    idx = w.axes.posToPoint(scanParams[self._scanParams[i]], axis=i)
-                    if not np.isclose(w.axes[i][idx], scanParams[self._scanParams[i]]):
-                        idx += 1 if w.axes[i][idx] < scanParams[self._scanParams[i]] else 0
-                        w.insert(idx, axis=i, axisValue=scanParams[self._scanParams[i]])
-                    idxs.append(idx)
-                if "Shift" in param:
-                    value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
-                else:
-                    value = rng.uniform(-1000, 1000)  # self._allScanParams[param].get()
-                tmpdata = w.data
-                for i in range(len(self._scanParams) - 1):
-                    tmpdata = tmpdata[idxs[i]]
-                tmpdata[idxs[-1]] = value
+                    w = w.duplicate()
+                    idxs = []
+                    for i in range(len(self._scanParams)):
+                        idx = w.axes.posToPoint(scanParams[self._scanParams[i]], axis=i)
+                        if not np.isclose(w.axes[i][idx], scanParams[self._scanParams[i]], rtol=1e-3):
+                            idx += 1 if w.axes[i][idx] < scanParams[self._scanParams[i]] else 0
+                            w.insert(idx, axis=i, axisValue=scanParams[self._scanParams[i]])
+                        idxs.append(idx)
+                    tmpdata = w.data
+                    for i in range(len(self._scanParams) - 1):
+                        tmpdata = tmpdata[idxs[i]]
+                    tmpdata[idxs[-1]] = value
 
-            self._correctParams[param].insert(0, w)
+                self._correctParams[param].insert(0, w)
 
         self._cutOldCorrectParams()
         self.dataChangedFunc(correctParams)
@@ -192,6 +195,14 @@ class AdvancedCorrector(QtCore.QObject):
 
     def setEnable(self, bool):
         self._enable = bool
+
+    def doCorrection(self):
+        if not self._enable:
+            return
+
+        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
+        for param in self._correctParams.keys():
+            pass
 
     def widget(self):
         return AdvancedCorrectionGUI(self)
