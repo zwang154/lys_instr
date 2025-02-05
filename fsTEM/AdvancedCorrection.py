@@ -78,6 +78,7 @@ class AdvancedCorrector(QtCore.QObject):
                         tmpdata = tmpdata[idxs[i]]
                     tmpdata[idxs[-1]] = value
 
+                w.note["File"] = ""
                 self._correctParams[param].insert(0, w)
 
         self._cutOldCorrectParams()
@@ -104,6 +105,8 @@ class AdvancedCorrector(QtCore.QObject):
         return {param: waves[0] for param, waves in self._correctParams.items() if param in correctParams}
 
     def saveAsFile(self, correctParams, gui=None):
+        if len(correctParams) == 0:
+            correctParams = self._correctParams.keys()
         waves = self.getWaves(correctParams)
         if len(waves) == 0:
             return
@@ -116,11 +119,13 @@ class AdvancedCorrector(QtCore.QObject):
                 waves[key].note["correctParam"] = key
                 waves[key].note["scanParams"] = self._scanParams
                 waves[key].export(fileName)
+                waves[key].note["File"] = fileName + ".npz"
             else:
                 for param, wave in waves.items():
                     wave.note["correctParam"] = param
                     wave.note["scanParams"] = self._scanParams
                     wave.export(fileName + "_" + param)
+                    wave.note["File"] = fileName + "_" + param + ".npz"
 
     def loadFromFile(self, correctParams, gui=None):
         def __loadWave(fileName, w, correctParam=None, gui=None):
@@ -156,6 +161,7 @@ class AdvancedCorrector(QtCore.QObject):
             idxs = tuple(idxs)
             w.data = w.data.transpose(idxs)
             w.axes = [w.axes[i] for i in idxs]
+            w.note["File"] = fileName
             if correctParam not in self._correctParams.keys():
                 self._correctParams[correctParam] = []
             self._correctParams[correctParam].insert(0, w)
@@ -248,6 +254,12 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         self._obj.dataChanged.connect(self.__dataChanged)
 
     def __initLayout(self):
+        self.setStyleSheet("QLineEdit {font-size: 10pt}"
+                           "QPushButton {font-size: 12pt}"
+                           "QLabel {font-size: 12pt}"
+                           "QCheckBox {font-size: 12pt}"
+                           "QListWidget {font-size: 14pt}")
+
         self._scanParams = QtWidgets.QListWidget()
         self._scanParams.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self._scanBuilder = _contextMenuBuilder(self, self._scanParams, self._obj._allScanParams.keys(), self._obj.updateScanParams)
@@ -261,9 +273,11 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         self._correctParams.customContextMenuRequested.connect(self._correctBuilder.build)
 
         self._correctFile = QtWidgets.QLineEdit()
+        self._correctFile.isReadOnly = True
 
         v = QtWidgets.QVBoxLayout()
         v.addWidget(QtWidgets.QCheckBox("Enable Correction", checked=False, clicked=self._obj.setEnable))
+        v.addWidget(QtWidgets.QWidget())
         v.addWidget(QtWidgets.QLabel("Scan Params"))
         v.addWidget(self._scanParams)
 
@@ -271,8 +285,9 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         v.addWidget(QtWidgets.QLabel("Correct Params"))
         g = QtWidgets.QGridLayout()
         g.addWidget(QtWidgets.QLabel("File"), 0, 0, 1, 1)
-        g.addWidget(self._correctFile, 0, 1, 1, 3)
-        g.addWidget(QtWidgets.QPushButton("Load", clicked=lambda: self._obj.loadFromFile(self.__selectedCorrectParams(), gui=self)), 1, 3, 1, 1)
+        g.addWidget(self._correctFile, 0, 1, 1, 5)
+        g.addWidget(QtWidgets.QPushButton("Load", clicked=lambda: self._obj.loadFromFile(self.__selectedCorrectParams(), gui=self)), 1, 0, 1, 3)
+        g.addWidget(QtWidgets.QPushButton("Save", clicked=lambda: self._obj.saveAsFile(self.__selectedCorrectParams(), gui=self)), 1, 3, 1, 3)
         v.addWidget(self._correctParams)
         v.addLayout(g)
 
@@ -282,7 +297,6 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         h1.addWidget(QtWidgets.QPushButton("Add", clicked=lambda: self._obj.addCurrentValues(self.__selectedCorrectParams())))
         h1.addWidget(QtWidgets.QPushButton("Undo", clicked=lambda: self._obj.undo(self.__selectedCorrectParams())))
         h1.addWidget(QtWidgets.QPushButton("Clear", clicked=lambda: self._obj.clearValues(self.__selectedCorrectParams())))
-        h1.addWidget(QtWidgets.QPushButton("Save", clicked=lambda: self._obj.saveAsFile(self.__selectedCorrectParams(), gui=self)))
         v.addLayout(h1)
 
         h = QtWidgets.QHBoxLayout()
@@ -290,8 +304,6 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
 
         v2 = QtWidgets.QVBoxLayout()
         self._data = widgets.lysCanvas()
-        self._data.setCanvasSize("Width", "Absolute", 7)
-        self._data.setCanvasSize("Height", "Absolute", 7)
         v2.addWidget(self._data)
         v2.addWidget(QtWidgets.QPushButton("Multicut", clicked=self.__showMulticut))
         v2.addWidget(QtWidgets.QPushButton("DoCorrectionTest", clicked=self._obj.doCorrection))
@@ -321,6 +333,9 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         if len(waves) == 1:
             if waves[0].data.ndim in (1, 2):
                 self._data.Append(waves[0])
+            self._correctFile.setText(waves[0].note["File"])
+        else:
+            self._correctFile.clear()
 
     def __selectedCorrectParams(self):
         return [item.text() for item in self._correctParams.selectedItems()]
