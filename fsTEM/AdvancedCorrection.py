@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from scipy.interpolate import interp1d, interpn
 from lys import widgets, filters, Wave, multicut
 from lys.Qt import QtWidgets, QtCore, QtGui
 
@@ -33,9 +34,11 @@ class AdvancedCorrector(QtCore.QObject):
                 del self._correctParams[param]
 
     def addCurrentValues(self, correctParams):
+        if len(correctParams) == 0:
+            correctParams = self._correctParams.keys()
         #        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
         rng = np.random.default_rng()  # for test
-        scanParams = {param: rng.integers(20) * 18 for param in self._scanParams}  # for test
+        scanParams = {param: rng.integers(5) for param in self._scanParams}  # for test
 
         if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
@@ -196,13 +199,37 @@ class AdvancedCorrector(QtCore.QObject):
     def setEnable(self, bool):
         self._enable = bool
 
+    @property
+    def enable(self):
+        return self._enable
+
     def doCorrection(self):
         if not self._enable:
             return
 
-        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
+#        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
+        rng = np.random.default_rng()  # for test
+        scanValues = rng.uniform(-10, 10, len(self._scanParams))  # for test
+        if len(scanValues) == 0:
+            return
+
         for param in self._correctParams.keys():
-            pass
+            wave = self._correctParams[param][0]
+            axes = wave.axes
+            data = wave.data
+            if len(scanValues) < len(axes):
+                axes = axes[:len(scanValues)]
+            if len(scanValues) == 1:
+                print(axes[0], data, scanValues[0])
+                print(type(axes[0]), type(data), type(scanValues[0]))
+                f = interp1d(axes[0], data, axis=0, bounds_error=False, fill_value='extrapolate')
+                value = f(scanValues[0])
+            else:
+                print(axes, data, scanValues)
+                print(type(axes), type(data), type(scanValues))
+                value = interpn(axes, data, scanValues, bounds_error=False, fill_value=None)[0]
+            print("[Do Correction] Scan values: ", scanValues, ", Correct Param : ", param, ", Set Value: ", value)
+#            self._allCorrectParams[param].set(value)
 
     def widget(self):
         return AdvancedCorrectionGUI(self)
@@ -267,6 +294,7 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         self._data.setCanvasSize("Height", "Absolute", 7)
         v2.addWidget(self._data)
         v2.addWidget(QtWidgets.QPushButton("Multicut", clicked=self.__showMulticut))
+        v2.addWidget(QtWidgets.QPushButton("DoCorrectionTest", clicked=self._obj.doCorrection))
 
         h.addLayout(v2)
 
