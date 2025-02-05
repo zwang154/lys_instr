@@ -90,6 +90,12 @@ class DataStorage(QtCore.QObject):
             self.pathChanged.emit(self)
             self.stateChanged.emit(self.state())
 
+    def release(self):
+        self._tags.pop(-1)
+        self._paths.pop(-1)
+        self.pathChanged.emit(self)
+        self.stateChanged.emit(self.state())
+
     def _finished(self):
         for i in reversed(range(len(self._threads))):
             if not self._threads[i].isRunning():
