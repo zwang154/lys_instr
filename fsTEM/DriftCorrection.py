@@ -93,6 +93,10 @@ class DriftCorrector(QtCore.QObject):
         self._shift = None
         self._enable = True
 
+    @property
+    def enable(self):
+        return self._enable
+
     def widget(self):
         return DriftCorrectionGUI(self)
 
@@ -132,8 +136,8 @@ class ShiftEstimator(QtCore.QThread):
             data.append(filted)
             axes = [filted.x, filted.y]
         data = Wave(np.array(data).transpose(1, 2, 0), *axes, None)
-        #data = Wave(np.array([self._filt.execute(d).data for d in self._data]).transpose(1, 2, 0), self._filt.execute(self._data[0]).x, self._filt.execute(self._data[0]).y, None)
-        return self._corr.execute(data).data[1:, :].T/self._shift
+        # data = Wave(np.array([self._filt.execute(d).data for d in self._data]).transpose(1, 2, 0), self._filt.execute(self._data[0]).x, self._filt.execute(self._data[0]).y, None)
+        return self._corr.execute(data).data[1:, :].T / self._shift
 
     def _correct(self, data):
         self._data.append(data)
