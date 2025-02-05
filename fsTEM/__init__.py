@@ -38,7 +38,7 @@ class GlobalInitializer:
         self._tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self._info = self._tem.getInfo()
         self._drift = DriftCorrector(self._tem)
-        self._advanced = AdvancedCorrector(self._tem)
+        self._advCorr = AdvancedCorrector(self._tem)
 
         gui = initialize(root, dic, self._generate, self._layout, self._scan)
         if gui is None:
@@ -131,13 +131,14 @@ class GlobalInitializer:
             d["TEM"] = self._tem.getWidget()
         if self._merlin is not None:
             self._merlin.setDrift(self._drift)
+            self._merlin.setAdvancedCorrector(self._advCorr)
             d["Merlin"] = self._merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
         if self._drift is not None:
             d["Drift"] = DriftCorrectionGUI(self._drift)
-        if self._advanced is not None:
-            d["Advanced Correction"] = AdvancedCorrectionGUI(self._advanced)
+        if self._advCorr is not None:
+            d["Advanced Correction"] = AdvancedCorrectionGUI(self._advCorr)
         if self._rmc is not None:
             w1 = SingleMotorGUI(self._rmc[0], 'Laser x')
             w2 = SingleMotorGUI(self._rmc[1], 'Laser y')

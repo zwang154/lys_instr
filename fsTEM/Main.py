@@ -40,6 +40,7 @@ class fsTEMMain(LysSubWindow):
         glb.mainWindow().closed.connect(lambda: self.saveSettings(self._path))
         self._camera.acquireStarted.connect(self._data.reserve)
         self._camera.acquireFinished.connect(self._data.saveImage)
+        self._camera.acquireStopped.connect(self._data.release)
         print("[fsTEM] Hardwares initialized. Data are storaged in", root)
         self.adjustSize()
 
