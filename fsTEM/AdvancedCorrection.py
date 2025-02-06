@@ -20,8 +20,36 @@ class AdvancedCorrector(QtCore.QObject):
         self._scanParams = []
         self._correctParams = {}
 
-    def updateScanParams(self, params):
-        self._scanParams = params
+    def updateScanParams(self, params, gui=None):
+        if len(params) == 0 or len(params) < len(self._scanParams) or len(self._correctParams) == 0:
+            self._scanParams = params
+            self.updateCorrectParams([])
+            return
+
+        newParams = [param for param in params if param not in self._scanParams]
+
+        for sparam in newParams:
+            value, ok = QtWidgets.QInputDialog.getDouble(gui, "Set value for " + sparam, 'Enter the "' + sparam + '" value of the current data.')
+            if not ok:
+                break
+
+            for cparam, waves in self._correctParams.items():
+                w = waves[0]
+                if w.data.shape == ():
+                    self._correctParams[cparam].insert(0, Wave())
+                else:
+                    nw = w.duplicate()
+                    if w.data.ndim == len(self._scanParams):
+                        nw.data = nw.data.reshape(np.append(nw.data.shape, 1))
+                    else:
+                        nw.data = nw.data.reshape(np.insert(nw.data.shape, -1, 1))
+                    self._correctParams[cparam].insert(0, nw)
+
+                    nw.axes[len(params) - 1] = np.array([value])
+
+            self._scanParams.append(sparam)
+
+        self.dataChangedFunc([])
 
     def updateCorrectParams(self, params):
         for param in params:
@@ -33,12 +61,14 @@ class AdvancedCorrector(QtCore.QObject):
             if param not in params:
                 del self._correctParams[param]
 
+        self.dataChangedFunc([])
+
     def addCurrentValues(self, correctParams):
         if len(correctParams) == 0:
             correctParams = self._correctParams.keys()
         #        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
         rng = np.random.default_rng()  # for test
-        scanParams = {param: rng.integers(5) for param in self._scanParams}  # for test
+        scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
 
         if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
@@ -133,17 +163,17 @@ class AdvancedCorrector(QtCore.QObject):
                 correctParam = w.note["correctParam"]
             if "scanParams" not in w.note.keys():
                 if len(self._scanParams) == 0:
-                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: No scan params found in file.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
+                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: No Scan Parameter found in file.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                     return -1
                 elif w.data.ndim < len(self._scanParams):
-                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: Data dimension in file does not match registered scan params.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
+                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: Data dimension in file does not match registered Scan Parameters.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                     return -1
                 elif len(self._scanParams) == 1:
                     w.note["scanParams"] = self._scanParams
                 else:
                     axes = []
                     for param in self._scanParams:
-                        axis, ok = QtWidgets.QInputDialog.getItem(gui, "Scan param", "Select axis for scan param: " + param, [str(i) for i in range(len(self._scanParams)) if i not in axes], editable=False)
+                        axis, ok = QtWidgets.QInputDialog.getItem(gui, "Select axis for Scan Parameter", "Select axis for Scan Parameter: " + param, [str(i) for i in range(len(self._scanParams)) if i not in axes], editable=False)
                         if not ok:
                             return -1
                         axes.append(int(axis))
@@ -152,7 +182,7 @@ class AdvancedCorrector(QtCore.QObject):
                 self._scanParams = w.note["scanParams"]
 
             if sorted(self._scanParams) != sorted(w.note["scanParams"]):
-                QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: Scan params in file do not match registered scan params.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
+                QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: Scan parameters in file do not match registered scan parameters.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                 return -1
 
             idxs = [w.note["scanParams"].index(param) for param in self._scanParams]
@@ -186,11 +216,11 @@ class AdvancedCorrector(QtCore.QObject):
             for fileName in fileNames:
                 w = Wave().importFrom(fileName)
                 if "correctParam" not in w.note.keys():
-                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load due to undefined correctParam.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
+                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load due to undefined Correct Parameter.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                     continue
 
                 if w.note["correctParam"] not in self._allCorrectParams.keys():
-                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load due to the old correctParam name.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
+                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load due to the old Correct Parameter name.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                     continue
 
                 __loadWave(fileName, w, gui=gui)
@@ -215,7 +245,7 @@ class AdvancedCorrector(QtCore.QObject):
 
 #        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
         rng = np.random.default_rng()  # for test
-        scanValues = rng.uniform(-10, 10, len(self._scanParams))  # for test
+        scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
         if len(scanValues) == 0:
             return
 
@@ -225,16 +255,23 @@ class AdvancedCorrector(QtCore.QObject):
             data = wave.data
             if len(scanValues) < len(axes):
                 axes = axes[:len(scanValues)]
-            if len(scanValues) == 1:
-                print(axes[0], data, scanValues[0])
-                print(type(axes[0]), type(data), type(scanValues[0]))
+
+            tmpScanValues = scanValues
+            while 1 in data.shape:
+                dim = data.shape.index(1)
+                axes = axes[:dim] + axes[dim + 1:]
+                data = np.reshape(data, data.shape[:dim] + data.shape[dim + 1:])
+                tmpScanValues = tmpScanValues[:dim] + tmpScanValues[dim + 1:]
+            if len(tmpScanValues) == 1:
+                print(axes[0], data, tmpScanValues[0])
+                print(type(axes[0]), type(data), type(tmpScanValues[0]))
                 f = interp1d(axes[0], data, axis=0, bounds_error=False, fill_value='extrapolate')
-                value = f(scanValues[0])
+                value = f(tmpScanValues[0])
             else:
-                print(axes, data, scanValues)
-                print(type(axes), type(data), type(scanValues))
+                print(axes, data, tmpScanValues)
+                print(type(axes), type(data), type(tmpScanValues))
                 value = interpn(axes, data, scanValues, bounds_error=False, fill_value=None)[0]
-            print("[Do Correction] Scan values: ", scanValues, ", Correct Param : ", param, ", Set Value: ", value)
+            print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
 #            self._allCorrectParams[param].set(value)
 
     def widget(self):
@@ -278,11 +315,11 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         v = QtWidgets.QVBoxLayout()
         v.addWidget(QtWidgets.QCheckBox("Enable Correction", checked=False, clicked=self._obj.setEnable))
         v.addWidget(QtWidgets.QWidget())
-        v.addWidget(QtWidgets.QLabel("Scan Params"))
+        v.addWidget(QtWidgets.QLabel("Scan Parameters"))
         v.addWidget(self._scanParams)
 
         v.addWidget(QtWidgets.QWidget())
-        v.addWidget(QtWidgets.QLabel("Correct Params"))
+        v.addWidget(QtWidgets.QLabel("Correct Parameters"))
         g = QtWidgets.QGridLayout()
         g.addWidget(QtWidgets.QLabel("File"), 0, 0, 1, 1)
         g.addWidget(self._correctFile, 0, 1, 1, 5)
@@ -333,7 +370,7 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
         if len(waves) == 1:
             if waves[0].data.ndim in (1, 2):
                 self._data.Append(waves[0])
-            self._correctFile.setText(waves[0].note["File"])
+            self._correctFile.setText("" if "File" not in waves[0].note.keys() else waves[0].note["File"])
         else:
             self._correctFile.clear()
 
@@ -372,19 +409,20 @@ class _contextMenuBuilder:
             return
         item, ok = QtWidgets.QInputDialog.getItem(self._parent, "Add Correct Params", "Param", additems, editable=False)
         if ok:
-            self._listwidget.addItem(item)
-            self._updatefunc(self.__getListItems())
+            items = self.__getListItems()
+            items.append(item)
+            self._updatefunc(items)
 
     def __delete(self):
         items = [item.text() for item in self._listwidget.selectedItems()]
-        ok = QtWidgets.QMessageBox.warning(self._parent, "Delete", 'This may delete all registered values. \n Do you really want to DELETE the params? : ' + ", ".join(items), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
+        ok = QtWidgets.QMessageBox.warning(self._parent, "Delete", 'This will delete all registered correction values. \n Do you really want to DELETE the parameter(s)? : ' + ", ".join(items), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
         if ok == QtWidgets.QMessageBox.Ok:
             for item in self._listwidget.selectedItems():
                 self._listwidget.takeItem(self._listwidget.row(item))
                 self._updatefunc(self.__getListItems())
 
     def __clear(self):
-        ok = QtWidgets.QMessageBox.warning(self._parent, "Clear", "This may delete all registered values. \n Do you really want to CLEAR all params?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
+        ok = QtWidgets.QMessageBox.warning(self._parent, "Clear", "This will delete all registered correction values. \n Do you really want to CLEAR the all parameter(s)?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
         if ok == QtWidgets.QMessageBox.Ok:
             self._listwidget.clear()
             self._updatefunc([])
