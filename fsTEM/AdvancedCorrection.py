@@ -66,9 +66,9 @@ class AdvancedCorrector(QtCore.QObject):
     def addCurrentValues(self, correctParams):
         if len(correctParams) == 0:
             correctParams = self._correctParams.keys()
-        #        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
-        rng = np.random.default_rng()  # for test
-        scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
+        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
+        # rng = np.random.default_rng()  # for test
+        # scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
 
         if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
@@ -78,11 +78,11 @@ class AdvancedCorrector(QtCore.QObject):
         for scanParams in scanParamsList:
             for param in correctParams:
                 w = self._correctParams[param][0]
-                # value = self._allCorrectParams[param].get()
-                if "Shift" in param:  # for test
-                    value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
-                else:  # for test
-                    value = rng.uniform(-1000, 1000)
+                value = self._allCorrectParams[param].get()
+                # if "Shift" in param:  # for test
+                #    value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
+                # else:  # for test
+                #    value = rng.uniform(-1000, 1000)
                 if w.data.shape == ():
                     shape = np.ones(len(self._scanParams), dtype=int)
                     if hasattr(value, "__iter__"):
@@ -243,9 +243,9 @@ class AdvancedCorrector(QtCore.QObject):
         if not self._enable:
             return
 
-#        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
-        rng = np.random.default_rng()  # for test
-        scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
+        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
+        # rng = np.random.default_rng()  # for test
+        # scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
         if len(scanValues) == 0:
             return
 
@@ -263,16 +263,16 @@ class AdvancedCorrector(QtCore.QObject):
                 data = np.reshape(data, data.shape[:dim] + data.shape[dim + 1:])
                 tmpScanValues = tmpScanValues[:dim] + tmpScanValues[dim + 1:]
             if len(tmpScanValues) == 1:
-                print(axes[0], data, tmpScanValues[0])
-                print(type(axes[0]), type(data), type(tmpScanValues[0]))
+                #                print(axes[0], data, tmpScanValues[0])
+                #                print(type(axes[0]), type(data), type(tmpScanValues[0]))
                 f = interp1d(axes[0], data, axis=0, bounds_error=False, fill_value='extrapolate')
                 value = f(tmpScanValues[0])
             else:
-                print(axes, data, tmpScanValues)
-                print(type(axes), type(data), type(tmpScanValues))
+                #                print(axes, data, tmpScanValues)
+                #                print(type(axes), type(data), type(tmpScanValues))
                 value = interpn(axes, data, scanValues, bounds_error=False, fill_value=None)[0]
-            print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
-#            self._allCorrectParams[param].set(value)
+#            print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
+            self._allCorrectParams[param].set(value)
 
     def widget(self):
         return AdvancedCorrectionGUI(self)
