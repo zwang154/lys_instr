@@ -341,6 +341,8 @@ class AdvancedCorrectionGUI(QtWidgets.QWidget):
 
         v2 = QtWidgets.QVBoxLayout()
         self._data = widgets.lysCanvas()
+        self._data.setCanvasSize("Width", "Absolute", 8)
+        self._data.setCanvasSize("Height", "Absolute", 8)
         v2.addWidget(self._data)
         v2.addWidget(QtWidgets.QPushButton("Multicut", clicked=self.__showMulticut))
         v2.addWidget(QtWidgets.QPushButton("DoCorrectionTest", clicked=self._obj.doCorrection))

@@ -138,7 +138,7 @@ class GlobalInitializer:
         if self._drift is not None:
             d["Drift"] = DriftCorrectionGUI(self._drift)
         if self._advCorr is not None:
-            d["Advanced Correction"] = AdvancedCorrectionGUI(self._advCorr)
+            d["Adv. Corr."] = AdvancedCorrectionGUI(self._advCorr)
         if self._rmc is not None:
             w1 = SingleMotorGUI(self._rmc[0], 'Laser x')
             w2 = SingleMotorGUI(self._rmc[1], 'Laser y')

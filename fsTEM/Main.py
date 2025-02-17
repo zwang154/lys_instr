@@ -45,7 +45,12 @@ class fsTEMMain(LysSubWindow):
         self.adjustSize()
 
     def __initlayout(self, hardwares, lay_other, scan_other):
-        self.setStyleSheet("QDoubleSpinBox,QSpinBox,QLineEdit,QComboBox {"
+        font = glb.mainWindow().font()
+        self.setStyleSheet("QWidget {"
+                           "font-family: " + font.family() + ";"
+                           "font-size: 12pt;"
+                           "}"
+                           "QDoubleSpinBox,QSpinBox,QLineEdit,QComboBox {"
                            "border-radius: 4px;"
                            "border:1px solid gray;"
                            "}"
