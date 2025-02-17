@@ -33,17 +33,18 @@ class PreCorrector(QtCore.QObject):
             if not ok:
                 break
 
-            for cparam, waves in self._correctParams.items():
+            for cparam, info in self._correctParams.items():
+                waves = info["wave"]
                 w = waves[0]
                 if w.data.shape == ():
-                    self._correctParams[cparam].insert(0, Wave())
+                    self._correctParams[cparam]["wave"].insert(0, Wave())
                 else:
                     nw = w.duplicate()
                     if w.data.ndim == len(self._scanParams):
                         nw.data = nw.data.reshape(np.append(nw.data.shape, 1))
                     else:
                         nw.data = nw.data.reshape(np.insert(nw.data.shape, -1, 1))
-                    self._correctParams[cparam].insert(0, nw)
+                    self._correctParams[cparam]["wave"].insert(0, nw)
 
                     nw.axes[len(params) - 1] = np.array([value])
 
@@ -54,7 +55,8 @@ class PreCorrector(QtCore.QObject):
     def updateCorrectParams(self, params):
         for param in params:
             if param not in self._correctParams.keys():
-                self._correctParams[param] = [Wave()]
+                self._correctParams[param] = {"wave": [Wave()], "relative": False}
+#                print(self._correctParams[param])
 
         keys = list(self._correctParams.keys())
         for param in keys:
@@ -66,9 +68,9 @@ class PreCorrector(QtCore.QObject):
     def addCurrentValues(self, correctParams):
         if len(correctParams) == 0:
             correctParams = self._correctParams.keys()
-        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
-        # rng = np.random.default_rng()  # for test
-        # scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
+#        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
+        rng = np.random.default_rng()  # for test
+        scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
 
         if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
@@ -77,12 +79,12 @@ class PreCorrector(QtCore.QObject):
             scanParamsList = [scanParams]
         for scanParams in scanParamsList:
             for param in correctParams:
-                w = self._correctParams[param][0]
-                value = self._allCorrectParams[param].get()
-                # if "Shift" in param:  # for test
-                #    value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
-                # else:  # for test
-                #    value = rng.uniform(-1000, 1000)
+                w = self._correctParams[param]["wave"][0]
+#                value = self._allCorrectParams[param].get()
+                if "Shift" in param:  # for test
+                    value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
+                else:  # for test
+                    value = rng.uniform(-1000, 1000)
                 if w.data.shape == ():
                     shape = np.ones(len(self._scanParams), dtype=int)
                     if hasattr(value, "__iter__"):
@@ -109,30 +111,30 @@ class PreCorrector(QtCore.QObject):
                     tmpdata[idxs[-1]] = value
 
                 w.note["File"] = ""
-                self._correctParams[param].insert(0, w)
+                self._correctParams[param]["wave"].insert(0, w)
 
         self._cutOldCorrectParams()
         self.dataChangedFunc(correctParams)
 
     def undo(self, correctParams):
         for param in correctParams:
-            if len(self._correctParams[param]) > 1:
-                self._correctParams[param].pop(0)
+            if len(self._correctParams[param]["wave"]) > 1:
+                self._correctParams[param]["wave"].pop(0)
 
         self.dataChangedFunc(correctParams)
 
     def clearValues(self, correctParams):
         for param in correctParams:
-            self._correctParams[param].insert(0, Wave())
-            self._correctParams[param] = self._correctParams[param][:5]
+            self._correctParams[param]["wave"].insert(0, Wave())
+            self._correctParams[param]["wave"] = self._correctParams[param]["wave"][:5]
 
         self.dataChangedFunc(correctParams)
 
     def dataChangedFunc(self, correctParams):
-        self.dataChanged.emit([waves[0] for param, waves in self._correctParams.items() if param in correctParams])
+        self.dataChanged.emit([info["wave"][0] for param, info in self._correctParams.items() if param in correctParams])
 
     def getWaves(self, correctParams):
-        return {param: waves[0] for param, waves in self._correctParams.items() if param in correctParams}
+        return {param: info["wave"][0] for param, info in self._correctParams.items() if param in correctParams}
 
     def saveAsFile(self, correctParams, gui=None):
         if len(correctParams) == 0:
@@ -193,8 +195,8 @@ class PreCorrector(QtCore.QObject):
             w.axes = [w.axes[i] for i in idxs]
             w.note["File"] = fileName
             if correctParam not in self._correctParams.keys():
-                self._correctParams[correctParam] = []
-            self._correctParams[correctParam].insert(0, w)
+                self._correctParams[correctParam]["wave"] = {"wave": [], "relative": False}
+            self._correctParams[correctParam]["wave"].insert(0, w)
 
         fileNames = QtWidgets.QFileDialog.getOpenFileNames(gui, "Open file", "", "Numpy npz (*.npz)")[0]
         if len(fileNames) == 0:
@@ -243,14 +245,14 @@ class PreCorrector(QtCore.QObject):
         if not self._enable:
             return
 
-        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
-        # rng = np.random.default_rng()  # for test
-        # scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
+#        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
+        rng = np.random.default_rng()  # for test
+        scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
         if len(scanValues) == 0:
             return
 
         for param in self._correctParams.keys():
-            wave = self._correctParams[param][0]
+            wave = self._correctParams[param]["wave"][0]
             axes = wave.axes
             data = wave.data
             if len(scanValues) < len(axes):
@@ -263,22 +265,23 @@ class PreCorrector(QtCore.QObject):
                 data = np.reshape(data, data.shape[:dim] + data.shape[dim + 1:])
                 tmpScanValues = tmpScanValues[:dim] + tmpScanValues[dim + 1:]
             if len(tmpScanValues) == 1:
-                #                print(axes[0], data, tmpScanValues[0])
-                #                print(type(axes[0]), type(data), type(tmpScanValues[0]))
+                print(axes[0], data, tmpScanValues[0])
+                print(type(axes[0]), type(data), type(tmpScanValues[0]))
                 f = interp1d(axes[0], data, axis=0, bounds_error=False, fill_value='extrapolate')
                 value = f(tmpScanValues[0])
             else:
-                #                print(axes, data, tmpScanValues)
-                #                print(type(axes), type(data), type(tmpScanValues))
+                print(axes, data, tmpScanValues)
+                print(type(axes), type(data), type(tmpScanValues))
                 value = interpn(axes, data, scanValues, bounds_error=False, fill_value=None)[0]
-#            print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
-            self._allCorrectParams[param].set(value)
+            print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
+#            self._allCorrectParams[param].set(value)
 
     def widget(self):
         return PreCorrectionGUI(self)
 
-    def _cutOldCorrectParams(self, size=5):
-        self._correctParams = {param: waves[:size] for param, waves in self._correctParams.items()}
+    def _cutOldCorrectParams(self, size=10):
+        for param, info in self._correctParams.items():
+            self._correctParams[param]["wave"] = info["wave"][:size]
 
 
 class PreCorrectionGUI(QtWidgets.QWidget):
@@ -306,6 +309,7 @@ class PreCorrectionGUI(QtWidgets.QWidget):
         self._correctParams.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self._correctParams.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self._correctParams.itemSelectionChanged.connect(lambda: self._obj.dataChangedFunc(self.__selectedCorrectParams()))
+        self._correctParams.itemClicked.connect(self.__itemClicked)
         self._correctBuilder = _contextMenuBuilder(self, self._correctParams, self._obj._allCorrectParams.keys(), self._obj.updateCorrectParams)
         self._correctParams.customContextMenuRequested.connect(self._correctBuilder.build)
 
@@ -362,7 +366,10 @@ class PreCorrectionGUI(QtWidgets.QWidget):
         if len(self._obj._correctParams) != self._correctParams.count():
             self._correctParams.clear()
             for param in self._obj._correctParams.keys():
-                self._correctParams.addItem(param)
+                item = QtWidgets.QListWidgetItem(param)
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+                item.setCheckState(QtCore.Qt.Checked if self._obj._correctParams[param]["relative"] else QtCore.Qt.Unchecked)
+                self._correctParams.addItem(item)
         if len(self._obj._scanParams) != self._scanParams.count():
             self._scanParams.clear()
             for param in self._obj._scanParams:
@@ -378,6 +385,11 @@ class PreCorrectionGUI(QtWidgets.QWidget):
 
     def __selectedCorrectParams(self):
         return [item.text() for item in self._correctParams.selectedItems()]
+
+    def __itemClicked(self, item):
+        for i in range(self._correctParams.count()):
+            item = self._correctParams.item(i)
+            self._obj._correctParams[item.text()]["relative"] = item.checkState() == QtCore.Qt.Checked
 
 
 class _contextMenuBuilder:
