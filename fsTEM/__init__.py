@@ -9,7 +9,7 @@ from PythonHardwares.SingleMotor import SingleMotorGUI
 from PythonHardwares.Hardwares.FEI.TecnaiFemto import TecnaiFemto
 from .Initializer import initialize
 from .DriftCorrection import DriftCorrector, DriftCorrectionGUI
-from .AdvancedCorrection import AdvancedCorrector, AdvancedCorrectionGUI
+from .PreCorrection import PreCorrector, PreCorrectionGUI
 
 root = "\\\\192.168.12.203\\smb\\data2\\"
 # root = home() + "/data"
@@ -38,7 +38,7 @@ class GlobalInitializer:
         self._tem = TecnaiFemto('192.168.12.210', '192.168.12.201', 7000, 7001)
         self._info = self._tem.getInfo()
         self._drift = DriftCorrector(self._tem)
-        self._advCorr = AdvancedCorrector(self._tem)
+        self._preCorr = PreCorrector(self._tem)
 
         gui = initialize(root, dic, self._generate, self._layout, self._scan)
         if gui is None:
@@ -131,14 +131,14 @@ class GlobalInitializer:
             d["TEM"] = self._tem.getWidget()
         if self._merlin is not None:
             self._merlin.setDrift(self._drift)
-            self._merlin.setAdvancedCorrector(self._advCorr)
+            self._merlin.setPreCorrector(self._preCorr)
             d["Merlin"] = self._merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
         if self._drift is not None:
             d["Drift"] = DriftCorrectionGUI(self._drift)
-        if self._advCorr is not None:
-            d["Adv. Corr."] = AdvancedCorrectionGUI(self._advCorr)
+        if self._preCorr is not None:
+            d["Pre-Corr."] = PreCorrectionGUI(self._preCorr)
         if self._rmc is not None:
             w1 = SingleMotorGUI(self._rmc[0], 'Laser x')
             w2 = SingleMotorGUI(self._rmc[1], 'Laser y')

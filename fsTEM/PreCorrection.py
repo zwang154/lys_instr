@@ -5,7 +5,7 @@ from lys import widgets, filters, Wave, multicut
 from lys.Qt import QtWidgets, QtCore, QtGui
 
 
-class AdvancedCorrector(QtCore.QObject):
+class PreCorrector(QtCore.QObject):
     dataChanged = QtCore.pyqtSignal(object)
 
     def __init__(self, tem):
@@ -202,7 +202,7 @@ class AdvancedCorrector(QtCore.QObject):
         if len(correctParams) == 1:
             w = Wave().importFrom(fileNames[0])
             if "correctParam" not in w.note.keys():
-                ok = QtWidgets.QMessageBox.warning(gui, "Caution", "This file was not created by AdvancedCorrection.\nAre you sure to continue?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
+                ok = QtWidgets.QMessageBox.warning(gui, "Caution", "This file was not created by PreCorrection.\nAre you sure to continue?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
                 if ok == QtWidgets.QMessageBox.Cancel:
                     return
             elif w.note["correctParam"] != correctParams[0]:
@@ -275,13 +275,13 @@ class AdvancedCorrector(QtCore.QObject):
             self._allCorrectParams[param].set(value)
 
     def widget(self):
-        return AdvancedCorrectionGUI(self)
+        return PreCorrectionGUI(self)
 
     def _cutOldCorrectParams(self, size=5):
         self._correctParams = {param: waves[:size] for param, waves in self._correctParams.items()}
 
 
-class AdvancedCorrectionGUI(QtWidgets.QWidget):
+class PreCorrectionGUI(QtWidgets.QWidget):
     def __init__(self, obj):
         super().__init__()
         self._obj = obj
