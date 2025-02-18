@@ -19,6 +19,7 @@ class PreCorrector(QtCore.QObject):
 
         self._scanParams = []
         self._correctParams = {}
+        self._initialValues = {}
 
     def updateScanParams(self, params, gui=None):
         if len(params) == 0 or len(params) < len(self._scanParams) or len(self._correctParams) == 0:
@@ -68,9 +69,9 @@ class PreCorrector(QtCore.QObject):
     def addCurrentValues(self, correctParams):
         if len(correctParams) == 0:
             correctParams = self._correctParams.keys()
-#        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
-        rng = np.random.default_rng()  # for test
-        scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
+        scanParams = {param: self._allScanParams[param].get() for param in self._scanParams}
+        # rng = np.random.default_rng()  # for test
+        # scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
 
         if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
@@ -80,11 +81,11 @@ class PreCorrector(QtCore.QObject):
         for scanParams in scanParamsList:
             for param in correctParams:
                 w = self._correctParams[param]["wave"][0]
-#                value = self._allCorrectParams[param].get()
-                if "Shift" in param:  # for test
-                    value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
-                else:  # for test
-                    value = rng.uniform(-1000, 1000)
+                value = self._allCorrectParams[param].get()
+                # if "Shift" in param:  # for test
+                #     value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
+                # else:  # for test
+                #     value = rng.uniform(-1000, 1000)
                 if w.data.shape == ():
                     shape = np.ones(len(self._scanParams), dtype=int)
                     if hasattr(value, "__iter__"):
@@ -195,7 +196,7 @@ class PreCorrector(QtCore.QObject):
             w.axes = [w.axes[i] for i in idxs]
             w.note["File"] = fileName
             if correctParam not in self._correctParams.keys():
-                self._correctParams[correctParam]["wave"] = {"wave": [], "relative": False}
+                self._correctParams[correctParam] = {"wave": [], "relative": False}
             self._correctParams[correctParam]["wave"].insert(0, w)
 
         fileNames = QtWidgets.QFileDialog.getOpenFileNames(gui, "Open file", "", "Numpy npz (*.npz)")[0]
@@ -241,15 +242,21 @@ class PreCorrector(QtCore.QObject):
     def enable(self):
         return self._enable
 
+    def saveCurrentValues(self):
+        self._initialValues = {param: self._allScanParams[param].get() for param in self._scanParams}
+        self._initialValues.update({param: self._allCorrectParams[param].get() for param in self._correctParams})
+
     def doCorrection(self):
         if not self._enable:
             return
 
-#        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
-        rng = np.random.default_rng()  # for test
-        scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
+        scanValues = [self._allScanParams[param].get() for param in self._scanParams]
+        # rng = np.random.default_rng()  # for test
+        # scanValues = list(rng.uniform(-10, 10, len(self._scanParams)))  # for test
         if len(scanValues) == 0:
             return
+
+        initialScanValues = [self._initialValues[param] if param in self._initialValues.keys() else 0 for param in self._scanParams]
 
         for param in self._correctParams.keys():
             wave = self._correctParams[param]["wave"][0]
@@ -259,22 +266,28 @@ class PreCorrector(QtCore.QObject):
                 axes = axes[:len(scanValues)]
 
             tmpScanValues = scanValues
+            tmpInitialScanValues = initialScanValues
             while 1 in data.shape:
                 dim = data.shape.index(1)
                 axes = axes[:dim] + axes[dim + 1:]
                 data = np.reshape(data, data.shape[:dim] + data.shape[dim + 1:])
                 tmpScanValues = tmpScanValues[:dim] + tmpScanValues[dim + 1:]
+                tmpInitialScanValues = tmpInitialScanValues[:dim] + tmpInitialScanValues[dim + 1:]
             if len(tmpScanValues) == 1:
-                print(axes[0], data, tmpScanValues[0])
-                print(type(axes[0]), type(data), type(tmpScanValues[0]))
+                # print(axes[0], data, tmpScanValues[0])
+                # print(type(axes[0]), type(data), type(tmpScanValues[0]))
                 f = interp1d(axes[0], data, axis=0, bounds_error=False, fill_value='extrapolate')
                 value = f(tmpScanValues[0])
+                if self._correctParams[param]["relative"]:
+                    value += self._initialValues[param] - f(tmpInitialScanValues[0])
             else:
-                print(axes, data, tmpScanValues)
-                print(type(axes), type(data), type(tmpScanValues))
-                value = interpn(axes, data, scanValues, bounds_error=False, fill_value=None)[0]
-            print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
-#            self._allCorrectParams[param].set(value)
+                # print(axes, data, tmpScanValues)
+                # print(type(axes), type(data), type(tmpScanValues))
+                value = interpn(axes, data, tmpScanValues, bounds_error=False, fill_value=None)[0]
+                if self._correctParams[param]["relative"]:
+                    value += self._initialValues[param] - interpn(axes, data, tmpInitialScanValues, bounds_error=False, fill_value=None)[0]
+            # print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
+            self._allCorrectParams[param].set(value)
 
     def widget(self):
         return PreCorrectionGUI(self)

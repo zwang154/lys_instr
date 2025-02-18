@@ -154,6 +154,9 @@ class RefCameraProcess(QtCore.QObject):
     def stop(self):
         pass
 
+    def getCamera(self):
+        return self._camera
+
 
 class RefCameraWidget(QtWidgets.QWidget):
     def __init__(self, camera, delay):
