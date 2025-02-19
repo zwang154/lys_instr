@@ -15,7 +15,7 @@ root = "\\\\192.168.12.203\\smb\\data2\\"
 # root = home() + "/data"
 
 dic = {
-    "Camera": ["Merlin", "Digital Micrograph", "EELS map", "DummyCamera"],
+    "Camera": ["Merlin", "Digital Micrograph", "Digital Micrograph (STEM)", "EELS map", "DummyCamera"],
     "Delay Stage": ["fs-fs", "fs-ns", "ns-ns", "fs-pump2", "ns-current", "DummyDelay"],
     "Pump Power": ["Pump1.Power", "Pump2.Power", "Pump Voltage", "DummyPump"],
     "Probe Power": ["Probe.Power", "DummyProbe"],
@@ -56,6 +56,8 @@ class GlobalInitializer:
             return self._merlin
         elif instr == 'Digital Micrograph':
             return self._tem.getCamera()
+        elif instr == 'Digital Micrograph (STEM)':
+            return self._tem.getSTEMCamera()
         elif instr == 'EELS map':
             self._eels = self._tem.getEELSMap()
             return self._eels
