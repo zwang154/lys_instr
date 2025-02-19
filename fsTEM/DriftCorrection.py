@@ -1,5 +1,5 @@
 import numpy as np
-from lys import widgets, filters, Wave
+from lys import glb, widgets, filters, Wave
 from lys.Qt import QtWidgets, QtCore
 
 
@@ -80,16 +80,20 @@ class DriftCorrector(QtCore.QObject):
         self._enable = estimation
         self._enableShift = correction
 
-    def verifyShift(self):
+    def verifyShift(self, output=False):
         self._enable = False
         self._shift = ShiftEstimator(self._cam, self._tem, self._filt, self._corr, exposure=0.01, shift=2, type="Beam Shift")
-        self._shift.finished.connect(self.__verified)
+        self._shift.finished.connect(lambda: self.__verified(output=output))
         self._shift.start()
 
-    def __verified(self):
+    def __verified(self, output=False):
         self._shiftMat = np.linalg.inv(self._shift.calc())
         print("Shift matrix = ")
         print(self._shiftMat)
+        if output:
+            text, ok = QtWidgets.QInputDialog.getText(None, "Output shift matrix to shell", "Enter name", text="shiftMatrix")
+            if ok:
+                glb.shell().addObject(self._shiftMat, name=text)
         self._shift = None
         self._enable = True
 
@@ -188,7 +192,9 @@ class DriftCorrectionGUI(QtWidgets.QWidget):
         h2.addWidget(QtWidgets.QPushButton("Set Filter", clicked=self.__setFilter))
 
         h3 = QtWidgets.QHBoxLayout()
-        h3.addWidget(QtWidgets.QPushButton("calc", clicked=self._obj.verifyShift))
+        outMat = QtWidgets.QCheckBox("Output shift matrix to shell")
+        h3.addWidget(QtWidgets.QPushButton("calc", clicked=lambda: self._obj.verifyShift(output=outMat.checkState())))
+        h3.addWidget(outMat)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(h0)
