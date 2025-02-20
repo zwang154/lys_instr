@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.interpolate import interp1d, interpn
-from lys import widgets, filters, Wave, multicut
+from lys import widgets, filters, Wave, multicut, glb
 from lys.Qt import QtWidgets, QtCore, QtGui
 
 
@@ -184,7 +184,7 @@ class PreCorrector(QtCore.QObject):
             if len(self._scanParams) == 0:
                 self._scanParams = w.note["scanParams"]
 
-            if sorted(self._scanParams) != sorted(w.note["scanParams"]):
+            if sorted(self._scanParams) != sorted(w.note["scanParams"]):  # TODO: Fix to allow loading even if the number of scanParams is insufficient
                 QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load: Scan parameters in file do not match registered scan parameters.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                 return -1
 
@@ -204,14 +204,30 @@ class PreCorrector(QtCore.QObject):
             return
         if len(correctParams) == 1:
             w = Wave().importFrom(fileNames[0])
-            if "correctParam" not in w.note.keys():
-                ok = QtWidgets.QMessageBox.warning(gui, "Caution", "This file was not created by PreCorrection.\nAre you sure to continue?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-                if ok == QtWidgets.QMessageBox.Cancel:
+            if ("correctParam" not in w.note.keys()) or (w.note["correctParam"] != correctParams[0]):
+                if "correctParam" not in w.note.keys():
+                    message = "This file was not created by PreCorrection.\nAre you sure to continue?"
+                else:
+                    message = f'This file is not for "{correctParams[0]}" but for "{w.note["correctParam"]}".\nAre you sure to continue?'
+                dlg = _LoadDialog(message)
+                ok = dlg.exec_()
+                if not ok:
                     return
-            elif w.note["correctParam"] != correctParams[0]:
-                ok = QtWidgets.QMessageBox.warning(gui, "Caution", f'This file is not for "{correctParams[0]}" but for "{w.note["correctParam"]}".\nAre you sure to continue?', QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-                if ok == QtWidgets.QMessageBox.Cancel:
-                    return
+                txt, inv = dlg.text, dlg.inverse
+                if len(txt):
+                    try:
+                        mat = np.array(glb.shell().eval(txt))
+                        if mat.shape == (1,):
+                            mat = mat[0]
+                        if inv:
+                            if len(mat.shape) == 2:
+                                mat = np.linalg.inv(mat)
+                            else:
+                                mat = 1 / mat
+                        w.data = np.dot(mat, w.data.T).T
+                    except:
+                        QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load because matrix cannot be evaluated or is incorrect.\nFile: " + fileNames[0], QtWidgets.QMessageBox.Ok)
+                        return
 
             __loadWave(fileNames[0], w, correctParam=correctParams[0], gui=gui)
 
@@ -223,7 +239,7 @@ class PreCorrector(QtCore.QObject):
                     continue
 
                 if w.note["correctParam"] not in self._allCorrectParams.keys():
-                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load due to the old Correct Parameter name.\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
+                    QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load due to the old Correct Parameter name: " + w.note["correctParam"] + "\nFile: " + fileName, QtWidgets.QMessageBox.Ok)
                     continue
 
                 __loadWave(fileName, w, gui=gui)
@@ -295,6 +311,42 @@ class PreCorrector(QtCore.QObject):
     def _cutOldCorrectParams(self, size=10):
         for param, info in self._correctParams.items():
             self._correctParams[param]["wave"] = info["wave"][:size]
+
+
+class _LoadDialog(QtWidgets.QDialog):
+    def __init__(self, message, title="Caution"):
+        super().__init__()
+        self.setWindowTitle(title)
+        g = QtWidgets.QGridLayout()
+        icon = QtWidgets.QLabel()
+        icon.setPixmap(icon.style().standardPixmap(QtWidgets.QStyle.SP_MessageBoxWarning))
+        icon.setAlignment(QtCore.Qt.AlignCenter)
+        lbl1 = QtWidgets.QLabel(message)
+        lbl2 = QtWidgets.QLabel("Enter the matrix expression or number to multiply\nthe loaded data by.")
+        self._txt = QtWidgets.QLineEdit()
+        self._inv = QtWidgets.QCheckBox("inverse")
+        okbtn = QtWidgets.QPushButton("OK", clicked=self.accept)
+        cancelbtn = QtWidgets.QPushButton("Cancel", clicked=self.reject)
+
+        g.addWidget(icon, 0, 0)
+        g.addWidget(lbl1, 0, 1, 1, 5)
+        g.addWidget(QtWidgets.QLabel(""), 1, 0)
+        g.addWidget(QtWidgets.QLabel("<option>"), 2, 0)
+        g.addWidget(lbl2, 3, 0, 1, 6)
+        g.addWidget(self._txt, 4, 0, 1, 4)
+        g.addWidget(self._inv, 4, 4, 1, 2)
+        g.addWidget(QtWidgets.QLabel(""), 5, 0)
+        g.addWidget(okbtn, 6, 0, 1, 3)
+        g.addWidget(cancelbtn, 6, 3, 1, 3)
+        self.setLayout(g)
+
+    @property
+    def text(self):
+        return self._txt.text()
+
+    @property
+    def inverse(self):
+        return self._inv.isChecked()
 
 
 class PreCorrectionGUI(QtWidgets.QWidget):
