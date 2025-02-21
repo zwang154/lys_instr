@@ -133,7 +133,6 @@ class GlobalInitializer:
             d["TEM"] = self._tem.getWidget()
         if self._merlin is not None:
             self._merlin.setDrift(self._drift)
-            self._merlin.setPreCorrector(self._preCorr)
             d["Merlin"] = self._merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
@@ -160,12 +159,16 @@ class GlobalInitializer:
         return d
 
     def _scan(self):
+        scan = {}
         if self._info is not None:
-            return self._info.getScan()
+            scan.update(self._info.getScan())
+        scan.update(self._tem.getTIA().getScans())
+        return scan
 
     def _setParams(self, dic):
         if self._info is not None:
             dic["TEM"] = self._info.get()
+            dic["TEM_TIA"] = self._tem.getTIA().get()
 
     def _closed(self):
         HardwareInterface.killAll()
