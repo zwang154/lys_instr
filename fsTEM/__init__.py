@@ -15,7 +15,7 @@ root = "\\\\192.168.12.203\\smb\\data2\\"
 # root = home() + "/data"
 
 dic = {
-    "Camera": ["Merlin", "Digital Micrograph", "EELS map", "DummyCamera"],
+    "Camera": ["Merlin", "Digital Micrograph", "Digital Micrograph (STEM)", "EELS map", "DummyCamera"],
     "Delay Stage": ["fs-fs", "fs-ns", "ns-ns", "fs-pump2", "ns-current", "DummyDelay"],
     "Pump Power": ["Pump1.Power", "Pump2.Power", "Pump Voltage", "DummyPump"],
     "Probe Power": ["Probe.Power", "DummyProbe"],
@@ -56,6 +56,8 @@ class GlobalInitializer:
             return self._merlin
         elif instr == 'Digital Micrograph':
             return self._tem.getCamera()
+        elif instr == 'Digital Micrograph (STEM)':
+            return self._tem.getSTEMCamera()
         elif instr == 'EELS map':
             self._eels = self._tem.getEELSMap()
             return self._eels
@@ -131,7 +133,6 @@ class GlobalInitializer:
             d["TEM"] = self._tem.getWidget()
         if self._merlin is not None:
             self._merlin.setDrift(self._drift)
-            self._merlin.setPreCorrector(self._preCorr)
             d["Merlin"] = self._merlin.SettingGUI()
         if self._eels is not None:
             d["EELS"] = self._eels.SettingGUI()
@@ -158,12 +159,16 @@ class GlobalInitializer:
         return d
 
     def _scan(self):
+        scan = {}
         if self._info is not None:
-            return self._info.getScan()
+            scan.update(self._info.getScan())
+        scan.update(self._tem.getTIA().getScans())
+        return scan
 
     def _setParams(self, dic):
         if self._info is not None:
             dic["TEM"] = self._info.get()
+            dic["TEM_TIA"] = self._tem.getTIA().get()
 
     def _closed(self):
         HardwareInterface.killAll()
