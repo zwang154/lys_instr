@@ -151,7 +151,7 @@ class ScanTab(QtWidgets.QWidget):
     def __startscan(self):
         scans = [s for s in self._scans if s.getScanName() != "None"]
         process = self._process[self._type.currentText()].getProcess()
-        process.getCamera().prepareToAcquire()
+#        process.getCamera().prepareToAcquire()
         for i, s in enumerate(reversed(scans)):
             process = Scanner(s.getScanName(), self._scan[s.getScanName()], s.getScanRange(), process, addFolder=i != 0, addName=i == 0)
         process.updated.connect(lambda s: self._text.setText("[Scanning...] " + s))
@@ -197,7 +197,7 @@ class Scanner(QtCore.QObject):
             if self._stopped:
                 return
             self._obj.set(value, wait=True)
-            self._process.getCamera().doPreCorrection()
+#            self._process.getCamera().doPreCorrection()
             if self._addFolder:
                 storage.setFolder(folder_old + "/" + self._name + str(i))
             if self._addName:
