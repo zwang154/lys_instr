@@ -1,7 +1,6 @@
-import os
 import numpy as np
 from scipy.interpolate import interp1d, interpn
-from lys import widgets, filters, Wave, multicut
+from lys import widgets, Wave, multicut
 from lys.Qt import QtWidgets, QtCore, QtGui
 
 
@@ -11,10 +10,13 @@ class PreCorrector(QtCore.QObject):
     def __init__(self, tem):
         super().__init__()
         self._tem = tem
+        self._tem.valueChanged.connect(lambda value: self.doCorrection(value))
         self._enable = False
         self._allScanParams = self._tem.getInfo().getScan()
+        self._allScanParams.update(self._tem.getTIA().getScans())
         self._allCorrectParams = self._tem.getStage().getScans()
         self._allCorrectParams.update(self._tem.getInfo().getScan())
+        self._allCorrectParams.update(self._tem.getTIA().getScans())
         self._allCorrectParams.update(self._tem.getShiftScans())
 
         self._scanParams = []
@@ -73,9 +75,11 @@ class PreCorrector(QtCore.QObject):
         # rng = np.random.default_rng()  # for test
         # scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
 
-        if "Beam Phi" in self._scanParams and np.isclose(scanParams["Beam Phi"], 0, atol=1e-2):
+        phiName = [name for name in self._scanParams if "Beam_Phi" in name]
+        phiName = "" if len(phiName) == 0 else phiName[0]
+        if len(phiName) and np.isclose(scanParams[phiName], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
-            scanParamsList[1]["Beam Phi"] = 360
+            scanParamsList[1][phiName] = 360
         else:
             scanParamsList = [scanParams]
         for scanParams in scanParamsList:
@@ -237,6 +241,9 @@ class PreCorrector(QtCore.QObject):
 
     def setEnable(self, bool):
         self._enable = bool
+        if bool:
+            self.saveCurrentValues()
+            self.doCorrection()
 
     @property
     def enable(self):
@@ -246,9 +253,15 @@ class PreCorrector(QtCore.QObject):
         self._initialValues = {param: self._allScanParams[param].get() for param in self._scanParams}
         self._initialValues.update({param: self._allCorrectParams[param].get() for param in self._correctParams})
 
-    def doCorrection(self):
+    def doCorrection(self, values={}):
         if not self._enable:
             return
+
+#        print(values)
+        if len(values):
+            #            print(len(set(self._scanParams) & set(values.keys())))
+            if len(set(self._scanParams) & set(values.keys())) == 0:
+                return
 
         scanValues = [self._allScanParams[param].get() for param in self._scanParams]
         # rng = np.random.default_rng()  # for test
@@ -287,7 +300,11 @@ class PreCorrector(QtCore.QObject):
                 if self._correctParams[param]["relative"]:
                     value += self._initialValues[param] - interpn(axes, data, tmpInitialScanValues, bounds_error=False, fill_value=None)[0]
             # print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
+#            print("set", param, value)
             self._allCorrectParams[param].set(value)
+#            print("done", param, value)
+
+#        print("done")
 
     def widget(self):
         return PreCorrectionGUI(self)

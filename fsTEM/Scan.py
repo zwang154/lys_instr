@@ -151,7 +151,6 @@ class ScanTab(QtWidgets.QWidget):
     def __startscan(self):
         scans = [s for s in self._scans if s.getScanName() != "None"]
         process = self._process[self._type.currentText()].getProcess()
-#        process.getCamera().prepareToAcquire()
         for i, s in enumerate(reversed(scans)):
             process = Scanner(s.getScanName(), self._scan[s.getScanName()], s.getScanRange(), process, addFolder=i != 0, addName=i == 0)
         process.updated.connect(lambda s: self._text.setText("[Scanning...] " + s))
@@ -197,7 +196,6 @@ class Scanner(QtCore.QObject):
             if self._stopped:
                 return
             self._obj.set(value, wait=True)
-#            self._process.getCamera().doPreCorrection()
             if self._addFolder:
                 storage.setFolder(folder_old + "/" + self._name + str(i))
             if self._addName:
@@ -212,7 +210,9 @@ class Scanner(QtCore.QObject):
         self._process.stop()
 
     def _update(self, text):
-        state = self._name + ": " + str(self._obj.get()) + ", " + text
+        value = self._obj.get()
+        value = 0 if np.isclose(value, 0, atol=1e-15) else value
+        state = self._name + ": " + '{:.5g}'.format(value) + ", " + text
         self.updated.emit(state)
 
 
