@@ -10,7 +10,7 @@ class PreCorrector(QtCore.QObject):
     def __init__(self, tem):
         super().__init__()
         self._tem = tem
-        self._tem.valueChanged.connect(lambda value: self.doCorrection(value))
+        self._tem.valueSet.connect(lambda value: self.doCorrection(value), type=QtCore.Qt.DirectConnection)
         self._enable = False
         self._allScanParams = self._tem.getInfo().getScan()
         self._allScanParams.update(self._tem.getTIA().getScans())
@@ -59,7 +59,6 @@ class PreCorrector(QtCore.QObject):
         for param in params:
             if param not in self._correctParams.keys():
                 self._correctParams[param] = {"wave": [Wave()], "relative": False}
-#                print(self._correctParams[param])
 
         keys = list(self._correctParams.keys())
         for param in keys:
@@ -75,7 +74,7 @@ class PreCorrector(QtCore.QObject):
         # rng = np.random.default_rng()  # for test
         # scanParams = {param: rng.integers(2) for param in self._scanParams}  # for test
 
-        phiName = [name for name in self._scanParams if "Beam_Phi" in name]
+        phiName = [name for name in self._scanParams if "beam_phi" in name]
         phiName = "" if len(phiName) == 0 else phiName[0]
         if len(phiName) and np.isclose(scanParams[phiName], 0, atol=1e-2):
             scanParamsList = [scanParams, scanParams.copy()]
@@ -273,9 +272,7 @@ class PreCorrector(QtCore.QObject):
         if not self._enable:
             return
 
-#        print(values)
         if len(values):
-            #            print(len(set(self._scanParams) & set(values.keys())))
             if len(set(self._scanParams) & set(values.keys())) == 0:
                 return
 
@@ -316,11 +313,7 @@ class PreCorrector(QtCore.QObject):
                 if self._correctParams[param]["relative"]:
                     value += self._initialValues[param] - interpn(axes, data, tmpInitialScanValues, bounds_error=False, fill_value=None)[0]
             # print("[Do Correction] Scan values: ", tmpScanValues, ", Correct Param : ", param, ", Set Value: ", value)
-#            print("set", param, value)
             self._allCorrectParams[param].set(value)
-#            print("done", param, value)
-
-#        print("done")
 
     def widget(self):
         return PreCorrectionGUI(self)
