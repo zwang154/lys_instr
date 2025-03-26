@@ -151,12 +151,13 @@ class ScanTab(QtWidgets.QWidget):
     def __startscan(self):
         scans = [s for s in self._scans if s.getScanName() != "None"]
         process = self._process[self._type.currentText()].getProcess()
-        for i, s in enumerate(reversed(scans)):
+        for i, s in enumerate(scans):
             process = Scanner(s.getScanName(), self._scan[s.getScanName()], s.getScanRange(), process, addFolder=i != 0, addName=i == 0)
         process.updated.connect(lambda s: self._text.setText("[Scanning...] " + s))
         self._text.setText("[Status] Starting...")
         self._storage.useNumber(False)
         self._storage.setEnabled(True)
+        self._storage.tagRequest.connect(self.__setScanNames)
         self.thread = Executor(process, self._storage)
         self.thread.finished.connect(self.__finishscan)
         self.__start.setEnabled(False)
@@ -173,6 +174,9 @@ class ScanTab(QtWidgets.QWidget):
         self._storage.setFilename(self.__oldFilename)
         self._storage.useNumber(True)
         self._text.setText("[Status] Finished. Waiting...")
+
+    def __setScanNames(self, dic):
+        dic["scanNames"] = [s.getScanName() for s in self._scans if s.getScanName() != "None"]
 
 
 class Scanner(QtCore.QObject):
@@ -197,7 +201,7 @@ class Scanner(QtCore.QObject):
                 return
             self._obj.set(value)
             if self._addFolder:
-                storage.setFolder(folder_old + "/" + self._name + str(i))
+                storage.setFolder(folder_old + "/" + self._name + str(i).zfill(len(str(len(self._values)))))
             if self._addName:
                 storage.setFilename(name_old + "_" + self._name + str(i))
             self._process.execute(storage)
