@@ -218,22 +218,30 @@ class PreCorrector(QtCore.QObject):
                 ok = dlg.exec_()
                 if not ok:
                     return
-                txt, inv = dlg.text, dlg.inverse
-                if len(txt):
+                mode = dlg.mode
+                if mode == "Multiply the free expression formula":
+                    txt, inv = dlg.text, dlg.inverse
+                    if len(txt):
+                        try:
+                            mat = np.array(glb.shell().eval(txt))
+                            if mat.shape == (1,):
+                                mat = mat[0]
+                            if inv:
+                                if len(mat.shape) == 2:
+                                    mat = np.linalg.inv(mat)
+                                else:
+                                    mat = 1 / mat
+                            w.data = np.dot(mat, w.data.T).T
+                        except:
+                            QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load because matrix cannot be evaluated or is incorrect.\nFile: " + fileNames[0], QtWidgets.QMessageBox.Ok)
+                            return
+                elif mode == "Convert from image point to beam_shift":
                     try:
-                        mat = np.array(glb.shell().eval(txt))
-                        if mat.shape == (1,):
-                            mat = mat[0]
-                        if inv:
-                            if len(mat.shape) == 2:
-                                mat = np.linalg.inv(mat)
-                            else:
-                                mat = 1 / mat
+                        mat = - np.array([[0.09013671, 0.18959546], [0.19225284, -0.08975173]]) * 55000 / dlg.magnification
                         w.data = np.dot(mat, w.data.T).T
                     except:
-                        QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load because matrix cannot be evaluated or is incorrect.\nFile: " + fileNames[0], QtWidgets.QMessageBox.Ok)
+                        QtWidgets.QMessageBox.critical(gui, "Error", "Failed to load because magnification is not integer or file is incorrect.\nFile: " + fileNames[0], QtWidgets.QMessageBox.Ok)
                         return
-
             __loadWave(fileNames[0], w, correctParam=correctParams[0], gui=gui)
 
         elif len(correctParams) == 0:
@@ -334,23 +342,55 @@ class _LoadDialog(QtWidgets.QDialog):
         icon.setPixmap(icon.style().standardPixmap(QtWidgets.QStyle.SP_MessageBoxWarning))
         icon.setAlignment(QtCore.Qt.AlignCenter)
         lbl1 = QtWidgets.QLabel(message)
-        lbl2 = QtWidgets.QLabel("Enter the matrix expression or number to multiply\nthe loaded data by.")
+        lbl2 = QtWidgets.QLabel("Select the operation to apply to the loaded data.")
+        self._mode = QtWidgets.QComboBox()
+        self._modelist = {}
+        self._modelist["Do nothing"] = QtWidgets.QWidget()
+        self._modelist["Multiply the free expression formula"] = QtWidgets.QWidget()
+        self._modelist["Convert from image point to beam_shift"] = QtWidgets.QWidget()
+        self._mode.addItems(self._modelist.keys())
+        self._mode.currentTextChanged.connect(self.__changeMode)
         self._txt = QtWidgets.QLineEdit()
         self._inv = QtWidgets.QCheckBox("inverse")
+        self._mag = QtWidgets.QLineEdit()
         okbtn = QtWidgets.QPushButton("OK", clicked=self.accept)
         cancelbtn = QtWidgets.QPushButton("Cancel", clicked=self.reject)
 
         g.addWidget(icon, 0, 0)
         g.addWidget(lbl1, 0, 1, 1, 5)
         g.addWidget(QtWidgets.QLabel(""), 1, 0)
-        g.addWidget(QtWidgets.QLabel("<option>"), 2, 0)
-        g.addWidget(lbl2, 3, 0, 1, 6)
-        g.addWidget(self._txt, 4, 0, 1, 4)
-        g.addWidget(self._inv, 4, 4, 1, 2)
+        g.addWidget(lbl2, 2, 0, 1, 6)
+        g.addWidget(self._mode, 3, 0, 1, 6)
+
+        w1 = self._modelist["Multiply the free expression formula"]
+        g1 = QtWidgets.QGridLayout()
+        w1.setLayout(g1)
+        g1.addWidget(QtWidgets.QLabel("Enter the matrix expression or number to multiply\nthe loaded data by."), 0, 0, 1, 3)
+        g1.addWidget(self._txt, 1, 0, 1, 2)
+        g1.addWidget(self._inv, 1, 2, 1, 1)
+
+        w2 = self._modelist["Convert from image point to beam_shift"]
+        g2 = QtWidgets.QGridLayout()
+        w2.setLayout(g2)
+        g2.addWidget(QtWidgets.QLabel("Magnification of loading data"), 0, 0, 1, 2)
+        g2.addWidget(self._mag, 0, 2, 1, 1)
+
+        for wid in self._modelist.values():
+            g.addWidget(wid, 4, 0, 1, 6)
+
         g.addWidget(QtWidgets.QLabel(""), 5, 0)
         g.addWidget(okbtn, 6, 0, 1, 3)
         g.addWidget(cancelbtn, 6, 3, 1, 3)
         self.setLayout(g)
+        self.__changeMode("Do nothing")
+
+    def __changeMode(self, mode):
+        for key, wid in self._modelist.items():
+            wid.setVisible(key == mode)
+
+    @property
+    def mode(self):
+        return self._mode.currentText()
 
     @property
     def text(self):
@@ -359,6 +399,10 @@ class _LoadDialog(QtWidgets.QDialog):
     @property
     def inverse(self):
         return self._inv.isChecked()
+
+    @property
+    def magnification(self):
+        return int(self._mag.text())
 
 
 class PreCorrectionGUI(QtWidgets.QWidget):
