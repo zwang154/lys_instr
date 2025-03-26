@@ -15,7 +15,7 @@ class PreCorrector(QtCore.QObject):
         self._allScanParams = self._tem.getInfo().getScan()
         self._allScanParams.update(self._tem.getTIA().getScans())
         self._allCorrectParams = self._tem.getStage().getScans()
-        self._allCorrectParams.update(self._tem.getInfo().getScan())
+        self._allCorrectParams.update(self._tem.getInfo().getScan(single=False))
         self._allCorrectParams.update(self._tem.getTIA().getScans())
         self._allCorrectParams.update(self._tem.getShiftScans())
 
@@ -84,17 +84,19 @@ class PreCorrector(QtCore.QObject):
         for scanParams in scanParamsList:
             for param in correctParams:
                 w = self._correctParams[param]["wave"][0]
-                value = self._allCorrectParams[param].get()
+                value = np.array(self._allCorrectParams[param].get())
+                if self._correctParams[param]["relative"]:
+                    value -= self._initialValues.get(param, 0)
                 # if "Shift" in param:  # for test
                 #     value = [rng.uniform(-1000, 1000), rng.uniform(-1000, 1000)]
                 # else:  # for test
                 #     value = rng.uniform(-1000, 1000)
                 if w.data.shape == ():
                     shape = np.ones(len(self._scanParams), dtype=int)
-                    if hasattr(value, "__iter__"):
-                        shape = np.append(shape, *np.array(value).shape)
+                    if value.shape != ():
+                        shape = np.append(shape, *value.shape)
                     w = Wave(data=np.zeros(shape, dtype=float))
-                    if hasattr(value, "__iter__"):
+                    if value.shape != ():
                         w.data[..., 0, :] = value
                     else:
                         w.data[..., 0] = value
@@ -265,8 +267,8 @@ class PreCorrector(QtCore.QObject):
         return self._enable
 
     def saveCurrentValues(self):
-        self._initialValues = {param: self._allScanParams[param].get() for param in self._scanParams}
-        self._initialValues.update({param: self._allCorrectParams[param].get() for param in self._correctParams})
+        self._initialValues = {param: np.array(self._allScanParams[param].get()) for param in self._scanParams}
+        self._initialValues.update({param: np.array(self._allCorrectParams[param].get()) for param in self._correctParams})
 
     def doCorrection(self, values={}):
         if not self._enable:
@@ -409,6 +411,7 @@ class PreCorrectionGUI(QtWidgets.QWidget):
 
         v.addWidget(QtWidgets.QWidget())
         v.addWidget(QtWidgets.QLabel("Register Current Values"))
+        v.addWidget(QtWidgets.QPushButton("Set current value as origin", clicked=self._obj.saveCurrentValues))
         h1 = QtWidgets.QHBoxLayout()
         h1.addWidget(QtWidgets.QPushButton("Add", clicked=lambda: self._obj.addCurrentValues(self.__selectedCorrectParams())))
         h1.addWidget(QtWidgets.QPushButton("Undo", clicked=lambda: self._obj.undo(self.__selectedCorrectParams())))
