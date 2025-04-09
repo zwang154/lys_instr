@@ -336,6 +336,11 @@ class PreCorrector(QtCore.QObject):
 class _LoadDialog(QtWidgets.QDialog):
     def __init__(self, message, title="Caution"):
         super().__init__()
+        font = glb.mainWindow().font()
+        self.setStyleSheet("QWidget {"
+                           "font-family: " + font.family() + ";"
+                           "font-size: " + str(font.pointSize()) + "pt;"
+                           "}")
         self.setWindowTitle(title)
         g = QtWidgets.QGridLayout()
         icon = QtWidgets.QLabel()
@@ -455,7 +460,7 @@ class PreCorrectionGUI(QtWidgets.QWidget):
 
         v.addWidget(QtWidgets.QWidget())
         v.addWidget(QtWidgets.QLabel("Register Current Values"))
-        v.addWidget(QtWidgets.QPushButton("Set current value as origin", clicked=self._obj.saveCurrentValues))
+#        v.addWidget(QtWidgets.QPushButton("Set current value as origin", clicked=self._obj.saveCurrentValues))
         h1 = QtWidgets.QHBoxLayout()
         h1.addWidget(QtWidgets.QPushButton("Add", clicked=lambda: self._obj.addCurrentValues(self.__selectedCorrectParams())))
         h1.addWidget(QtWidgets.QPushButton("Undo", clicked=lambda: self._obj.undo(self.__selectedCorrectParams())))
@@ -471,7 +476,7 @@ class PreCorrectionGUI(QtWidgets.QWidget):
         self._data.setCanvasSize("Height", "Absolute", 8)
         v2.addWidget(self._data)
         v2.addWidget(QtWidgets.QPushButton("Multicut", clicked=self.__showMulticut))
-        v2.addWidget(QtWidgets.QPushButton("DoCorrectionTest", clicked=self._obj.doCorrection))
+#        v2.addWidget(QtWidgets.QPushButton("DoCorrectionTest", clicked=self._obj.doCorrection))
 
         h.addLayout(v2)
 
