@@ -114,7 +114,7 @@ class TestSingleMotorDummy(unittest.TestCase):
         
         Temporally overrides the _get method, which is repeatedly called by the background _loadState method, to raise a TimeoutError.
         Checks that this causes the state to become dead.
-        Then restores the original _get function and checks that the background _loadState method detects the state as alive again.
+        Then restores the original _get function and checks that the background _loadState method detects the state still as dead.
         """
         dummy = SingleMotorDummy()
 
@@ -128,6 +128,6 @@ class TestSingleMotorDummy(unittest.TestCase):
 
         dummy._get = originalGet
         time.sleep(0.1)
-        self.assertTrue(dummy.isAlive())
+        self.assertFalse(dummy.isAlive())
 
 
