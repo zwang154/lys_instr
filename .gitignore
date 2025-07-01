@@ -11,3 +11,4 @@ valtest
 *.str
 *__pycache__
 *.egg-info
+docs_src/build
