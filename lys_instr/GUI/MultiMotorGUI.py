@@ -1,90 +1,316 @@
 import numpy as np
 import qtawesome as qta
 import os
-import ast
+import json
 from lys.Qt import QtWidgets, QtGui, QtCore
 
 
+class MultiMotorSpecifics:
+    """
+    Provides feature management for a multi-axis motor, including settable, joggable, and offsettable axes.
+
+    This class acts as a wrapper around a motor object, filtering and managing which axes can be set, jogged, or offset.
+    """
+    def __init__(self, motor, wait=None, axisNamesSettable=None, axisNamesJoggable=None, axisNamesOffsettable=None):
+        """
+        Initializes MultiMotorSpecifics with axis feature sets.
+
+        Args:
+            motor: The motor object to wrap.
+            axisNamesSettable (iterable, optional): Names of axes that can be set. Defaults to all axes.
+            axisNamesJoggable (iterable, optional): Names of axes that can be jogged. Defaults to all axes.
+            axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.
+        """
+        self._motor = motor
+        self._allNames = self._motor.nameList
+        self._wait = wait
+
+        # Settable
+        self._settableNameList = list(axisNamesSettable) if axisNamesSettable else list(self._allNames)
+        self._SettableIndices = [self._allNames.index(name) for name in self._settableNameList]
+
+        # Joggable
+        self._joggableNameList = axisNamesJoggable if axisNamesJoggable is not None else self._motor.getNamesAll()
+
+        # Offsettable
+        self._offsettableNameList = axisNamesOffsettable if axisNamesOffsettable is not None else self._motor.getNamesAll()
+        self._offsetDict = {name: 0 for name in self._offsettableNameList}
+
+    def __getattr__(self, name):
+        """
+        Delegates attribute access to the underlying motor object.
+
+        Args:
+            name (str): Attribute name.
+
+        Returns:
+            Any: Attribute value from the motor object.
+        """
+        return getattr(self._motor, name)
+
+    def set(self, *args, wait=None, **kwargs):
+        """
+        Sets target values for settable axes.
+
+        Accepts values as a dict, sequence, or keyword arguments, and only applies to axes marked as settable.
+
+        Raises:
+            ValueError: If the number of values does not match the number of settable axes.
+            TypeError: If the argument type is unsupported.
+        """
+        if wait is None:
+            wait = self._wait
+
+        if args:
+            if isinstance(args[0], dict):
+                filtered = {name: value for name, value in args[0].items() if name in self._settableNameList}
+                self._motor.set(filtered, wait=self._wait)
+            elif isinstance(args[0], (list, tuple, np.ndarray)):
+                if len(args[0]) != len(self._settableNameList):
+                    raise ValueError(f"Length of values ({len(args[0])}) does not match number of Settable axes ({len(self._settableNameList)})")
+                filtered = dict(zip(self._settableNameList, args[0]))
+                self._motor.set(filtered, wait=self._wait)
+            elif len(args) == len(self._settableNameList):
+                filtered = dict(zip(self._settableNameList, args))
+                self._motor.set(filtered, wait=self._wait)
+            else:
+                raise TypeError(f"Unsupported argument type or wrong number of values for set(): {args}")
+        else:
+            filtered = {name: value for name, value in kwargs.items() if name in self._settableNameList}
+            self._motor.set(wait=self._wait, **filtered)
+    
+    def setOffset(self, *args, toCurrent=True, **kwargs):
+        """
+        Sets the offset for offsettable axes.
+
+        Args:
+            toCurrent (bool, optional): If True, set offsets to the current motor positions. Defaults to True.
+        """
+        if toCurrent:
+            self._offsetDict = {name: self._motor.get()[name] for name in self._offsetDict}
+        self._motor.valueChanged.emit(self._motor.get())
+
+    def clearOffset(self):
+        """
+        Clears all offsets for offsettable axes and emit a valueChanged signal.
+        """
+        self._offsetDict = {name: 0 for name in self._offsettableNameList}
+        self._motor.valueChanged.emit(self._motor.get())
+
+    def setNamesSettable(self, settableNameList):
+        """
+        Sets the list of axes that are settable.
+
+        Args:
+            settableNameList (iterable): Names of settable axes.
+        """
+        self._settableNameList = list(settableNameList)
+
+    def getNamesSettable(self):
+        """
+        Gets the list of settable axes.
+
+        Returns:
+            list: Names of settable axes.
+        """
+        return self._settableNameList
+
+    def setNamesJoggable(self, joggableNameList):
+        """
+        Sets the list of axes that are joggable.
+
+        Args:
+            joggableNameList (iterable): Names of joggable axes.
+        """
+        self._joggableNameList = list(joggableNameList)
+    
+    def getNamesJoggable(self):
+        """
+        Gets the list of joggable axes.
+
+        Returns:
+            list: Names of joggable axes.
+        """
+        return self._joggableNameList
+
+    def setNamesOffsettable(self, offsettableNameList):
+        """
+        Sets the list of axes that are offsettable.
+
+        Args:
+            offsettableNameList (iterable): Names of offsettable axes.
+        """
+        self._offsettableNameList = list(offsettableNameList)
+
+    def getNamesOffsettable(self):
+        """
+        Gets the list of offsettable axes.
+
+        Returns:
+            list: Names of offsettable axes.
+        """
+        return self._offsettableNameList
+
+
+
 class MultiMotorGUI(QtWidgets.QGroupBox):
+    """
+    GUI widget for controlling and monitoring a multi-axis motor.
+
+    Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.
+    """
     def __init__(self, obj, title):
+        """
+        Initializes the MultiMotorGUI widget.
+
+        Args:
+            obj: The motor's features object to control.
+            title (str): The title for the group box.
+        """
         super().__init__(title)
-        self.setAlignment(QtCore.Qt.AlignHCenter)
-        self.setFont(QtGui.QFont(self.font().family(), 12))
         self._obj = obj
         self._obj.valueChanged.connect(self._valueChanged)
         self._obj.busyStateChanged.connect(self._busyStateChanged)
         self._obj.aliveStateChanged.connect(self._aliveStateChanged)
-        self._obj.valueSet.connect(self._valueSet)
+
+        # Set title style
+        self.setAlignment(QtCore.Qt.AlignHCenter)
+        self.setFont(QtGui.QFont(self.font().family(), 12))
         
-        dir = os.path.join('.lys_instr', 'GUI', 'MultiMotor')
+        # Load memory file
+        dir = os.path.join(".lys_instr", "GUI", "MultiMotor")
         os.makedirs(dir, exist_ok=True)
-        self._path = os.path.join(dir, 'position_positionList.lst')
+        self._path = os.path.join(dir, "position_positionList.lst")
+
+        self._savedPositions = []
         if os.path.exists(self._path):
-            with open(self._path, 'r') as f:
-                txt = f.read()
-                try:
-                    self._namedPositions = ast.literal_eval(txt)
-                except Exception:
-                    self._namedPositions = []
-        else:
-            self._namedPositions = []
+            try:
+                with open(self._path, "r") as f:
+                    self._savedPositions = json.load(f)
+            except Exception as e:
+                QtWidgets.QMessageBox.warning(self, "File Load Error", f"Could not read file:\n{e}")
+                self._savedPositions = []
         
-        self.__initLayout()
-        self._updateMemory()
+        # Initialize GUI layout
+        self._initLayout()
 
-    def __initLayout(self):
-        self.setStyleSheet('QLineEdit {font-size: 14pt}'
-                           'QDoubleSpinBox {font-size: 14pt}'
-                           'QPushButton {font-size: 12pt}'
-                           'QLabel {font-size: 12pt}')
+    def _getNamesSettable(self):
+        """
+        Gets the list of settable axes from the features object.
 
-        self._nowAt = {name: QtWidgets.QDoubleSpinBox() for name in self._obj.getNames()}
+        Returns:
+            list: Names of settable axes.
+        """
+        if hasattr(self._obj, "getNamesSettable"):
+            return self._obj.getNamesSettable()
+        else:
+            return self._obj.nameList
+
+    def _getNamesjoggable(self):
+        """
+        Get the list of joggable axes from the features object.
+
+        Returns:
+            list: Names of joggable axes.
+        """
+        if hasattr(self._obj, "getNamesJoggable"):
+            return self._obj.getNamesJoggable()
+        else:
+            return self._obj.nameList
+
+    def _initLayout(self):
+        """
+        Initializes the GUI layout and widgets for the multi-motor control panel.
+        """
+        self.setStyleSheet("QLineEdit {font-size: 14pt}"
+                           "QDoubleSpinBox {font-size: 14pt}"
+                           "QPushButton {font-size: 12pt}"
+                           "QLabel {font-size: 12pt}")
+
+        # Create main panel
+        self._axisNames = {name: QtWidgets.QLabel(name) for name in self._obj.nameList}
+        for lbl in self._axisNames.values():
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
+        axisNameText = QtWidgets.QLabel("Axis")
+
+        self._nowAt = {name: QtWidgets.QDoubleSpinBox() for name in self._obj.nameList}
         for dsb in self._nowAt.values():
             dsb.setRange(-np.inf, np.inf)
             dsb.setReadOnly(True)
             dsb.setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
             dsb.setDecimals(3)
-        nowAtText = QtWidgets.QLabel('Now at')
+            dsb.setStyleSheet("background-color: #f0f0f0;")
+        nowAtText = QtWidgets.QLabel("Now at")
 
-        self._moveTo = {name: QtWidgets.QLineEdit() for name in self._obj.getNames()}
-        moveToText = QtWidgets.QLabel('Move to')
+        self._moveTo = {name: QtWidgets.QLineEdit() for name in self._getNamesSettable()}
+        moveToText = QtWidgets.QLabel("Move to")
 
-        self._jogNega = {name: QtWidgets.QPushButton(qta.icon('ri.arrow-left-fill'), '', clicked=self._nega) for name in self._obj.getNames()}
+        jogText = QtWidgets.QLabel("Jog")
+
+        self._jogNega = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-left-fill"), "", clicked=self._nega) for name in self._getNamesjoggable()}
         for btn in self._jogNega.values():
             btn.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         self._jogNegaReversed = {btn: name for name, btn in self._jogNega.items()}
 
-        self._jogPosi = {name: QtWidgets.QPushButton(qta.icon('ri.arrow-right-fill'), '', clicked=self._posi) for name in self._obj.getNames()}
+        self._jogPosi = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-right-fill"), "", clicked=self._posi) for name in self._getNamesjoggable()}
         for btn in self._jogPosi.values():
             btn.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         self._jogPosiReversed = {btn: name for name, btn in self._jogPosi.items()}
 
-        self._jogStep = {name: QtWidgets.QDoubleSpinBox() for name in self._obj.getNames()}
+        self._jogStep = {name: QtWidgets.QDoubleSpinBox() for name in self._getNamesjoggable()}
         for dsb in self._jogStep.values():
             dsb.setRange(0, np.inf)
             dsb.setDecimals(2)
-        jogText = QtWidgets.QLabel('Jog')
-        jogStepText = QtWidgets.QLabel('Step')
+        jogStepText = QtWidgets.QLabel("Step")
 
-        self._execute = QtWidgets.QPushButton('Go', clicked=self._setMoveToValue)
+        self._execute = QtWidgets.QPushButton("Go", clicked=self._setMoveToValue)
         self._execute.setEnabled(True)
 
-        self._interrupt = QtWidgets.QPushButton('Stop', clicked=self._obj.stop)
+        self._interrupt = QtWidgets.QPushButton("Stop", clicked=self._obj.stop)
         self._interrupt.setEnabled(False)
 
-        self._aliveStateIndicator = QtWidgets.QLabel()
-        self._aliveStateChanged(self._obj.isAlive())
+        self._aliveIndicator = {name: QtWidgets.QLabel() for name in self._obj.nameList}
+        for name, lbl in self._aliveIndicator.items():
+            alive = self._obj.isAlive[name]
+            icon = qta.icon("ri.checkbox-circle-fill", color="green") if alive else qta.icon("ri.close-circle-fill", color="red")
+            lbl.setPixmap(icon.pixmap(24, 24))
+            lbl.setAlignment(QtCore.Qt.AlignCenter)
 
-        settings = QtWidgets.QPushButton(qta.icon('ri.settings-5-fill'), '', clicked=self._showSettings)
-        settings.setToolTip('Settings')
+        settings = QtWidgets.QPushButton(qta.icon("ri.settings-5-fill"), "", clicked=self._showSettings)
+        settings.setToolTip("Settings")
         settings.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         settings.setIconSize(QtCore.QSize(20, 24))
 
+        # Create collapsible panel
+        self._collapsible = QtWidgets.QWidget()
+
+        self._expandBtn = QtWidgets.QToolButton()
+        self._expandBtn.setArrowType(QtCore.Qt.RightArrow)
+        self._expandBtn.setCheckable(True)
+        self._expandBtn.setChecked(False)
+        self._expandBtn.setAutoRaise(True)
+        self._expandBtn.setIconSize(QtCore.QSize(14, 14))
+        self._expandBtn.toggled.connect(self._toggleMemoryTree)
+
+        expanderLine = QtWidgets.QFrame()
+        expanderLine.setFrameShape(QtWidgets.QFrame.HLine)
+        expanderLine.setStyleSheet("color: lightgray;")
+
+        collapsibleLayout = QtWidgets.QHBoxLayout(self._collapsible)
+        collapsibleLayout.setContentsMargins(0, 0, 0, 0)
+        collapsibleLayout.addWidget(self._expandBtn)
+        collapsibleLayout.addWidget(expanderLine)
+        collapsibleLayout.setStretch(1, 1)
+
+        # Create memory panel
+        self._memoryPanel = QtWidgets.QWidget()
+        memoryPanelText = QtWidgets.QLabel("Memory")
+
         self._positionList = QtWidgets.QTreeWidget()
         self._positionList.setColumnCount(3)
-        self._positionList.setHeaderLabels(['Label', 'Position', 'Memo'])
+        self._positionList.setHeaderLabels(["Label", "Position", "Memo"])
         self._positionList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self._positionList.itemSelectionChanged.connect(lambda: self._updateMemoryButtons(load, delete))
+        self._positionList.itemSelectionChanged.connect(lambda: self._updateMemoryBtns(load, delete))
         self._positionList.setIndentation(0)
         self._positionList.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.SelectedClicked)
         self._positionList.itemChanged.connect(self._memoEdited)
@@ -94,212 +320,281 @@ class MultiMotorGUI(QtWidgets.QGroupBox):
         self._positionList.setItemDelegateForColumn(0, NoEditDelegate(self._positionList))
         self._positionList.setItemDelegateForColumn(1, NoEditDelegate(self._positionList))
 
-
-        self._memory = QtWidgets.QToolButton()
-        self._memory.setToolButtonStyle(QtCore.Qt.ToolButtonIconOnly)
-        self._memory.setIcon(qta.icon('ri.save-2-fill'))  # 'ri.bookmark-fill', 'ri.save-2-fill'
-        self._memory.setCheckable(True)
-        self._memory.setChecked(False)
-        self._memory.setToolTip('Memory')
-        self._memory.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
-        self._memory.setIconSize(QtCore.QSize(24, 24))
-        self._memory.toggled.connect(self._toggleMemoryTree)
-
-        self._memoryPanel = QtWidgets.QWidget()
-        # self._memoryPanel.setVisible(False)
-        memoryPanelText = QtWidgets.QLabel('Memory')
-
-        memoryPanelSeparator = QtWidgets.QFrame()
-        memoryPanelSeparator.setFrameShape(QtWidgets.QFrame.HLine)
-        memoryPanelSeparator.setStyleSheet('color: lightgray;')
-
-
-
-        save = QtWidgets.QPushButton('Save', clicked=self._save)
+        save = QtWidgets.QPushButton("Save", clicked=self._save)
         save.setEnabled(True)
         
-        load = QtWidgets.QPushButton('Load', clicked=self._load)
+        load = QtWidgets.QPushButton("Load", clicked=self._load)
         load.setEnabled(False)
 
-        delete = QtWidgets.QPushButton('Delete', clicked=self._delete)
+        delete = QtWidgets.QPushButton("Delete", clicked=self._delete)
         delete.setEnabled(False)
 
-        axisName = {name: QtWidgets.QLabel(name.replace('stage_', '')) for name in self._obj.getNames()}
-        for lbl in axisName.values():
-            lbl.setAlignment(QtCore.Qt.AlignCenter)
-        axisText = QtWidgets.QLabel('Axis')
-
-
+        # Main panel layout
         gl = QtWidgets.QGridLayout()
-        gl.addWidget(nowAtText, 0, 1)
-        gl.addWidget(moveToText, 0, 2)
-        gl.addWidget(jogText, 0, 3)
-        gl.addWidget(jogStepText, 0, 5)
-        gl.addWidget(axisText, 0, 0)
-        for i, name in enumerate(self._obj.getNames()):
-            gl.addWidget(axisName[name], 1 + i, 0)
-            gl.addWidget(self._nowAt[name], 1 + i, 1)
-            gl.addWidget(self._moveTo[name], 1 + i, 2)
-            gl.addWidget(self._jogNega[name], 1 + i, 3)
-            gl.addWidget(self._jogPosi[name], 1 + i, 4)
-            gl.addWidget(self._jogStep[name], 1 + i, 5)
-        gl.addWidget(self._interrupt, 1 + len(self._nowAt), 1)
-        gl.addWidget(self._execute, 1 + len(self._nowAt), 2)
-        gl.addWidget(self._aliveStateIndicator, 1 + len(self._nowAt), 3, alignment=QtCore.Qt.AlignCenter)
-        gl.addWidget(settings, 1 + len(self._nowAt), 4, alignment=QtCore.Qt.AlignCenter)
-        gl.addWidget(self._memory, 1 + len(self._nowAt), 5, alignment=QtCore.Qt.AlignRight)
-        gl.addWidget(self._memoryPanel, 2 + len(self._nowAt), 0, len(self._obj.getNames()), 6)     # addWidget(widget, row, column, rowSpan, columnSpan)
+        gl.addWidget(axisNameText, 0, 1)
+        gl.addWidget(nowAtText, 0, 2)
+        gl.addWidget(moveToText, 0, 3)
+        gl.addWidget(jogText, 0, 4)
+        gl.addWidget(jogStepText, 0, 6)
+        for i, name in enumerate(self._obj.nameList):
+            gl.addWidget(self._aliveIndicator[name], 1 + i, 0, alignment=QtCore.Qt.AlignCenter)
+            gl.addWidget(self._axisNames[name], 1 + i, 1)
+            gl.addWidget(self._nowAt[name], 1 + i, 2)
+            if name in self._getNamesSettable():
+                gl.addWidget(self._moveTo[name], 1 + i, 3)
+                if name in self._getNamesjoggable():
+                    gl.addWidget(self._jogNega[name], 1 + i, 4)
+                    gl.addWidget(self._jogPosi[name], 1 + i, 5)
+                    gl.addWidget(self._jogStep[name], 1 + i, 6)
+        gl.addWidget(self._interrupt, 1 + len(self._nowAt), 2)
+        gl.addWidget(self._execute, 1 + len(self._nowAt), 3)
+        gl.addWidget(settings, 1 + len(self._nowAt), 0, alignment=QtCore.Qt.AlignCenter)
+
+        # Collapsible and memory panel layout
+        gl.addWidget(self._collapsible, 2 + len(self._nowAt), 0, 1, 7)
+        gl.addWidget(self._memoryPanel, 3 + len(self._nowAt), 0, len(self._obj.nameList), 7)
+
+        # Main layout
         self.setLayout(gl)
 
-        # Within memory panel
-        buttonLayout = QtWidgets.QHBoxLayout()
-        buttonLayout.addWidget(save)
-        buttonLayout.addWidget(load)
-        buttonLayout.addWidget(delete)
+        # Collapsible panel layout
+        btnGroup = QtWidgets.QHBoxLayout()
+        btnGroup.addWidget(save)
+        btnGroup.addWidget(load)
+        btnGroup.addWidget(delete)
 
+        # Memory panel layout
         memoryPanelLayout = QtWidgets.QVBoxLayout(self._memoryPanel)
         memoryPanelLayout.setContentsMargins(0, 0, 0, 0)
-        memoryPanelLayout.addWidget(memoryPanelSeparator)
         memoryPanelLayout.addWidget(memoryPanelText)
         memoryPanelLayout.addWidget(self._positionList)
-        memoryPanelLayout.addLayout(buttonLayout)
+        memoryPanelLayout.addLayout(btnGroup)
         self._memoryPanel.setVisible(False)
 
+        # Show latest saved positions
+        self._updateMemory()
 
-    def _setMoveToValue(self):        # Wrapper for self._obj.set(self._moveToValue())
-        value = []
+    def _setMoveToValue(self):
+        """
+        Sets target positions for axes based on user input in the GUI.
+        """
+        current = self._obj.get()
+        targetDict = {}
         for name in self._moveTo:
             text = self._moveTo[name].text()
             try:
-                value.append(float(text))
+                value = float(text)
             except ValueError:
-                value.append(np.nan)
-        self._obj.set(value)
-
-    def _valueSet(self, valueList):
-        for key, value in valueList.items():
-            self._moveTo[key].setText(str(value))
+                continue
+            target = value + self._obj._offsetDict.get(name, 0)
+            if not np.isnan(target) and not np.isclose(target, current[name]):
+                targetDict[name] = target
+        if targetDict:
+            self._obj.set(**targetDict)
 
     def _valueChanged(self, valueList):
+        """
+        Updates the displayed axis positions in the GUI.
+
+        Args:
+            valueList (dict): Mapping of axis names to their new values.
+        """
         for key, value in valueList.items():
-            self._nowAt[key].setValue(value)
+            self._nowAt[key].setValue(value - self._obj._offsetDict.get(key, 0))
 
     def _busyStateChanged(self, busy):
-        self._execute.setEnabled(not busy and self._obj.isAlive())
-        self._interrupt.setEnabled(busy and self._obj.isAlive())
+        """
+        Updates the GUI based on the alive state of the axes.
+
+        Disables jog buttons, nowAt spin boxes, and moveTo line edits for axes that are dead, and enables them for axes that are alive.
+
+        Args:
+            alive (dict): Mapping of axis names to their alive state (bool).
+        """
+        anyBusy = bool(any(busy.values()))
+        allAlive = all(self._obj.isAlive.values())
+        self._execute.setEnabled(not anyBusy and allAlive)
+        self._interrupt.setEnabled(anyBusy)
         for btn in self._jogNega.values():
-            btn.setEnabled(not busy and self._obj.isAlive())
+            btn.setEnabled(not anyBusy and allAlive)
         for btn in self._jogPosi.values():
-            btn.setEnabled(not busy and self._obj.isAlive())
-        if busy:
-            self._execute.setText('Moving')
-        else:
-            self._execute.setText('Go')
+            btn.setEnabled(not anyBusy and allAlive)
+        self._execute.setText("Moving" if anyBusy else "Go")
 
     def _aliveStateChanged(self, alive):
-        self._execute.setEnabled(not self._obj.isBusy() and alive)
-        self._interrupt.setEnabled(self._obj.isBusy() and alive)
-        for btn in self._jogNega.values():
-            btn.setEnabled(not self._obj.isBusy() and alive)
-        for btn in self._jogPosi.values():
-            btn.setEnabled(not self._obj.isBusy() and alive)
-        icon = qta.icon('ri.checkbox-circle-fill', color='green') if alive else qta.icon('ri.close-circle-fill', color='red')
-        self._aliveStateIndicator.setPixmap(icon.pixmap(24, 24))
+        """
+        Updates the GUI controls based on the alive state of the axes.
+
+        Disable jog buttons, nowAt spin box and moveTo line edits when dead and enable them when alive.
+
+        Args:
+            alive (dict): Mapping of axis names to alive state (bool).
+        """
+        busy = self._obj.isBusy
+        anyBusy = any(busy.values())
+        allAlive = all(alive.values())
+        self._execute.setEnabled(not anyBusy and allAlive)
+        self._interrupt.setEnabled(anyBusy)
+        for name in alive:
+            axisAlive = alive[name]
+            self._nowAt[name].setEnabled(axisAlive)
+            if name in self._getNamesSettable():
+                self._moveTo[name].setEnabled(not busy[name] and axisAlive)
+            if name in self._getNamesjoggable():
+                self._jogNega[name].setEnabled(not busy[name] and axisAlive)
+                self._jogPosi[name].setEnabled(not busy[name] and axisAlive)
+            icon = qta.icon("ri.checkbox-circle-fill", color="green") if axisAlive else qta.icon("ri.close-circle-fill", color="red")
+            self._aliveIndicator[name].setPixmap(icon.pixmap(24, 24))
 
     def _nega(self):
+        """
+        Handles negative jog button press for an axis.
+        """
         name = self._jogNegaReversed.get(self.sender())
-        if name is not None:
-            i = self._obj.getNames().index(name)
-            value = self._obj.get()
-            value[i] = value[i] - self._jogStep[name].value()  # Subtract for negative jog
-            value[:i] = np.nan
-            value[i + 1:] = np.nan
-            self._obj.set(value)
+        if name is None:
+            return
+        target = self._obj.get()[name] - self._jogStep[name].value()
+        self._obj.set(**{name: target})
+        self._moveTo[name].setText(f"{target - self._obj._offsetDict[name]:.3f}")
 
     def _posi(self):
+        """
+        Handles positive jog button press for an axis.
+        """
         name = self._jogPosiReversed.get(self.sender())
-        if name is not None:
-            i = self._obj.getNames().index(name)
-            value = self._obj.get()
-            value[i] = value[i] + self._jogStep[name].value()  # Add for positive jog
-            value[:i] = np.nan
-            value[i + 1:] = np.nan
-            self._obj.set(value)
-
-    # def _toggleMemoryTree(self, checked):
-    #     self._positionList.setVisible(checked)
-    #     if checked:
-    #         self._showMemory.setText('Hide Memory')
-    #     else:
-    #         self._showMemory.setText('Show Memory')
+        if name is None:
+            return
+        target = self._obj.get()[name] + self._jogStep[name].value()
+        self._obj.set(**{name: target})
+        self._moveTo[name].setText(f"{target - self._obj._offsetDict[name]:.3f}")
 
     def _toggleMemoryTree(self, checked):
+        """
+        Shows or hides the memory panel in the GUI.
+
+        Args:
+            checked (bool): Whether the memory panel should be visible.
+        """
         self._memoryPanel.setVisible(checked)
-        # self._memory.setArrowType(QtCore.Qt.UpArrow if checked else QtCore.Qt.DownArrow)
-        self._memory.setIcon(qta.icon('ri.save-2-fill'))   # 'ri.bookmark-fill', 'ri.save-2-fill'
-        self.adjustSize()  # This line ensures the window resizes to fit the new layout
-        
+        self._expandBtn.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
+        self.adjustSize()
+
     def _save(self):
-        names = [name for name, *_ in self._namedPositions]
+        """
+        Saves the current axis positions to the memory file.
+        """
+        labels = {item["label"] for item in self._savedPositions}
         i = 1
-        while f'{i}' in names:
+        while f"{i}" in labels:
             i += 1
-        newName = f'{i}'
-        newPosition = list(self._obj.get())
-        newMemo = ''
-        self._namedPositions.append((newName, newPosition, newMemo))
-        with open(self._path, 'w') as f:
-            f.write(str(self._namedPositions))
+        newlabel = f"{i}"
+        newPosition = [self._obj.get()[name] for name in self._obj.nameList]
+        newMemo = ""
+        self._savedPositions.append({"label": newlabel, "position": newPosition, "memo": newMemo})
+        try:
+            with open(self._path, "w") as f:
+                json.dump(self._savedPositions, f)
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "Save Error", f"Could not update file:\n{e}")
         self._updateMemory()
 
     def _load(self):
-        selections = [i.text(1) for i in self._positionList.selectedItems()]
-        if selections:
-            try:
-                self._obj.set(ast.literal_eval(selections[0]))
-            except Exception as e:
-                QtWidgets.QMessageBox.warning(self, 'Load Error', f'Could not load position:\n{e}')
+        """
+        Loads a selected saved axis position item from the memory file and set the axes accordingly.
+        """
+        selections = self._positionList.selectedItems()
+        if not selections:
+            return
+        try:
+            selectedlabel = selections[0].text(0)
+            itemDict = next(item for item in self._savedPositions if item["label"] == selectedlabel)
+            loadedValues = itemDict["position"]
+            settableNames = self._getNamesSettable()
+            valueDict = {name: loadedValues[self._obj.nameList.index(name)] for name in settableNames}
+            self._obj.set(**valueDict)
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "Load Error", f"Could not load position:\n{e}")
 
     def _delete(self):
-        selectedNames = {i.text(0) for i in self._positionList.selectedItems()}
-        self._namedPositions = [item for item in self._namedPositions if item[0] not in selectedNames]
+        """
+        Deletes selected saved positions from the memory file.
+        """
+        selectedlabels = {i.text(0) for i in self._positionList.selectedItems()}
+        self._savedPositions = [item for item in self._savedPositions if item["label"] not in selectedlabels]
         try:
-            with open(self._path, 'w') as f:
-                f.write(str(self._namedPositions))
+            with open(self._path, "w") as f:
+                json.dump(self._savedPositions, f)
         except Exception as e:
-            QtWidgets.QMessageBox.warning(self, 'Delete Error', f'Could not update file:\n{e}')
+            QtWidgets.QMessageBox.warning(self, "Delete Error", f"Could not update file:\n{e}")
         self._updateMemory()
 
     def _updateMemory(self):
-        self._positionList.clear()      # _positionList is a QTreeWidget
-        for name, position, memo in self._namedPositions:
-            displayedPosition = ', '.join(f'{v:.3f}' for v in position)
-            item = QtWidgets.QTreeWidgetItem([name, displayedPosition, memo])
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)  # This allows editing, but delegates block columns 0 and 1
+        """
+        Updates the memory panel with the latest saved positions.
+        """
+        self._positionList.clear()
+        for itemDict in self._savedPositions:
+            label = itemDict["label"]
+            position = itemDict["position"]
+            memo = itemDict["memo"]
+            displayedPosition = ", ".join(f"{v:.3f}" for v in position)
+            item = QtWidgets.QTreeWidgetItem([label, displayedPosition, memo])
+
+            # Protect columns 0 and 1 from editing
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
             self._positionList.addTopLevelItem(item)
+
         for col in range(self._positionList.columnCount()):
             self._positionList.resizeColumnToContents(col)
 
     def _memoEdited(self, item, column):
-        if column == 2:  # Memo column
-            name = item.text(0)
-            for idx, (n, pos, _) in enumerate(self._namedPositions):
-                if n == name:
-                    self._namedPositions[idx] = (n, pos, item.text(2))
-                    with open(self._path, 'w') as f:
-                        f.write(str(self._namedPositions))
+        """
+        Handles edits to the memo field in the memory panel.
+
+        Args:
+            item (QTreeWidgetItem): The edited item.
+            column (int): The column index that was edited.
+        """
+        if column == 2:  # The memo column
+            label = item.text(0)
+            memo = item.text(2)
+            for idx, pos in enumerate(self._savedPositions):
+                if pos["label"] == label:
+                    self._savedPositions[idx]["memo"] = memo
+                    try:
+                        with open(self._path, "w") as f:
+                            json.dump(self._savedPositions, f)
+                    except Exception as e:
+                        QtWidgets.QMessageBox.warning(self, "Memo Edit Error", f"Could not update file:\n{e}")
                     break
 
-    def _updateMemoryButtons(self, loadPushButton, deletePushButton):
+    def _updateMemoryBtns(self, loadBtn, deleteBtn):
+        """
+        Enables or disables memory panel buttons based on selection.
+
+        Args:
+            loadBtn (QPushButton): The load button.
+            deleteBtn (QPushButton): The delete button.
+        """
         selected = len(self._positionList.selectedItems()) > 0
-        loadPushButton.setEnabled(selected)
-        deletePushButton.setEnabled(selected)
+        loadBtn.setEnabled(selected)
+        deleteBtn.setEnabled(selected)
 
     def _showSettings(self):
         """
         Opens the settings dialog for the device.
         """
-        self.settingsWidget(parent=self).open()
+        dialog = self.settingsWidget(parent=self)
+        if hasattr(dialog, "offsetChanged"):
+            dialog.offsetChanged.connect(self._clearMoveToFields)
+        dialog.open()
+
+    def _clearMoveToFields(self):
+        """
+        Clears all move-to input fields in the GUI.
+        """
+        for le in self._moveTo.values():
+            le.clear()
 
     def settingsWidget(self, parent=None):
         """
@@ -315,86 +610,164 @@ class MultiMotorGUI(QtWidgets.QGroupBox):
 
 
 class NoEditDelegate(QtWidgets.QStyledItemDelegate):
-    def createEditor(self, parent, option, index):
-        # Prevent editing
+    """
+    Delegate to prevent editing of certain columns in a QTreeWidget.
+    """
+    def createEditor(self, parent, option, index):      # Prevents editing of the first two columns
         return None
+    
 
 class _settingsDialog(QtWidgets.QDialog):
     """
-    Settings dialog for a single-axis motor device.
+    Settings dialog for a multi-axis motor device.
 
-    Provides a dialog window to view and toggle the motor's alive/dead status.
-    The dialog stays synchronized with the parent control panel.
-
-    Attributes:
-        _obj (SingleMotorInterface): The motor object whose settings are being managed.
-        _aliveLineEdit (QLineEdit): Displays the current alive/dead status of the motor.
-
-    Methods:
-        _initLayout(): Initializes the layout and GUI components of the dialog.
-        _toggleAlive(): Toggles the motor's alive/dead state and emits the corresponding signal.
-        _setAliveState(): Updates the displayed alive/dead status in the dialog.
+    Allows viewing and toggling the alive/dead status and managing offsets for each axis.
     """
+    offsetChanged = QtCore.pyqtSignal()
 
     def __init__(self, obj, parent):
         """
         Initializes the settings dialog.
 
         Args:
-            obj (SingleMotorInterface): The motor object whose settings are being managed.
+            obj: The motor object whose settings are being managed.
             parent (QWidget): The parent widget for this dialog.
         """
         super().__init__(parent=parent)
-        self.setWindowTitle('Settings - SingleMotorDummy')
+        self.setWindowTitle("Settings")
         self._obj = obj
+        self._obj.aliveStateChanged.connect(self._updateAliveState)
         self._initLayout()
 
     def _initLayout(self):
         """
         Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
         """
-        toggleAlive = QtWidgets.QPushButton('Change', clicked=self._toggleAlive)
+        self.setStyleSheet("QLineEdit {font-size: 14pt}"
+                           "QLineEdit {border-radius: 12px}"
+                           "QDoubleSpinBox {font-size: 14pt}"
+                           "QPushButton {font-size: 12pt}"
+                           "QLabel {font-size: 12pt}")
+        
+        # Create alive panel
+        aliveLayout = QtWidgets.QGridLayout()
+        self._switch = {name: QtWidgets.QPushButton("Change", clicked=lambda checked, n=name: self._toggleAlive(n)) for name in self._obj.nameList}
+        self._aliveLineEdit = {name: QtWidgets.QLineEdit("Alive") for name in self._obj.nameList}
+        for le in self._aliveLineEdit.values():
+            le.setAlignment(QtCore.Qt.AlignCenter)
+        for i, name in enumerate(self._obj.nameList):
+            aliveLayout.addWidget(self._aliveLineEdit[name], i, 0, alignment=QtCore.Qt.AlignCenter)
+            aliveLayout.addWidget(self._switch[name], i, 1, alignment=QtCore.Qt.AlignCenter)
 
-        self._aliveLineEdit = QtWidgets.QLineEdit('Alive')
-        self.setStyleSheet('QLineEdit {border-radius: 13px;'
-                           'font-size: 15pt;'
-                           'border: 0px;'
-                           '}')
-        self._aliveLineEdit.setAlignment(QtCore.Qt.AlignCenter)
-        self._setAliveState()
-        self._obj.aliveStateChanged.connect(self._setAliveState)
+        # Create offset panel        
+        if hasattr(self._obj, "_offsetDict"):
+            line = QtWidgets.QFrame()
+            line.setFrameShape(QtWidgets.QFrame.HLine)
+            line.setStyleSheet("color: lightgray;")
 
-        gl = QtWidgets.QGridLayout()
-        gl.addWidget(toggleAlive, 0, 0)
-        gl.addWidget(self._aliveLineEdit, 1, 0)
-        self.setLayout(gl)
+            offsetLayout = QtWidgets.QGridLayout()
 
-    def _toggleAlive(self):
+            self._offsetBtns = {name: QtWidgets.QPushButton("Offset", clicked=lambda checked, n=name: self._offsetAxis(n)) for name in self._obj._offsetDict}
+            self._unsetBtns = {name: QtWidgets.QPushButton("Unset", clicked=lambda checked, n=name: self._unsetAxis(n)) for name in self._obj._offsetDict}
+            self._offsetLbls = {name: QtWidgets.QLabel(name) for name in self._obj._offsetDict}
+            self._offsetEdits = {name: QtWidgets.QDoubleSpinBox() for name in self._obj._offsetDict}
+
+            for name in self._obj._offsetDict:
+                self._offsetLbls[name].setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+                self._offsetEdits[name].setRange(-np.inf, np.inf)
+                self._offsetEdits[name].setReadOnly(True)
+                self._offsetEdits[name].setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
+                self._offsetEdits[name].setDecimals(3)
+                self._offsetEdits[name].setValue(self._obj._offsetDict[name])
+                self._offsetEdits[name].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+                self._unsetBtns[name].setEnabled(False)
+
+            for i, name in enumerate(self._obj._offsetDict):
+                offsetLayout.addWidget(self._offsetLbls[name], i, 0)
+                offsetLayout.addWidget(self._offsetEdits[name], i, 1)
+                offsetLayout.addWidget(self._offsetBtns[name], i, 2)
+                offsetLayout.addWidget(self._unsetBtns[name], i, 3)
+
+        # Combine layouts
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.addLayout(aliveLayout)
+        mainLayout.addWidget(line)
+        mainLayout.addLayout(offsetLayout)    
+        self.setLayout(mainLayout)
+
+        # Initialize alive state  
+        self._updateAliveState()
+
+
+    def _offsetAxis(self, name):
         """
-        Toggles the alive/dead state of the motor and emits the corresponding signal.
-        """
-        self._obj._alive = not self._obj.isAlive()
-        self._obj.aliveStateChanged.emit(self._obj._alive)
+        Sets the offset for a specific axis to its current value.
 
-    def _setAliveState(self):
+        Args:
+            name (str): The axis name.
         """
-        Updates the displayed alive/dead status in the dialog.
+        self._unsetBtns[name].setEnabled(True)
+        self._obj._offsetDict[name] = self._obj.get()[name]
+        self._offsetEdits[name].setValue(self._obj._offsetDict[name])
+        self.offsetChanged.emit()
+        self._obj.valueChanged.emit(self._obj.get())
+
+    def _unsetAxis(self, name):
         """
-        if self._obj.isAlive():
-            self._aliveLineEdit.setText('Alive')
-            self._aliveLineEdit.setStyleSheet('background-color: #adff2f; color: #000000')
-        else:
-            self._aliveLineEdit.setText('Dead')
-            self._aliveLineEdit.setStyleSheet('background-color: #ff0000; color: #ffffff')
+        Clears the offset for a specific axis.
+
+        Args:
+            name (str): The axis name.
+        """
+        self._unsetBtns[name].setEnabled(False)
+        self._obj._offsetDict[name] = 0
+        self._offsetEdits[name].setValue(0)
+        self.offsetChanged.emit()
+        self._obj.valueChanged.emit(self._obj.get())
+
+    def _toggleAlive(self, name):
+        """
+        Toggles the alive/dead state of the specified axis and emit the corresponding signal.
+
+        Args:
+            name (str): The axis name.
+        """
+        self._obj._error[self._obj.nameList.index(name)] = not self._obj._error[self._obj.nameList.index(name)]
+        self._obj.valueChanged.emit(self._obj.get())
+        self._obj.aliveStateChanged.emit({name: self._obj._info[name].alive})
+        
 
 
-if __name__ == '__main__':              # To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.SingleMotorGUI
+    def _updateAliveState(self):
+        """
+        Updates the displayed alive/dead status for each axis in the dialog.
+        """
+        for idx, name in enumerate(self._obj.nameList):
+            if self._obj.isAlive[name]:
+                self._aliveLineEdit[name].setText("Alive")
+                self._aliveLineEdit[name].setStyleSheet("background-color: #adff2f; color: #000000")
+            else:
+                self._aliveLineEdit[name].setText("Dead")
+                self._aliveLineEdit[name].setStyleSheet("background-color: #ff0000; color: #ffffff")
+
+
+
+
+
+# To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.SingleMotorGUI
+if __name__ == "__main__":
     import sys
-    from fstem.lys_instr import MultiMotorDummy
+    from fstem.lys_instr.GUI.MultiMotorGUI import MultiMotorSpecifics
+    from fstem.lys_instr.dummy.MultiMotorDummy import MultiMotorDummy
     from lys.Qt import QtWidgets
 
     app = QtWidgets.QApplication(sys.argv)
-    dummy = MultiMotorDummy()
-    gui = MultiMotorGUI(dummy, 'Multi-Motor Control')
+    backend = MultiMotorDummy("y", "z", "α", "x", "β", "γ")
+    specifics = MultiMotorSpecifics(backend,
+                                    wait=False,
+                                    axisNamesSettable=("z", "α", "y"),
+                                    axisNamesJoggable=("z"),
+                                    axisNamesOffsettable=("y", "z"))
+    gui = MultiMotorGUI(specifics, "Multi-Motor Control")
     gui.show()
     sys.exit(app.exec_())
