@@ -178,7 +178,7 @@ class DataStorage(QtCore.QObject):
         else:
             self.save()
 
-    def reserve(self, shape=None, fillValue=None):
+    def reserve(self, shape, fillValue=None):
         """
         Reserves storage for a new data array with the specified shape.
 
@@ -202,9 +202,7 @@ class DataStorage(QtCore.QObject):
         self._paths.append(path)
         os.makedirs(folder, exist_ok=True)
 
-        if shape is not None:
-            self._arr = np.full(shape, np.nan if fillValue is None else fillValue, dtype=float)
-
+        self._arr = np.full(shape, np.nan if fillValue is None else fillValue, dtype=float)
         self.savingStateChanged.emit(self.saving)
 
     def update(self, indexDim, data):
@@ -215,8 +213,9 @@ class DataStorage(QtCore.QObject):
             indexDim (tuple): Index dimensions for the data.
             data (dict): Dictionary mapping indices to data arrays for updating the buffer.
         """
+        if not self.enabled:
+            return
         for idx, value in data.items():
-            #print(idx, value)
             self._arr[idx[-len(indexDim):]] = value
 
     def save(self):
@@ -225,7 +224,7 @@ class DataStorage(QtCore.QObject):
 
         This method starts a worker thread to write the buffered data array and emits signals for path and saving state updates.
         """
-        if not (self._enabled and self._paths):
+        if not self.enabled:
             return
 
         wave = Wave(self._arr.copy())

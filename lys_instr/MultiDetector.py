@@ -1,8 +1,9 @@
 import logging
 import time
 
+from lys.Qt import QtCore
+
 from .Interfaces import HardwareInterface
-from lys.Qt import QtCore, QtWidgets
 
 
 class _AcqThread(QtCore.QThread):
@@ -12,10 +13,10 @@ class _AcqThread(QtCore.QThread):
     Runs the detector's acquisition loop as a worker thread and emits signals when new data is acquired.
     """
 
-    # Signal (dict) emitted when new data is acquired.
     dataAcquired = QtCore.pyqtSignal(dict)
+    """emitted when new data is acquired."""
 
-    def __init__(self, detector, streaming):
+    def __init__(self, detector, iter=1):
         """
         Initializes the acquisition thread for the detector.
 
@@ -25,7 +26,7 @@ class _AcqThread(QtCore.QThread):
         super().__init__()
         self._detector = detector
         self._detector.updated.connect(self._onUpdated)
-        self._streaming = streaming
+        self._iteration = iter
 
     def run(self, *args, **kwargs):
         """
@@ -33,7 +34,7 @@ class _AcqThread(QtCore.QThread):
 
         Overrides the ``run()`` method of QThread and is called when the worker thread is started.
         """
-        self._detector._run(self._streaming)
+        self._detector._run(self._iteration)
         self._onUpdated()
 
     def _onUpdated(self):
@@ -43,7 +44,6 @@ class _AcqThread(QtCore.QThread):
         Called in response to the detector's ``updated`` signal.
         """
         self.dataAcquired.emit(self._detector._get())
-
 
 
 class DetectorInterface(HardwareInterface):
@@ -92,13 +92,14 @@ class DetectorInterface(HardwareInterface):
             self._alive = al
             self.aliveStateChanged.emit(al)
 
-    def startAcq(self, streaming=False, wait=False, output=False):
+    def startAcq(self, iter=1, wait=False, output=False):
         """
         Starts acquisition in an acquisition thread.
 
         If both `wait` and `output` are True, the method blocks until acquisition is complete and returns the acquired data.
 
         Args:
+            iter (int): Number of iterations.
             wait (bool, optional): If True, blocks until acquisition is complete. Defaults to False.
             output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.
 
@@ -112,7 +113,7 @@ class DetectorInterface(HardwareInterface):
         self._busy = True
         self.busyStateChanged.emit(True)
 
-        self._thread = _AcqThread(self, streaming=streaming)
+        self._thread = _AcqThread(self, iter=iter)
         self._thread.dataAcquired.connect(self.dataAcquired.emit)
         self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
         if wait and output:
@@ -120,7 +121,6 @@ class DetectorInterface(HardwareInterface):
             self._thread.dataAcquired.connect(buffer.update, type=QtCore.Qt.DirectConnection)
 
         self._thread.start()
-
 
         if wait:
             self.waitForReady()
@@ -153,6 +153,19 @@ class DetectorInterface(HardwareInterface):
                 time.sleep(interval)
             else:
                 return True
+
+    def stop(self):
+        """
+        Stops the acquisition and emits the latest acquired data.
+
+        This method waits for the acquisition worker thread to finish if it is running.
+        """
+        self._stop()
+
+        if self._thread is not None and self._thread.isRunning():
+            self._thread.quit()
+            self._thread.wait()
+        self.dataAcquired.emit(self._get())
 
     @property
     def exposure(self):
@@ -198,34 +211,7 @@ class DetectorInterface(HardwareInterface):
             bool: True if the detector is alive, False otherwise.
         """
         return self._isAlive()
-
-    def stop(self):
-        """
-        Stops the acquisition and emits the latest acquired data.
-
-        This method waits for the acquisition worker thread to finish if it is running.
-        """
-        self._stop()
-
-        if self._thread is not None and self._thread.isRunning():
-            self._thread.quit()
-            self._thread.wait()
-        self.dataAcquired.emit(self._get())
     
-    def settingWidget(self):
-        """
-        Returns a generic settings dialog.
-
-        This method is intended to be overridden in subclasses to provide a device-specific settings UI.
-
-        Args:
-            parent (QWidget, optional): Parent widget for the dialog.
-
-        Returns:
-            QDialog: The settings dialog.
-        """
-        raise NotImplementedError("Subclass should implement this method.")
-
     def _get(self):
         """
         Should be implemented in subclasses to provide device-specific logic for getting acquired data.
@@ -247,16 +233,29 @@ class DetectorInterface(HardwareInterface):
         """
         raise NotImplementedError("Sub-class should implement this method.")
 
-    def _run(self, streaming):
+    def _run(self, iter=1):
         """
         The sub-class of this class should implement _run method.
 
         Args:
-            streaming(bool): Whether the measurement should be continuous.
+            iter(int): Number of iterations. -1 means continuous run.
         """
         raise NotImplementedError("This method should be implemented in sub class.")
 
+    def settingWidget(self):
+        """
+        Returns a generic settings dialog.
 
+        This method is intended to be overridden in subclasses to provide a device-specific settings UI.
+
+        Args:
+            parent (QWidget, optional): Parent widget for the dialog.
+
+        Returns:
+            QDialog: The settings dialog.
+        """
+        raise NotImplementedError("Subclass should implement this method.")
+    
 
 class MultiDetectorInterface(DetectorInterface):
     """
@@ -265,18 +264,25 @@ class MultiDetectorInterface(DetectorInterface):
     This class extends DetectorInterface to support detectors that acquire multi-dimensional data frames.
     Subclasses should implement device-specific logic for data acquisition and shape reporting.
     """
-
-    def __init__(self, indexDim=None, **kwargs):
+    @property
+    def axes(self):
         """
-        Initializes the multi-detector interface.
+        Returns the axes for the full data.
 
-        Args:
-            indexDim (tuple or None): Dimensions for indexing acquired data.
-            **kwargs: Additional keyword arguments passed to DetectorInterface.
+        Returns:
+            list of numpy array: The axes for the full data.
         """
-        super().__init__(**kwargs)
-        self._indexDim = indexDim
-        self._acquiredIndices = []
+        raise NotImplementedError("The sub class should implement this property")
+
+    @property
+    def frameDim(self):
+        """
+        Returns the dimensions for the single data.
+
+        Returns:
+            tuple: Dimensions for indexing acquired data.
+        """
+        return len(self.frameShape)
 
     @property
     def indexDim(self):
@@ -284,34 +290,37 @@ class MultiDetectorInterface(DetectorInterface):
         Returns the dimensions for indexing acquired data frames.
 
         Returns:
-            tuple or None: Dimensions for indexing acquired data, or None if not set.
+            tuple or None: Dimensions for indexing acquired data.
         """
-        return self._indexDim
+        return len(self.indexShape)
 
     @property
-    def acquiredIndices(self):
+    def frameShape(self):
         """
-        Returns the list of acquired indices.
-
-        Each index corresponds to a data frame acquired by the multi-detector.
+        Returns the shape of the single frame.
 
         Returns:
-            list: List of acquired data indices.
+            tuple: Shape of the single data.
         """
-        return self._acquiredIndices
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @property
+    def indexShape(self):
+        """
+        Returns the shape of the single frame.
+
+        Returns:
+            tuple: Shape of the indices.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
 
     @property
     def dataShape(self):
         """
         Returns the shape of the acquired data.
 
-        This property should be implemented in subclasses to provide the specific shape of the data frames.
-
         Returns:
             tuple: Shape of the acquired data.
-
-        Raises:
-            NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("Subclasses must implement this method to return the shape of the acquired data.")
+        return tuple([*self.indexShape, *self.frameShape])
     

@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import itertools
 
 from lys_instr.MultiDetector import MultiDetectorInterface
 from lys.Qt import QtWidgets, QtCore
@@ -11,42 +12,40 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
     """
-    def __init__(self, indexDim=None, frameDim=None, frameTime=None, **kwargs):
+    def __init__(self, indexShape, frameShape, frameTime=None, **kwargs):
         """
         Initializes the dummy multi-detector with the given parameters.
 
         Args:
-            indexDim (tuple of int, optional): Dimensions of the index grid.
-            frameDim (tuple of int, optional): Dimensions of each data frame.
+            indexShape (tuple of int): Shape of the index grid.
+            frameShape (tuple of int): Shape of each data frame.
             frameTime (float, optional): Time per frame in seconds.
             **kwargs: Additional keyword arguments passed to the parent class.
         """
-        super().__init__(indexDim=indexDim, **kwargs)
+        super().__init__(**kwargs)
         self._data = {}
-        self._frameDim = frameDim
-        self._frameTime = frameTime
+        self._frameShape = frameShape
+        self._indexShape = indexShape
+        self.exposure = frameTime
         self._error = False
         self.start()
 
-    def _run(self, streaming):
+    def _run(self, iter=1):
         """
         Runs the acquisition thread associated with the ``MultiDetectorInterface``, simulating indexed/arrayed data frame acquisition.
 
         This method generates random data frames at the specified frame time, updates the acquired indices, and emits an update signal after each frame is acquired.
         """
-        self._acquiredIndices = []
-        startNum = 0
-        endNum = None if streaming else startNum + np.product(self.indexDim)
-
         self._shouldStop = False
 
-        i = startNum
-        while not self._shouldStop and (endNum is None or i < endNum):
-            time.sleep(self._frameTime)
-            idx = (i // np.product(self.indexDim), i % np.product(self.indexDim) % self.indexDim[0], i % np.product(self.indexDim) // self.indexDim[0])
-            self._data[idx] = np.random.rand(*self._frameDim)
-            self._acquiredIndices.append(idx)
-            self.updated.emit()
+        i = 0
+        while i != iter:
+            for idx in itertools.product(*[range(i) for i in self.indexShape]):
+                if self._shouldStop:
+                    return
+                time.sleep(self.exposure)
+                self._data[idx] = np.random.rand(*self.frameShape)
+                self.updated.emit()
             i += 1
 
     def _stop(self):
@@ -76,17 +75,17 @@ class MultiDetectorDummy(MultiDetectorInterface):
         return not self._error
 
     @property
-    def dataShape(self):
-        """
-        Returns the shape of the data that the detector would return.
-
-        The shape is a combination of the index dimensions and the frame dimensions.
-
-        Returns:
-            tuple: Shape of the data.
-        """
-        return (*self.indexDim, *self._frameDim)
+    def frameShape(self):
+        return self._frameShape
+        
+    @property
+    def indexShape(self):
+        return self._indexShape
     
+    @property
+    def axes(self):
+        return [np.linspace(0, 1, s) for s in self.dataShape]
+
     def settingWidget(self):
         return _GeneralPanel(self)
 

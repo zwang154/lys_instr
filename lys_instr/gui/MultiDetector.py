@@ -1,6 +1,6 @@
 import numpy as np
 
-from lys import multicut
+from lys import multicut, Wave
 from lys.Qt import QtWidgets, QtCore
 
 from .widgets import AliveIndicator, SettingButton
@@ -12,10 +12,10 @@ class MultiDetectorGUI(QtWidgets.QWidget):
     Only for implementation in lys.
     """
 
-    def __init__(self, obj, wait=False, interval=1):
+    def __init__(self, obj, wait=False, interval=1, iter=1):
         super().__init__()
         self._obj = obj
-        self._params = {"wait": wait, "interval": interval}
+        self._params = {"wait": wait, "interval": interval, "iter": iter}
 
         self._obj.busyStateChanged.connect(self._setButtonState)
         self._obj.aliveStateChanged.connect(self._setButtonState)
@@ -25,8 +25,9 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _initLayout(self):
         # Data display widget
-        self._mcut = multicut(np.random.rand(*self._obj._frameDim), returnInstance=True, subWindow=False)
+        self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
         self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self._mcut.loadDefaultTemplate()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
@@ -69,16 +70,17 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         self.setLayout(mainLayout)
 
     def _update(self):
-        self._mcut.cui.setRawWave(self._data)
+        if hasattr(self, "_data"):
+            self._mcut.cui.setRawWave(self._data)
 
     def _dataAcquired(self, data):
         if data:
             for idx, frame in data.items():
-                self._data[idx[-frame.ndim:]] = frame
+                self._data.data[idx[-frame.ndim:]] = frame
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame
-            if self._frameCount == np.prod(self._obj.indexDim):
+            if self._frameCount == np.prod(self._obj.indexShape):
                 update = True
             else:
                 update = False if self._params["interval"] is None else self._frameCount % self._params["interval"] == 0
@@ -88,12 +90,12 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _onAcquire(self, mode="acquire"):
         self._frameCount = 0
-        self._data = np.zeros(self._obj.dataShape)
+        self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
         self._mcut.cui.setRawWave(self._data)
         if mode == "acquire":
-            self._obj.startAcq(wait=self._params["wait"])
+            self._obj.startAcq(wait=self._params["wait"], iter=self._params["iter"])
         else:
-            self._obj.startAcq(streaming=True)
+            self._obj.startAcq(iter=-1)
 
     def _setButtonState(self):
         alive = self._obj.isAlive
@@ -105,14 +107,10 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._acquire.setEnabled(False)
             self._stream.setEnabled(False)
             self._stop.setEnabled(True)
-            self._acquire.setText("Acquire")
-            self._stream.setText("Stream")
         else:
             self._acquire.setEnabled(True)
             self._stream.setEnabled(True)
             self._stop.setEnabled(False)
-            self._acquire.setText("Acquire")
-            self._stream.setText("Stream")
 
     def _showSettings(self):
         settingsWindow = _SettingDialog(self, self._obj, self._params)
@@ -147,38 +145,35 @@ class _GeneralPanel(QtWidgets.QWidget):
             self.updated.connect(updated)
 
     def __initLayout(self, interval):
-        self._scheduledUpdateCheck = QtWidgets.QCheckBox("Update every", checked=interval is not None, toggled=self._changeInterval)
+        self._iter = QtWidgets.QSpinBox()
+        self._iter.setRange(1, 2**31 - 1)
+        self._iter.valueChanged.connect(self._changeInterval)
+
         self._updateInterval = QtWidgets.QSpinBox()
         self._updateInterval.setRange(1, 2**31 - 1)
-        self._updateInterval.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         self._updateInterval.valueChanged.connect(self._changeInterval)
         if interval is None:
             self._updateInterval.setEnabled(False)
         else:
             self._updateInterval.setValue(interval)
 
-        def setWait(value):
-            self._params["wait"] = value
-        updateBtn = QtWidgets.QPushButton("Update", clicked=self.updated.emit)
-        waitCheck = QtWidgets.QCheckBox("Wait for acquisition to finish", checked=self._params["wait"], toggled=setWait)
-
+        self._scheduledUpdateCheck = QtWidgets.QCheckBox("Update every", checked=interval is not None, toggled=self._changeInterval)
         self._scheduledUpdateCheck.stateChanged.connect(self._updateInterval.setEnabled)
 
-        updateLayout = QtWidgets.QHBoxLayout()
-        updateLayout.addWidget(self._scheduledUpdateCheck)
-        updateLayout.addWidget(self._updateInterval)
-        updateLayout.addWidget(QtWidgets.QLabel("frames"))
-        updateLayout.addWidget(updateBtn)
+        grid = QtWidgets.QGridLayout()
+        grid.addWidget(QtWidgets.QLabel("Repeat"), 0, 0)
+        grid.addWidget(self._iter, 0, 1)
+        grid.addWidget(QtWidgets.QLabel("times"), 0, 2)
 
-        waitLayout = QtWidgets.QHBoxLayout()
-        waitLayout.addWidget(waitCheck)
-
-        optionsLayout = QtWidgets.QVBoxLayout(self)
-        optionsLayout.addLayout(updateLayout)
-        optionsLayout.addLayout(waitLayout)
+        grid.addWidget(self._scheduledUpdateCheck, 1, 0)
+        grid.addWidget(self._updateInterval, 1, 1)
+        grid.addWidget(QtWidgets.QLabel("frames"), 1, 2)
+        grid.addWidget(QtWidgets.QPushButton("Update", clicked=self.updated.emit), 1, 3)
+        self.setLayout(grid)
 
     def _changeInterval(self):
         if self._scheduledUpdateCheck.isChecked():
             self._params["interval"] = self._updateInterval.value()
         else:
             self._params["interval"] = None         
+        self._params["iter"] = self._iter.value()
