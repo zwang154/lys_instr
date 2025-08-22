@@ -1,136 +1,293 @@
 import os
-import queue
+import numpy as np
 import logging
+from lys import Wave
 from lys.Qt import QtCore
-from .Interfaces import HardwareInterface, lock
 
 logging.basicConfig(level=logging.INFO)
 
 
-class DataStorageInterface(HardwareInterface):
+class DataStorage(QtCore.QObject):
+    """
+    Threaded data storage and file management for multi-dimensional data.
 
+    This class reserves disk space for data arrays, buffers and updates them with new values, and saves the buffered data to disk.
+    Saving is performed asynchronously in a background thread, keeping the main application responsive.
+    Qt signals are emitted to notify when the save path or saving state changes.
+
+    Args:
+        **kwargs: Additional keyword arguments passed to QObject.
+    """
+
+    #: Signal emitted when storage path changes.
+    pathChanged = QtCore.pyqtSignal()
+
+    #: Signal (bool) emitted when saving state changes.
     savingStateChanged = QtCore.pyqtSignal(bool)
 
-    def __init__(self, maxQueueSize=0, bufferThreshold=1, interval=0.5, buffered=False, **kwargs):
-        super().__init__(interval=interval, **kwargs)
-        self._path = None
-        self._saveThread = SaveThread(saveFunc=self.write, maxQueueSize=maxQueueSize)
-        self._saveThread.savingStateChanged.connect(self.savingStateChanged.emit)
-        self._saveThread.start()
+    #: Signal (dict) emitted to request metadata tags.
+    tagRequest = QtCore.pyqtSignal(dict)
 
-        self._mutex = QtCore.QMutex()
-        self._bufferThreshold = bufferThreshold
-        self._buffered = buffered
-        self._buffer = {}
-        self.setBuffered(buffered)
+    def __init__(self, **kwargs):
+        """
+        Initializes the ``DataStorage`` instance.
 
-    @lock
-    def _loadState(self):
-        if self.getBufferSize() > self._bufferThreshold:
-            self.flushBuffer()
+        Sets up initial state.
 
-    def flushBuffer(self):
-        if self._buffered and self._buffer:
-            self._saveThread.enqueue(self._buffer.copy())
-            self._buffer.clear()
+        Args:
+            **kwargs: Additional keyword arguments passed to the base class.
+        """
+        super().__init__()
+        self._base = ""
+        self._folder = ""
+        self._name = ""
+        self._enabled = True
+        self._numbered = True
+        self._threads = []
+        self._tags = []
+        self._paths = []
+        self._arr = None
+        self._notes = None
 
-    @lock
-    def getBuffer(self):
-        return self._buffer
+    @property
+    def base(self):
+        """
+        Returns the base directory for saving data files.
 
-    @lock
-    def getBufferSize(self):
-        return sum(getattr(frame, 'nbytes', 0) / (1024 * 1024) for frame in self._buffer.values())
+        Returns:
+            str: Base directory.
+        """
+        return self._base
 
-    @lock
-    def update(self, data):
-        if self._buffered:
-            self._buffer.update(data)
-        else:
-            self._saveThread.enqueue(data)
+    @base.setter
+    def base(self, value):
+        """
+        Sets the base directory for saving data files.
+        """
+        self._base = value
 
-    def setPath(self, fileDir, fileName, fileType):
-        ext = {'hdf5': 'h5', 'zarr': 'zarr'}.get(fileType)
-        self._path = os.path.join(fileDir, f"{fileName}.{ext}")
-        self._type = fileType
+    @property
+    def folder(self):
+        """
+        Returns the data folder name under base directory.
 
-    def setBuffered(self, buffered):
-        if self._buffered == buffered:
+        Returns:
+            str: Data folder name.
+        """
+        return self._folder
+
+    @folder.setter
+    def folder(self, value):
+        """
+        Sets the data folder name under base directory.
+        """
+        self._folder = value
+
+    @property
+    def name(self):
+        """
+        Returns the base file name for saving data files.
+
+        Returns:
+            str: File name.
+        """
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        """
+        Sets the base file name for saving data files.
+        """
+        self._name = value
+    
+    @property
+    def numbered(self):
+        """
+        Returns whether automatic file numbering is enabled.
+
+        Returns:
+            bool: True if automatic file numbering is enabled, False otherwise.
+        """
+        return self._numbered
+
+    @numbered.setter
+    def numbered(self, value):
+        """
+        Sets whether to enable automatic file numbering.
+        """
+        self._numbered = value
+
+    @property
+    def enabled(self):
+        """
+        Returns whether the ``DataStorage`` instance is enabled.
+
+        Returns:
+            bool: True if the ``DataStorage`` instance is enabled, False otherwise.
+        """
+        return self._enabled
+    
+    @enabled.setter
+    def enabled(self, value):
+        """
+        Sets whether to enable the ``DataStorage`` instance.
+        """
+        self._enabled = value
+
+    def getNumber(self):
+        """
+        Gets the next available file number for saving.
+
+        The number will be appended to the file name when saving if automatic numbering is enabled.
+
+        Returns:
+            int or None: Next available file number, or None if numbering is disabled.
+        """
+        if not self.numbered:
+            return None
+
+        reserved = set([thread.path for thread in self._threads] + self._paths)
+        i = 0
+        while True:
+            candidate = os.path.join(self.base, self.folder, f"{self.name}_{i}.npz")
+            if not os.path.exists(candidate) and candidate not in reserved:
+                return i
+            i += 1
+
+    def connect(self, detector):
+        """
+        Connects this ``DataStorage`` instance to a detector.
+
+        Args:
+            detector (object): Detector instance emitting ``dataAcquired`` and ``busyStateChanged`` signals.
+        """
+        self._detector = detector
+        self._detector.dataAcquired.connect(self._dataAcquired)
+        self._detector.busyStateChanged.connect(self._busyStateChanged)
+
+    def _dataAcquired(self, data):
+        self.update(self._detector.indexDim, data)
+
+    def _busyStateChanged(self, busy):
+        """
+        Reserves storage if busy, otherwise saves the buffered data.
+
+        Args:
+            busy (bool): If True, reserve storage; if False, save the buffered data.
+        """
+        self._reserve() if busy else self._save()       # detector._indexDim
+
+    def reserve(self, shape=None, fillValue=None):
+        """
+        Reserves storage for a new data array with the specified shape.
+
+        Args:
+            shape (tuple, optional): Shape of the data array to reserve.
+            fillValue (float, optional): Value to initialize the array with (default: NaN).
+        """
+        if not self.enabled:
+            self.savingStateChanged.emit(self.saving)
             return
 
-        self._buffered = buffered
+        tag = {"Notes": self._notes}
+        self.tagRequest.emit(tag)
 
-        if self._buffered:
-            # self._mutex = QtCore.QMutex()
-            self.start()
-        else:
-            if self._buffer:
-                self.flushBuffer()
-            self._buffer.clear()
-            self.kill()
-            self.wait()
+        number = self.getNumber()
+        numberedName = f"{self.name}_{number}.npz" if number is not None else f"{self.name}.npz"
+        folder = os.path.join(self.base, self.folder)
+        path = os.path.join(folder, numberedName)
 
-    def stop(self):
-        if self._saveThread.isRunning():
-            self._saveThread.kill()
-            self._saveThread.wait()
+        self._tags.append(tag)
+        self._paths.append(path)
+        os.makedirs(folder, exist_ok=True)
 
-    def write(self, data):
-        try:
-            self._write(data, path=self._path, type=self._type)
-        except Exception as e:
-            logging.error(f"Error saving data: {e}")
+        if shape is not None:
+            self._arr = np.full(shape, np.nan if fillValue is None else fillValue, dtype=float)
 
-    def read(self, keys=None):        # Key is a collection of indices
-        if not self._path or not self._type:
-            logging.error("Path or type not set for reading.")
-            return {}
-        if not os.path.exists(self._path):
-            logging.error(f"File does not exist: {self._path}")
-            return {}
+        self.savingStateChanged.emit(self.saving)
 
-        try:
-            return self._read(path=self._path, type=self._type, keys=keys)
-        except Exception as e:
-            logging.error(f"Error reading data: {e}")
-            return {}
-    
-    @lock
-    def setBufferThreshold(self, bufferThreshold):
-        self._bufferThreshold = bufferThreshold
+    def update(self, indexDim, data):
+        """
+        Updates the buffered data array with new values.
+
+        Args:
+            indexDim (tuple): Index dimensions for the data.
+            data (dict): Dictionary mapping indices to data arrays for updating the buffer.
+        """
+        for idx, value in data.items():
+            self._arr[idx[-len(indexDim):]] = value
+
+    def save(self):
+        """
+        Saves the buffered data array asynchronously to disk.
+
+        This method starts a worker thread to write the buffered data array and emits signals for path and saving state updates.
+        """
+        if not (self._enabled and self._paths):
+            return
+
+        wave = Wave(self._arr.copy())
+        wave.note = self._tags.pop(0)
+        path = self._paths.pop(0)
+
+        thread = _SaveThread(wave, path)
+        thread.finished.connect(self._savingFinished)
+        self._threads.append(thread)
+        thread.start()
+
+        self.pathChanged.emit()
+        self.savingStateChanged.emit(self.saving)
+
+    def _savingFinished(self):
+        """
+        Slot called when a save thread finishes.
+
+        Updates the saving state and emits the ``savingStateChanged`` signal.
+        """
+        for i in reversed(range(len(self._threads))):
+            if not self._threads[i].isRunning():
+                self._threads.remove(self._threads[i])
+        self.savingStateChanged.emit(self.saving)
+
+    @property
+    def saving(self):
+        """
+        Returns whether a save operation is currently in progress.
+
+        Returns:
+            bool: True if a save operation is in progress, False otherwise.
+        """
+        return bool(self._threads or self._paths)
 
 
-class SaveThread(QtCore.QThread):
 
-    savingStateChanged = QtCore.pyqtSignal(bool)
 
-    def __init__(self, saveFunc, maxQueueSize=0):
+class _SaveThread(QtCore.QThread):
+    """
+    Save thread for ``DataStorage``.
+
+    Writes the provided Wave object asynchronously to disk at the specified path as a worker thread.
+    """
+
+    def __init__(self, wave, path):
+        """
+        Initialize the save thread with a Wave object and a file path.
+
+        Args:
+            wave (Wave): The Wave object to be saved.
+            path (str): File path where the Wave object will be saved.
+        """
         super().__init__()
-        self.saveFunc = saveFunc
-        self._queue = queue.Queue(maxsize=maxQueueSize)
-        self._running = True
+        self.wave = wave
+        self.path = path
 
     def run(self):
-        while self._running:
-            try:
-                data = self._queue.get(timeout=0.1)
-                self.saveFunc(data)
-                self.savingStateChanged.emit(False)
-            except queue.Empty:
-                continue
-
-    def enqueue(self, data):
-        self.savingStateChanged.emit(True)
-        self._queue.put(data)
-
-    def getQueueSize(self):
-        return self._queue.qsize()
-
-    def isRunning(self):
-        return self._running
-
-    def kill(self):
-        self._running = False
-
+        """
+        Runs the save thread, exporting the Wave object to the specified path.
+        """
+        try:
+            self.wave.export(self.path)
+        except Exception as e:
+            logging.error("Exception in save thread for path '%s': %s", self.path, e)
 
 

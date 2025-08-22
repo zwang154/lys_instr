@@ -2,15 +2,15 @@ import logging
 import time
 import abc
 
-from lys.Qt import QtCore, QtWidgets
 from .Interfaces import HardwareInterface
+from lys.Qt import QtCore, QtWidgets
 
 
 class _AcqThread(QtCore.QThread):
     """
     Acquisition thread for ``DetectorInterface``.
 
-    Runs the detector's acquisition loop in a worker thread and emits signals when new data is acquired.
+    Runs the detector's acquisition loop as a worker thread and emits signals when new data is acquired.
     """
 
     # Signal (dict) emitted when new data is acquired.
@@ -20,10 +20,8 @@ class _AcqThread(QtCore.QThread):
         """
         Initializes the acquisition thread for the detector.
 
-        Parameters
-        ----------
-        detector : DetectorInterface
-            The detector instance to run acquisition for.
+        Args:
+            detector (DetectorInterface): The detector instance to run acquisition for.
         """
         super().__init__()
         self._detector = detector
@@ -60,10 +58,8 @@ class DetectorInterface(HardwareInterface):
     ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that causes interruption.
     The ``updated`` signal should be emitted by the acquisition thread to inform when new data is acquired.
 
-    Parameters
-    ----------
-    **kwargs
-        Additional keyword arguments passed to QThread.
+    Args:
+        **kwargs: Additional keyword arguments passed to QThread.
     """
 
     #: Signal (bool) emitted when alive state changes.
@@ -84,10 +80,8 @@ class DetectorInterface(HardwareInterface):
 
         Sets up initial state and internal flags.
 
-        Parameters
-        ----------
-        **kwargs
-            Additional keyword arguments passed to the base class.
+        Args:
+            **kwargs: Additional keyword arguments passed to the base class.
         """
         super().__init__(**kwargs)
         self.busy = False
@@ -106,25 +100,17 @@ class DetectorInterface(HardwareInterface):
 
     def startAcq(self, wait=False, output=False, **kwargs):
         """
-        Starts acquisition in a worker thread (the acquisition thread).
+        Starts acquisition in an acquisition thread.
 
-        Parameters
-        ----------
-        wait : bool, optional
-            If True, blocks until acquisition is complete.
-        output : bool, optional
-            If True, returns acquired data as a dictionary.
-        **kwargs
-            Additional keyword arguments passed to the acquisition thread.
+        If both `wait` and `output` are True, the method blocks until acquisition is complete and returns the acquired data.
 
-        Returns
-        -------
-        dict or None
-            Acquired data if output is True, otherwise None.
+        Args:
+            wait (bool, optional): If True, blocks until acquisition is complete. Defaults to False.
+            output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.
+            **kwargs: Additional keyword arguments passed to the acquisition thread.
 
-        Notes
-        -----
-        If both wait and output are True, the method blocks until acquisition is complete and returns the acquired data.
+        Returns:
+            dict or None: Acquired data if output is True, otherwise None.
         """
         if self.busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
@@ -133,27 +119,15 @@ class DetectorInterface(HardwareInterface):
         self.busy = True
         self.busyStateChanged.emit(True)
 
-        # if wait and output:
-        #     buffer = {}
-        #     def bufferSlot(data):
-        #         buffer.update(data)
-        #     self._bufferSlot = bufferSlot
-        #     # self.dataAcquired.connect(self._bufferSlot)
-
-
         self._thread = _AcqThread(self)
-
         if wait and output:
             buffer = {}
             def bufferSlot(data):
                 buffer.update(data)
             self._bufferSlot = bufferSlot
-            # self.dataAcquired.connect(self._bufferSlot)
             self._thread.dataAcquired.connect(self._bufferSlot, type=QtCore.Qt.DirectConnection)
-
         self._thread.dataAcquired.connect(self.dataAcquired.emit)
         self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
-        # self._thread.finished.connect(self._onAcqFinished)
         self._thread.start()
 
         if wait:
@@ -163,7 +137,7 @@ class DetectorInterface(HardwareInterface):
                     self.dataAcquired.disconnect(self._bufferSlot)
                 except (TypeError, RuntimeError):
                     logging.warning("Tried to disconnect a slot that was not connected")
-                print(buffer.keys())
+                # print(buffer.keys())
                 return buffer
 
     def _onAcqFinished(self):
@@ -180,35 +154,17 @@ class DetectorInterface(HardwareInterface):
         """
         Blocks further interaction until the device is no longer busy.
 
-        Parameters
-        ----------
-        interval : float, optional
-            Polling interval in seconds. Defaults to 0.1.
+        Args:
+            interval (float, optional): Polling interval in seconds. Defaults to 0.1.
 
-        Returns
-        -------
-        bool
-            True once all axes become idle.
+        Returns:
+            bool: True once all axes become idle.
         """
         while True:
             if self.isBusy:
                 time.sleep(interval)
             else:
                 return True
-
-    # def waitForReady(self):
-    #     """
-    #     Blocks further interaction until the detector is no longer busy.
-
-    #     This method starts a local Qt event loop and returns when the busy state becomes False, ensuring that Qt signals and events are processed while waiting.
-    #     """
-    #     loop = QtCore.QEventLoop()
-    #     def waitSlot(busy):
-    #         if not busy:
-    #             loop.quit()
-    #     self.busyStateChanged.connect(waitSlot)
-    #     loop.exec_()
-    #     self.busyStateChanged.disconnect(waitSlot)
 
     @property
     def isBusy(self):
@@ -217,10 +173,8 @@ class DetectorInterface(HardwareInterface):
 
         This property reflects the internal busy flag, which is True during acquisition.
 
-        Returns
-        -------
-        bool
-            True if the detector is busy, False otherwise.
+        Returns:
+            bool: True if the detector is busy, False otherwise.
         """
         return self.busy
     
@@ -231,10 +185,8 @@ class DetectorInterface(HardwareInterface):
 
         This property should be implemented in subclasses to provide device-specific logic.
 
-        Returns
-        -------
-        bool
-            True if the detector is alive, False otherwise.
+        Returns:
+            bool: True if the detector is alive, False otherwise.
         """
         return self._isAlive()
 
@@ -266,64 +218,94 @@ class DetectorInterface(HardwareInterface):
 
         This method is intended to be overridden in subclasses to provide a device-specific settings UI.
 
-        Parameters
-        ----------
-        parent : QWidget, optional
-            Parent widget for the dialog.
+        Args:
+            parent (QWidget, optional): Parent widget for the dialog.
 
-        Returns
-        -------
-        QDialog
-            The settings dialog.
+        Returns:
+            QDialog: The settings dialog.
         """
         return QtWidgets.QDialog()
 
     @abc.abstractmethod
     def _get(self):
+        """
+        Should be implemented in subclasses to provide device-specific logic for getting acquired data.
+
+        Returns:
+            dict: Mapping of indices (tuple) to their data frames (np.ndarray).
+        """
         pass
 
     @abc.abstractmethod
     def _stop(self):
+        """
+        Should be implemented in subclasses to provide device-specific logic for stopping acquisition.
+        """
         pass
 
     @abc.abstractmethod
     def _isAlive(self):
+        """
+        Should be implemented in subclasses to provide device-specific logic for returning alive state.
+        """
         pass
 
 
 
 class MultiDetectorInterface(DetectorInterface):
+    """
+    Abstract interface for multi-detector devices.
+
+    This class extends DetectorInterface to support detectors that acquire multi-dimensional data frames.
+    Subclasses should implement device-specific logic for data acquisition and shape reporting.
+    """
+
     def __init__(self, indexDim=None, **kwargs):
         """
         Initializes the multi-detector interface.
 
-        Parameters
-        ----------
-        indexDim : tuple or None
-            Dimensions for indexing acquired data.
-        **kwargs
-            Additional keyword arguments passed to DetectorInterface.
+        Args:
+            indexDim (tuple or None): Dimensions for indexing acquired data.
+            **kwargs: Additional keyword arguments passed to DetectorInterface.
         """
-
         super().__init__(**kwargs)
         self._indexDim = indexDim
         self._acquiredIndices = []
 
-    def getAcquiredIndices(self):
+    @property
+    def indexDim(self):
+        """
+        Returns the dimensions for indexing acquired data frames.
+
+        Returns:
+            tuple or None: Dimensions for indexing acquired data, or None if not set.
+        """
+        return self._indexDim
+
+    @property
+    def acquiredIndices(self):
         """
         Returns the list of acquired indices.
 
         Each index corresponds to a data frame acquired by the multi-detector.
 
-        Returns
-        -------
-        list
-            List of acquired data indices.
+        Returns:
+            list: List of acquired data indices.
         """
         return self._acquiredIndices
 
+    @property
+    def dataShape(self):
+        """
+        Returns the shape of the acquired data.
 
+        This property should be implemented in subclasses to provide the specific shape of the data frames.
 
+        Returns:
+            tuple: Shape of the acquired data.
 
-
-
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
+        """
+        raise NotImplementedError("Subclasses must implement this method to return the shape of the acquired data.")
+    

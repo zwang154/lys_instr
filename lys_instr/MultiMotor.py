@@ -3,8 +3,8 @@ import time
 import logging
 import abc
 
-from lys.Qt import QtCore, QtWidgets
 from .Interfaces import HardwareInterface, lock
+from lys.Qt import QtCore, QtWidgets
 
 
 class _AxisInfo():
@@ -19,12 +19,9 @@ class _AxisInfo():
         """
         Initializes the axis state.
 
-        Parameters
-        ----------
-        busy : bool, optional
-            Initial busy state. Defaults to False.
-        alive : bool, optional
-            Initial alive state. Defaults to True.
+        Args:
+            busy (bool, optional): Initial busy state. Defaults to False.
+            alive (bool, optional): Initial alive state. Defaults to True.
         """
         self.busy = busy
         self.alive = alive
@@ -39,12 +36,9 @@ class MultiMotorInterface(HardwareInterface):
     ``_get()``, ``_set()``, and ``_isBusy()`` should raise RuntimeError if the device is not responding or if there is a communication error.
     ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that causes interruption.
 
-    Parameters
-    ----------
-    *axisNamesAll
-        Names of all axes to manage.
-    **kwargs
-        Additional keyword arguments passed to QThread.
+    Args:
+        *axisNamesAll: Names of all axes to manage.
+        **kwargs: Additional keyword arguments passed to QThread.
     """
 
     #: Signal (dict) emitted when axis values change.
@@ -60,12 +54,9 @@ class MultiMotorInterface(HardwareInterface):
         """
         Initializes the interface with the given axis names.
         
-        Parameters
-        ----------
-        *axisNamesAll
-            Names of all axes to manage.
-        **kwargs
-            Additional keyword arguments passed to the base class.
+        Args:
+            *axisNamesAll: Names of all axes to manage.
+            **kwargs: Additional keyword arguments passed to the base class.
         """
         super().__init__(**kwargs)
         self._info = {name: _AxisInfo() for name in axisNamesAll}
@@ -111,21 +102,17 @@ class MultiMotorInterface(HardwareInterface):
         """
         Sets target values for one or more axes.
 
-        For each axis specified in ``kwargs``, sets its target value. Optionally waits until all axes become idle after setting.
+        For each axis specified in ``kwargs``, sets its target value.
+        For example, to set x to 1.0 and y to 2.0, call: ``set(x=1.0, y=2.0)``.
+        Optionally waits until all axes become idle after setting.
 
-        Parameters
-        ----------
-        wait : bool, optional
-            If True, block until all axes become idle after setting. Defaults to False.
-        waitInterval : float, optional
-            Polling interval in seconds while waiting. Defaults to 0.1.
-        **kwargs
-            Axis-value pairs to set, e.g., x=1.0, y=2.0.
+        Args:
+            wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.
+            waitInterval (float, optional): Polling interval in seconds while waiting. Defaults to 0.1.
+            **kwargs: Axis-value pairs to set, e.g., x=1.0, y=2.0.
 
-        Raises
-        ------
-        ValueError
-            If any provided axis name is invalid.
+        Raises:
+            ValueError: If any provided axis name is invalid.
         """
         with QtCore.QMutexLocker(self._mutex):
             # Validate axis names
@@ -148,20 +135,14 @@ class MultiMotorInterface(HardwareInterface):
         """
         Gets the current values of all axes in the specified data type.
 
-        Parameters
-        ----------
-        type : type, optional
-            Output type (`dict`, `list`, or `np.ndarray`). Defaults to `dict`.
+        Args:
+            type (type, optional): Output type (`dict`, `list`, or `np.ndarray`). Defaults to `dict`.
 
-        Returns
-        -------
-        dict, list, or np.ndarray
-            Axis values in the requested format.
+        Returns:
+            dict or list or np.ndarray: Axis values in the requested format.
 
-        Raises
-        ------
-        TypeError
-            If an unsupported output type is requested.
+        Raises:
+            TypeError: If an unsupported output type is requested.
         """
         valueDict = self._get()
         if type is dict:
@@ -185,15 +166,11 @@ class MultiMotorInterface(HardwareInterface):
         """
         Blocks further interaction until the device is no longer busy.
 
-        Parameters
-        ----------
-        interval : float, optional
-            Polling interval in seconds. Defaults to 0.1.
+        Args:
+            interval (float, optional): Polling interval in seconds. Defaults to 0.1.
 
-        Returns
-        -------
-        bool
-            True once all axes become idle.
+        Returns:
+            bool: True once all axes become idle.
         """
         while True:
             if any(self.isBusy.values()):
@@ -206,15 +183,11 @@ class MultiMotorInterface(HardwareInterface):
         """
         Returns the current busy state of all axes.
 
-        Returns
-        -------
-        dict
-            Mapping of axis names to their busy state (bool).
+        Returns:
+            dict: Mapping of axis names to their busy state (bool).
 
-        Raises
-        ------
-        RuntimeError
-            If the device is not responding or a communication error occurs.
+        Raises:
+            RuntimeError: If the device is not responding or a communication error occurs.
         """
         with QtCore.QMutexLocker(self._mutex):
             return self._isBusy()
@@ -224,10 +197,8 @@ class MultiMotorInterface(HardwareInterface):
         """
         Returns the current alive state of all axes.
 
-        Returns
-        -------
-        dict
-            Mapping of axis names to their alive state (bool).
+        Returns:
+            dict: Mapping of axis names to their alive state (bool).
         """
         return self._isAlive()
 
@@ -236,10 +207,8 @@ class MultiMotorInterface(HardwareInterface):
         """
         Returns the list of axis names.
 
-        Returns
-        -------
-        list of str
-            List of axis names.
+        Returns:
+            list of str: List of axis names.
         """
         return list(self._info.keys())
     
@@ -249,15 +218,11 @@ class MultiMotorInterface(HardwareInterface):
 
         This method is intended to be overridden in subclasses to provide a device-specific settings UI.
 
-        Parameters
-        ----------
-        parent : QWidget, optional
-            Parent widget for the dialog.
+        Args:
+            parent (QWidget, optional): Parent widget for the dialog.
 
-        Returns
-        -------
-        QDialog
-            Settings dialog.
+        Returns:
+            QDialog: Settings dialog.
         """
         return QtWidgets.QDialog()
 
@@ -267,10 +232,8 @@ class MultiMotorInterface(HardwareInterface):
         """
         Should be implemented in subclasses to provide device-specific logic for determining busy state.
 
-        Returns
-        -------
-        dict
-            Mapping of axis names to their busy state (bool).
+        Returns:
+            dict: Mapping of axis names to their busy state (bool).
         """
         pass
 
@@ -279,10 +242,8 @@ class MultiMotorInterface(HardwareInterface):
         """
         Should be implemented in subclasses to provide device-specific logic for determining alive state.
 
-        Returns
-        -------
-        dict
-            Mapping of axis names to their alive state (bool).
+        Returns:
+            dict: Mapping of axis names to their alive state (bool).
         """
         pass
 
@@ -291,10 +252,8 @@ class MultiMotorInterface(HardwareInterface):
         """
         Should be implemented in subclasses to provide device-specific logic for getting axis positions.
 
-        Returns
-        -------
-        dict
-            Mapping of axis names to their current positions (float).
+        Returns:
+            dict: Mapping of axis names to their current positions (float).
         """
         pass
 
@@ -303,14 +262,7 @@ class MultiMotorInterface(HardwareInterface):
         """
         Should be implemented in subclasses to provide device-specific logic for setting axis positions.
 
-        Parameters
-        ----------
-        kwargs : dict
-            Axis-value pairs to set, e.g., x=1.0, y=2.0.
-        
-        Raises
-        ------
-        RuntimeError
-            If the device is not responding or a communication error occurs.
+        Args:
+            kwargs (dict): Axis-value pairs to set, e.g., x=1.0, y=2.0.
         """
         pass
