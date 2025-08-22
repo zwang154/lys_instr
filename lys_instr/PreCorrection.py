@@ -151,24 +151,24 @@ class PreCorrector(QtCore.QObject):
     delCorrectParamSignal = QtCore.pyqtSignal(object)
     addFuncSignal = QtCore.pyqtSignal(object)
 
-    def __init__(self, tem):
+    def __init__(self):
         super().__init__()
-        self._tem = tem
+        #self._tem = tem
         self._enable = False
-        self._allScanParams = self._tem.getInfo().getScan()
-        self._allScanParams.update(self._tem.getTIA().getScans())
-        self._allCorrectParams = self._tem.getStage().getScans()
-        self._allCorrectParams.update(self._tem.getInfo().getScan(single=False))
-        self._allCorrectParams.update(self._tem.getTIA().getScans())
-        self._allCorrectParams.update(self._tem.getShiftScans())
+        #self._allScanParams = self._tem.getInfo().getScan()
+        #self._allScanParams.update(self._tem.getTIA().getScans())
+        self._allCorrectParams = {"x": 1, "y": 2}#self._tem.getStage().getScans()
+        #self._allCorrectParams.update(self._tem.getInfo().getScan(single=False))
+        #self._allCorrectParams.update(self._tem.getTIA().getScans())
+        #self._allCorrectParams.update(self._tem.getShiftScans())
 
-        self._tem.valueSet.connect(self.doCorrection)
+        #self._tem.valueSet.connect(self.doCorrection)
 
         self._correctParams = dict()
 
     def addCorrectParam(self, correctParamName):
         if correctParamName not in self._correctParams.keys():
-            correctParam = _CorrectParameter(correctParamName, self._allCorrectParams[correctParamName])
+            correctParam = _CorrectParameter(self._allCorrectParams[correctParamName])
             self._correctParams[correctParamName] = correctParam
             self.addCorrectParamSignal.emit({"correctParamName": correctParamName, "correctParam": correctParam})
 
@@ -182,7 +182,7 @@ class PreCorrector(QtCore.QObject):
         self._correctParams[paramName].enable = bool
 
     def _getEnabledScanParams(self):
-        return set.union(*[correctParam.getEnabledArgNames() for correctParam in self._correctParams.values()])
+        return set.union(*[correctParam.argNames(excludeFixed=True) for correctParam in self._correctParams.values()])
 
     def _getEnabledCorrectParams(self):
         return [key for key, value in self._correctParams.items() if value.enable]
@@ -209,7 +209,7 @@ class PreCorrector(QtCore.QObject):
         usedCorrectParams = self._getEnabledCorrectParams()
 
         for used in usedCorrectParams:
-            value = self._correctParams[used].getCorrectValue(usedScanValues)
+            value = self._correctParams[used](**usedScanValues)
             if value.size == 1:
                 self._correctParams[used].set(value.item())
             else:
@@ -217,25 +217,16 @@ class PreCorrector(QtCore.QObject):
 
 
 class _CorrectParameter(QtCore.QObject):
-    addFuncSignal = QtCore.pyqtSignal(object)  # with {"funcName":funcName, "func":func}
-    delFuncsSignal = QtCore.pyqtSignal(object)  # with funcNames
     enableChanged = QtCore.pyqtSignal(object)
-    formulaChanged = QtCore.pyqtSignal(object)  # formula
-    correctParamNameError = QtCore.pyqtSignal(object)  # errorCorrectParamName
 
-    def __init__(self, correctParamName, scaner):
+    def __init__(self, scaner):
         super().__init__()
+        self._corrector = _FunctionCombination()
         self._scaner = scaner
         self._enable = True
 
-        self._corrector = _CorrectSetup(correctParamName, self)
-        self._corrector.addFuncSignal.connect(self.addFuncSignal.emit)
-        self._corrector.delFuncsSignal.connect(self.delFuncsSignal.emit)
-        self._corrector.formulaChanged.connect(self.formulaChanged.emit)
-        self._corrector.correctParamNameError.connect(self.correctParamNameError.emit)
-
     def get(self):
-        return self._scaner.get()
+        return self._scaner#.get()
 
     def set(self, value):
         return self._scaner.set(value)
@@ -253,122 +244,87 @@ class _CorrectParameter(QtCore.QObject):
         return getattr(self._corrector, attr)
 
 
-class _CorrectSetup(QtCore.QObject):
+class _FunctionCombination(QtCore.QObject):
     addFuncSignal = QtCore.pyqtSignal(object)  # {"funcName":funcName, "func":func}
     delFuncsSignal = QtCore.pyqtSignal(object)  # funcsNames
     formulaChanged = QtCore.pyqtSignal(object)  # formula
     correctParamNameError = QtCore.pyqtSignal(object)  # correctParamName of load File
 
-    def __init__(self, correctParamName, correctParam):
+    def __init__(self):
         super().__init__()
-        self._correctParamName = correctParamName
-        self._correctParam = correctParam
-        self._dimCorrect = 1 if isinstance(self._correctParam.get(), (int, float)) else len(self._correctParam.get())
         self._funcs = dict()
-        self._funcsID = 0
         self._formula = None
 
-    def getCorrectValue(self, scanParams):
+    def __call__(self, **scanParams):
         if self._formula is None:
             firstFunc = next(iter(self._funcs.values()))
-            correctValue = firstFunc(*[scanParams[argName] for argName in firstFunc.getEnabledArgNames()])
+            correctValue = firstFunc(**scanParams)
         else:
-            localVariables = {funcName: func(*[scanParams[argName] for argName in func.getEnabledArgNames()]) for funcName, func in self._funcs.items()}
+            localVariables = {funcName: func(**scanParams) for funcName, func in self._funcs.items()}
             correctValue = eval(self._formula, {"__builtins__": None}, localVariables)
         return correctValue
 
-    def addFuncFromGrid(self, gridWave):
-        data = gridWave.data
-        axes = gridWave.axes
-        note = gridWave.note
+    def addFunction(self, name, func):
+        """
+        Add function.
 
-        outputAxis = -1  # if necessary, make it optional
-        if self._dimCorrect == 1 and data.shape[outputAxis] != 1:
-            data = data[:, :, np.newaxis]
-            axes.append(np.array([0]))
+        Args:
+            name(str): The name of the function.
+            func(_NamedInterpolatedFunction): The function object.
+        """
+        self._funcs[name] = func
+        self.addFuncSignal.emit({"funcName": name, "func": func})
 
-        numOfPoints = np.prod((data.shape[:outputAxis]))  # if made optional, needs update
-        dimOutput = data.shape[outputAxis]
-        outputs = data.reshape(numOfPoints, dimOutput)
+    def deleteFunction(self, name):
+        """
+        Delete function by name.
 
-        grids = np.array(np.meshgrid(*axes[:outputAxis], indexing="ij"))  # if made optional, needs update
-        inputs = grids.reshape(grids.shape[0], np.prod(grids.shape[1:])).T  # inputs.shape = (numOfPoints, dimInput)
-
-        inputWave = Wave(inputs, scanParamNames=note["scanParamNames"])
-        outputWave = Wave(outputs, correctParamName=note["correctParamName"])
-
-        self.addFuncFromIO(inputWave, outputWave)
-
-    def addFuncFromIO(self, inputWave, outputWave):
-        if outputWave.note["correctParamName"] != self._correctParamName:
-            self.correctParamNameError.emit(outputWave.note["correctParamName"])
-            return
-
-        argNames = inputWave.note["scanParamNames"]
-        funcName = "func"+str(self._funcsID)
-        func = _NamedInterpolatedFunction(inputWave.data, outputWave.data, argNames)
-        self._funcs[funcName] = func
-        self._funcsID += 1
-        self.addFuncSignal.emit({"funcName": funcName, "func": func})
-
-    def delFuncs(self, funcsNames):
-        for key in list(self._funcs.keys()):
-            if key in funcsNames:
-                del self._funcs[key]
-        self.delFuncsSignal.emit(funcsNames)
+        Args:
+            name(str): The name of the function.
+        """
+        del self._funcs[name]
+        self.delFuncsSignal.emit(name)
 
     def setFormula(self, formula):
         self._formula = formula
 
-    def getEnabledArgNames(self):
-        return set.union(*[func.getEnabledArgNames() for func in self._funcs.values()])
+    def argNames(self, excludeFixed=True):
+        return set.union(*[func.argNames(excludeFixed=excludeFixed) for func in self._funcs.values()])
 
 
-class _InterpolatedFunction(QtCore.QObject):
+class _NamedInterpolatedFunction(QtCore.QObject):
+    """
+    This class represents a function f(x,y) with the information of arguments name such as 'x'.
+
+    Evaluation of the function can be done by __call__ like f(x=1, y=2).
+    """
     fixedValueChanged = QtCore.pyqtSignal(object)
 
-    def __init__(self, inputs, outputs):
-        super().__init__()
-        inputAxis = outputAxis = -1  # if necessary, make it optional
-
-        self._dimInput = inputs.shape[inputAxis]
-        self._dimOutput = outputs.shape[outputAxis]
-
-        self._interpolator = RBFInterpolator(inputs, outputs, kernel="linear")
-        self._fixedValues = [None]*self._dimInput
-
-    def __call__(self, *args):
-        args = list(args)
-        for i, value in enumerate(self._fixedValues):
-            if value is not None:
-                args.insert(i, value)
-
-        return self._interpolator([args])
-
-    def getDimInput(self):
-        return self._dimInput
-
-    def getDimOutput(self):
-        return self._dimOutput
-
-    def setFixedValue(self, index, value):
-        self._fixedValues[index] = value
-        self.fixedValueChanged.emit((index, value))
-
-    def getFixedValue(self):
-        return self._fixedValues
-
-
-class _NamedInterpolatedFunction(_InterpolatedFunction):
     def __init__(self, inputs, outputs, argNames):
-        super().__init__(inputs, outputs)
+        super().__init__()
+
         self._argNames = argNames
+        self._interpolator = RBFInterpolator(inputs, outputs, kernel="linear")
+        self._fixedValues = {}
 
-    def getArgNames(self):
-        return self._argNames
+    def __call__(self, **kwargs):
+        return self._interpolator([[self._fixedValues.get(arg, kwargs[arg]) for arg in self.argNames()]])
 
-    def getEnabledArgNames(self):
-        return set(argName for argName, fixedValue in zip(self._argNames, self._fixedValues) if fixedValue is None)
+    def setFixedValue(self, name, value):
+        """
+        Fix an arguments specified by name.
+        """
+        self._fixedValues[name] = value
+        self.fixedValueChanged.emit((name, value))
+
+    def argNames(self, excludeFixed=False):
+        """
+        Returns all arguments names of this function.
+        """
+        if excludeFixed:
+            return [arg for arg in self._argNames if arg not in self._fixedValues]
+        else:
+            return self._argNames
 
 
 class CorrectMakerGUI(QtWidgets.QWidget):
@@ -700,6 +656,7 @@ class CorrectParamWidget(QtWidgets.QWidget):
         super().__init__()
         self._correctParamName = correctParamName
         self._correctParam = correctParam
+        self._funcsID = 0
         self.__initUI()
         self._funcIdCountor = 0
         self._signalConnect()
@@ -797,18 +754,40 @@ class CorrectParamWidget(QtWidgets.QWidget):
         dialog = _addFuncDialog(self)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             if dialog.getMode() == "gridData":
-                gridDataPath = dialog.getGridDataPath()
-                self._correctParam.addFuncFromGrid(load(gridDataPath))
+                gridWave = load(dialog.getGridDataPath())
+
+                data, axes, note = gridWave.data, gridWave.axes, gridWave.note
+                dimCorrect = 1 if isinstance(self._correctParam.get(), (int, float)) else len(self._correctParam.get())
+
+                outputAxis = -1  # if necessary, make it optional
+                if dimCorrect == 1 and data.shape[outputAxis] != 1:
+                    data = data[:, :, np.newaxis]
+                    axes.append(np.array([0]))
+
+                numOfPoints = np.prod((data.shape[:outputAxis]))  # if made optional, needs update
+                dimOutput = data.shape[outputAxis]
+                outputs = data.reshape(numOfPoints, dimOutput)
+
+                grids = np.array(np.meshgrid(*axes[:outputAxis], indexing="ij"))  # if made optional, needs update
+                inputs = grids.reshape(grids.shape[0], np.prod(grids.shape[1:])).T  # inputs.shape = (numOfPoints, dimInput)
+
+                inputWave = Wave(inputs, scanParamNames=note["scanParamNames"])
+                outputWave = Wave(outputs, correctParamName=note["correctParamName"])
             else:
-                inputPath = dialog.getInputPath()
-                outputPath = dialog.getOutputPath()
-                self._correctParam.addFuncFromIO(load(inputPath), load(outputPath))
+                inputWave = load(dialog.getInputPath())
+                outputWave = load(dialog.getOutputPath())
+
+            name = "func"+str(self._funcsID)
+            func = _NamedInterpolatedFunction(inputWave.data, outputWave.data, inputWave.note["scanParamNames"])
+            self._correctParam.addFunction(name, func)
+            self._funcsID += 1
 
     def _delFuncs(self):
         selectedFuncNames = [self._funcsList.itemWidget(item).getFuncName() for item in self._funcsList.selectedItems()]
         ok = QtWidgets.QMessageBox.warning(self._funcsList, "Delete", 'This will delete all registered correction values. \n Do you really want to DELETE the parameter(s)? : ' + ", ".join(selectedFuncNames), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
         if ok:
-            self._correctParam.delFuncs(selectedFuncNames)
+            for name in selectedFuncNames:
+                self._correctParam.deleteFunction(name)
 
     def _clearFuncs(self):
         allFuncItems = [self._funcsList.item(i) for i in range(self._funcsList.count())]
@@ -962,7 +941,7 @@ class FuncWidget(QtWidgets.QWidget):
         super().__init__()
         self._funcName = funcName
         self._func = func
-        self._items = func.getArgNames()
+        self._items = func.argNames()
         self.__initUI()
         self._func.fixedValueChanged.connect(lambda signal: self._fixedValueChanged(*signal))
 
@@ -971,11 +950,11 @@ class FuncWidget(QtWidgets.QWidget):
         mainLayout.addWidget(QtWidgets.QLabel(self._funcName))
 
         self.argsInfo = []
-        for i in range(self._func.getDimInput()):
+        for i in range(len(self._func.argNames())):
             hLayout = QtWidgets.QHBoxLayout()
 
             argNameLabel = QtWidgets.QLabel(f"scanParam{i + 1}")
-            argNameWidget = QtWidgets.QLabel(self._func.getArgNames()[i])
+            argNameWidget = QtWidgets.QLabel(self._func.argNames()[i])
 
             enableLabel = QtWidgets.QLabel("enable")
             enableWidget = QtWidgets.QCheckBox()
