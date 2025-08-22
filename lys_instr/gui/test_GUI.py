@@ -5,12 +5,8 @@ from lys.Qt import QtWidgets, QtCore
 from lys_instr import DataStorage, gui, dummy
 
 
-# def clearStyleSheets(widget):
-#     widget.setStyleSheet("")
-#     for child in widget.findChildren(QtWidgets.QWidget):
-#         child.setStyleSheet("")
-
 class test_window(LysSubWindow):
+    _path = ".lys/instr/setting_test"
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Test GUI")
@@ -19,15 +15,12 @@ class test_window(LysSubWindow):
         self._motor = dummy.MultiMotorDummy("y", "z", "α", "x", "β", "γ")
         self._storage.connect(self._detector)
 
-        # self._settingsWindow = LysSubWindow()
-        # self._settingsWindow.setWindowTitle("Settings")
-        # self._settingsWindow.hide()
-
         self.__initLayout()
         self.adjustSize()
 
-    def __initLayout(self):
+        self.setSettingFile(self._path)
 
+    def __initLayout(self):
         _storageGUI = gui.DataStorageGUI(self._storage)
         _motorGUI = gui.MultiMotorGUI(self._motor, axisNamesSettable=("z", "α", "y"), axisNamesJoggable=("z"), axisNamesOffsettable=("y", "z"))
         _detectorGUI = gui.MultiDetectorGUI(self._detector)
@@ -50,13 +43,3 @@ class test_window(LysSubWindow):
         w = QtWidgets.QWidget()
         w.setLayout(HBox)
         self.setWidget(w)       # cannot set layout
-        # clearStyleSheets(self)
-
-
-    # def showSettings(self, settingsPanel):
-    #     settingsWindow = LysSubWindow()
-    #     settingsWindow.setWindowTitle("Settings")
-    #     settingsWindow.setWidget(settingsPanel)
-    #     settingsWindow.show()
-    #     settingsWindow.raise_()
-    #     self._lastSettingsWindow = settingsWindow  # Prevent garbage collection

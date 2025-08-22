@@ -33,11 +33,8 @@ class _AcqThread(QtCore.QThread):
 
         Overrides the ``run()`` method of QThread and is called when the worker thread is started.
         """
-        try:
-            self._detector._run(self._streaming)
-            self._onUpdated()
-        except Exception as e:
-            logging.exception("Error in acquisition thread")
+        self._detector._run(self._streaming)
+        self._onUpdated()
 
     def _onUpdated(self):
         """
@@ -128,10 +125,7 @@ class DetectorInterface(HardwareInterface):
         if wait:
             self.waitForReady()
             if output:
-                try:
-                    self.dataAcquired.disconnect(buffer.update)
-                except (TypeError, RuntimeError):
-                    logging.warning("Tried to disconnect a slot that was not connected")
+                self.dataAcquired.disconnect(buffer.update)
                 return buffer
 
     def _onAcqFinished(self):
@@ -211,21 +205,12 @@ class DetectorInterface(HardwareInterface):
 
         This method waits for the acquisition worker thread to finish if it is running.
         """
-        try:
-            self._stop()
-        except Exception as e:
-            logging.exception("Error stopping detector")
+        self._stop()
 
         if self._thread is not None and self._thread.isRunning():
-            try:
-                self._thread.quit()
-                self._thread.wait()
-            except Exception as e:
-                logging.exception("Error shutting down acquisition thread")
-        try:
-            self.dataAcquired.emit(self._get())
-        except Exception as e:
-            logging.exception("Error emitting acquired data")
+            self._thread.quit()
+            self._thread.wait()
+        self.dataAcquired.emit(self._get())
     
     def settingWidget(self):
         """

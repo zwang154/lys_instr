@@ -4,8 +4,6 @@ import logging
 from lys import Wave
 from lys.Qt import QtCore
 
-logging.basicConfig(level=logging.INFO)
-
 
 class DataStorage(QtCore.QObject):
     """
@@ -38,9 +36,9 @@ class DataStorage(QtCore.QObject):
             **kwargs: Additional keyword arguments passed to the base class.
         """
         super().__init__()
-        self._base = ""
-        self._folder = ""
-        self._name = ""
+        self._base = "."
+        self._folder = "folder"
+        self._name = "data"
         self._enabled = True
         self._numbered = True
         self._threads = []
@@ -175,7 +173,10 @@ class DataStorage(QtCore.QObject):
         Args:
             busy (bool): If True, reserve storage; if False, save the buffered data.
         """
-        self._reserve() if busy else self._save()       # detector._indexDim
+        if busy:
+            self.reserve(self._detector.dataShape)
+        else:
+            self.save()
 
     def reserve(self, shape=None, fillValue=None):
         """
@@ -215,6 +216,7 @@ class DataStorage(QtCore.QObject):
             data (dict): Dictionary mapping indices to data arrays for updating the buffer.
         """
         for idx, value in data.items():
+            #print(idx, value)
             self._arr[idx[-len(indexDim):]] = value
 
     def save(self):
@@ -285,9 +287,6 @@ class _SaveThread(QtCore.QThread):
         """
         Runs the save thread, exporting the Wave object to the specified path.
         """
-        try:
-            self.wave.export(self.path)
-        except Exception as e:
-            logging.error("Exception in save thread for path '%s': %s", self.path, e)
+        self.wave.export(self.path)
 
 

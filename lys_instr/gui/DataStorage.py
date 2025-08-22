@@ -9,40 +9,23 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._obj = obj
         self._settingPath = False
 
-        try:
-            with open(".lastPath.json", "r") as f:
-                lastPath = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            lastPath = {}
-        self._lastBase = lastPath.get("base", "fstem/.lys_instr/GUI")
-        self._lastFolder = lastPath.get("folder", "DataStorage")
-        self._lastName = lastPath.get("name", "Acquisition")
-
         self._initLayout()
+        self._obj.base = self._base.text()
+        self._obj.folder = self._folder.text()
+        self._obj.name = self._name.text()
 
         self._obj.pathChanged.connect(self._pathChanged)
         self._obj.savingStateChanged.connect(self._savingStateChanged)
 
-
     def _initLayout(self):
-        # self.setStyleSheet("QLineEdit {font-size: 14pt}"
-        #                    "QDoubleSpinBox {font-size: 14pt}"
-        #                    "QSpinBox {font-size: 14pt}"
-        #                    "QPushButton {font-size: 12pt}"
-        #                    "QLabel {font-size: 12pt}"
-        #                    "QCheckBox {font-size: 12pt}")
-
         # Widgets for data saving
         browse = QtWidgets.QPushButton(qta.icon("ri.folder-open-fill"), "", clicked=self._browse)
         browse.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         browse.setIconSize(QtCore.QSize(24, 24))
 
         self._base = QtWidgets.QLineEdit(objectName="DataStorage_base")
-        self._base.setText(self._lastBase)
         self._folder = QtWidgets.QLineEdit(objectName="DataStorage_folder")
-        self._folder.setText(self._lastFolder)
         self._name = QtWidgets.QLineEdit(objectName="DataStorage_name")
-        self._name.setText(self._lastName)
 
         self._savedIndicator = QtWidgets.QLabel()
         self._savedIndicator.setPixmap(qta.icon("ri.check-line", color="green").pixmap(24, 24))
@@ -83,7 +66,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(pathLayout)
         self.setLayout(mainLayout)
-
 
     def _pathChanged(self):
         if self._settingPath:
@@ -128,8 +110,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._optionsPanel.setVisible(checked)
         self._expandBtn.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
         self.adjustSize()
-
-
 
 
 # To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.DataStorageGUI

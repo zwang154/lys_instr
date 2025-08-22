@@ -188,12 +188,8 @@ class MultiMotorGUI(QtWidgets.QWidget):
 
         self._savedPositions = []
         if os.path.exists(self._path):
-            try:
-                with open(self._path, "r") as f:
-                    self._savedPositions = json.load(f)
-            except Exception as e:
-                QtWidgets.QMessageBox.warning(self, "File Load Error", f"Could not read file:\n{e}")
-                self._savedPositions = []
+            with open(self._path, "r") as f:
+                self._savedPositions = json.load(f)
         
         # Initialize GUI layout
         self._initLayout()
@@ -495,11 +491,8 @@ class MultiMotorGUI(QtWidgets.QWidget):
         newPosition = [self._obj.get()[name] for name in self._obj.nameList]
         newMemo = ""
         self._savedPositions.append({"label": newlabel, "position": newPosition, "memo": newMemo})
-        try:
-            with open(self._path, "w") as f:
-                json.dump(self._savedPositions, f)
-        except Exception as e:
-            QtWidgets.QMessageBox.warning(self, "Save Error", f"Could not update file:\n{e}")
+        with open(self._path, "w") as f:
+            json.dump(self._savedPositions, f)
         self._updateMemory()
 
     def _load(self):
@@ -509,15 +502,12 @@ class MultiMotorGUI(QtWidgets.QWidget):
         selections = self._positionList.selectedItems()
         if not selections:
             return
-        try:
-            selectedlabel = selections[0].text(0)
-            itemDict = next(item for item in self._savedPositions if item["label"] == selectedlabel)
-            loadedValues = itemDict["position"]
-            settableNames = self._getNamesSettable()
-            valueDict = {name: loadedValues[self._obj.nameList.index(name)] for name in settableNames}
-            self._obj.set(**valueDict)
-        except Exception as e:
-            QtWidgets.QMessageBox.warning(self, "Load Error", f"Could not load position:\n{e}")
+        selectedlabel = selections[0].text(0)
+        itemDict = next(item for item in self._savedPositions if item["label"] == selectedlabel)
+        loadedValues = itemDict["position"]
+        settableNames = self._getNamesSettable()
+        valueDict = {name: loadedValues[self._obj.nameList.index(name)] for name in settableNames}
+        self._obj.set(**valueDict)
 
     def _delete(self):
         """
@@ -525,11 +515,8 @@ class MultiMotorGUI(QtWidgets.QWidget):
         """
         selectedlabels = {i.text(0) for i in self._positionList.selectedItems()}
         self._savedPositions = [item for item in self._savedPositions if item["label"] not in selectedlabels]
-        try:
-            with open(self._path, "w") as f:
-                json.dump(self._savedPositions, f)
-        except Exception as e:
-            QtWidgets.QMessageBox.warning(self, "Delete Error", f"Could not update file:\n{e}")
+        with open(self._path, "w") as f:
+            json.dump(self._savedPositions, f)
         self._updateMemory()
 
     def _updateMemory(self):
@@ -565,11 +552,8 @@ class MultiMotorGUI(QtWidgets.QWidget):
             for idx, pos in enumerate(self._savedPositions):
                 if pos["label"] == label:
                     self._savedPositions[idx]["memo"] = memo
-                    try:
-                        with open(self._path, "w") as f:
-                            json.dump(self._savedPositions, f)
-                    except Exception as e:
-                        QtWidgets.QMessageBox.warning(self, "Memo Edit Error", f"Could not update file:\n{e}")
+                    with open(self._path, "w") as f:
+                        json.dump(self._savedPositions, f)
                     break
 
     def _updateMemoryBtns(self, loadBtn, deleteBtn):
