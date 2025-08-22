@@ -2,6 +2,7 @@ import numpy as np
 import time
 
 from lys_instr.MultiDetector import MultiDetectorInterface
+from lys.Qt import QtWidgets, QtCore
 
 
 class MultiDetectorDummy(MultiDetectorInterface):
@@ -25,10 +26,9 @@ class MultiDetectorDummy(MultiDetectorInterface):
         self._frameDim = frameDim
         self._frameTime = frameTime
         self._error = False
-        self._numFrames = None
         self.start()
 
-    def _run(self):
+    def _run(self, streaming):
         """
         Runs the acquisition thread associated with the ``MultiDetectorInterface``, simulating indexed/arrayed data frame acquisition.
 
@@ -36,7 +36,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
         """
         self._acquiredIndices = []
         startNum = 0
-        endNum = None if self._numFrames is None else startNum + self._numFrames
+        endNum = None if streaming else startNum + np.product(self.indexDim)
 
         self._shouldStop = False
 
@@ -87,3 +87,31 @@ class MultiDetectorDummy(MultiDetectorInterface):
         """
         return (*self.indexDim, *self._frameDim)
     
+    def settingWidget(self):
+        return _GeneralPanel(self)
+
+
+class _GeneralPanel(QtWidgets.QWidget):
+    def __init__(self, obj):
+        super().__init__()
+        self.setWindowTitle("Settings")
+        self._obj = obj
+        self._initLayout()
+
+    def _initLayout(self):
+        self._switch = QtWidgets.QPushButton("Change", clicked=self._toggleAlive)
+
+        aliveLayout = QtWidgets.QVBoxLayout()
+        aliveLayout.addWidget(self._switch, alignment=QtCore.Qt.AlignCenter)
+
+        # Combine layouts
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.addLayout(aliveLayout)
+        self.setLayout(mainLayout)
+        
+    def _toggleAlive(self):
+        backend = self._obj
+        backend._error = not backend._error
+        if (data := backend._get()):
+            backend.dataAcquired.emit(data)
+        backend.aliveStateChanged.emit(backend.isAlive)

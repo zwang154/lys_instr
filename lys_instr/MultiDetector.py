@@ -1,6 +1,5 @@
 import logging
 import time
-import abc
 
 from .Interfaces import HardwareInterface
 from lys.Qt import QtCore, QtWidgets
@@ -16,7 +15,7 @@ class _AcqThread(QtCore.QThread):
     # Signal (dict) emitted when new data is acquired.
     dataAcquired = QtCore.pyqtSignal(dict)
 
-    def __init__(self, detector):
+    def __init__(self, detector, streaming):
         """
         Initializes the acquisition thread for the detector.
 
@@ -26,6 +25,7 @@ class _AcqThread(QtCore.QThread):
         super().__init__()
         self._detector = detector
         self._detector.updated.connect(self._onUpdated)
+        self._streaming = streaming
 
     def run(self, *args, **kwargs):
         """
@@ -34,7 +34,7 @@ class _AcqThread(QtCore.QThread):
         Overrides the ``run()`` method of QThread and is called when the worker thread is started.
         """
         try:
-            self._detector._run(*args, **kwargs)
+            self._detector._run(self._streaming)
             self._onUpdated()
         except Exception as e:
             logging.exception("Error in acquisition thread")
@@ -48,6 +48,7 @@ class _AcqThread(QtCore.QThread):
         self.dataAcquired.emit(self._detector._get())
 
 
+
 class DetectorInterface(HardwareInterface):
     """
     Abstract interface for detector devices.
@@ -59,33 +60,26 @@ class DetectorInterface(HardwareInterface):
     The ``updated`` signal should be emitted by the acquisition thread to inform when new data is acquired.
 
     Args:
+        exposure(float or None): The initial exposure time. If the device does not support the exposure time, None should be set.
         **kwargs: Additional keyword arguments passed to QThread.
     """
 
-    #: Signal (bool) emitted when alive state changes.
     aliveStateChanged = QtCore.pyqtSignal(bool)
+    """Emitted when alive state changes."""
 
-    #: Signal (bool) emitted when busy state changes.
     busyStateChanged = QtCore.pyqtSignal(bool)
+    """Emitted when busy state changes."""
 
-    #: Signal (dict) emitted when data is acquired.
     dataAcquired = QtCore.pyqtSignal(dict)
+    """emitted when data is acquired."""
 
-    #: Signal emitted by the acquisition thread when new data is acquired.
     updated = QtCore.pyqtSignal()
+    """emitted by the acquisition thread when new data is acquired."""
 
-    def __init__(self, **kwargs):
-        """
-        Initializes the detector interface.
-
-        Sets up initial state and internal flags.
-
-        Args:
-            **kwargs: Additional keyword arguments passed to the base class.
-        """
+    def __init__(self, exposure=1, **kwargs):
         super().__init__(**kwargs)
-        self.busy = False
-        self._alive = True
+        self._exposure = exposure
+        self._busy = False
 
     def _loadState(self):
         """
@@ -93,12 +87,15 @@ class DetectorInterface(HardwareInterface):
 
         Emits the ``aliveStateChanged`` signal if the alive state has changed.
         """
+        if not hasattr(self, "_alive"):
+            self._alive = True
+
         al = self._isAlive()
         if self._alive != al:
             self._alive = al
             self.aliveStateChanged.emit(al)
 
-    def startAcq(self, wait=False, output=False, **kwargs):
+    def startAcq(self, streaming=False, wait=False, output=False):
         """
         Starts acquisition in an acquisition thread.
 
@@ -107,37 +104,34 @@ class DetectorInterface(HardwareInterface):
         Args:
             wait (bool, optional): If True, blocks until acquisition is complete. Defaults to False.
             output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.
-            **kwargs: Additional keyword arguments passed to the acquisition thread.
 
         Returns:
             dict or None: Acquired data if output is True, otherwise None.
         """
-        if self.busy:
+        if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
             return
         
-        self.busy = True
+        self._busy = True
         self.busyStateChanged.emit(True)
 
-        self._thread = _AcqThread(self)
-        if wait and output:
-            buffer = {}
-            def bufferSlot(data):
-                buffer.update(data)
-            self._bufferSlot = bufferSlot
-            self._thread.dataAcquired.connect(self._bufferSlot, type=QtCore.Qt.DirectConnection)
+        self._thread = _AcqThread(self, streaming=streaming)
         self._thread.dataAcquired.connect(self.dataAcquired.emit)
         self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
+        if wait and output:
+            buffer = {}
+            self._thread.dataAcquired.connect(buffer.update, type=QtCore.Qt.DirectConnection)
+
         self._thread.start()
+
 
         if wait:
             self.waitForReady()
             if output:
                 try:
-                    self.dataAcquired.disconnect(self._bufferSlot)
+                    self.dataAcquired.disconnect(buffer.update)
                 except (TypeError, RuntimeError):
                     logging.warning("Tried to disconnect a slot that was not connected")
-                # print(buffer.keys())
                 return buffer
 
     def _onAcqFinished(self):
@@ -147,7 +141,7 @@ class DetectorInterface(HardwareInterface):
         Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.
         """
         self._thread = None
-        self.busy = False
+        self._busy = False
         self.busyStateChanged.emit(False)
 
     def waitForReady(self, interval=0.1):
@@ -167,6 +161,27 @@ class DetectorInterface(HardwareInterface):
                 return True
 
     @property
+    def exposure(self):
+        """
+        Return the exposure time.
+        If the detector does not support the exposure time, None will be returned.
+
+        Returns:
+            float or None: The exposure time
+        """
+        return self._exposure
+    
+    @exposure.setter
+    def exposure(self, value):
+        """
+        Set the exposure time.
+
+        Args:
+            value(float): The exporesure time to be set.
+        """
+        self._exposure = value
+
+    @property
     def isBusy(self):
         """
         Returns whether the detector is currently busy.
@@ -176,7 +191,7 @@ class DetectorInterface(HardwareInterface):
         Returns:
             bool: True if the detector is busy, False otherwise.
         """
-        return self.busy
+        return self._busy
     
     @property
     def isAlive(self):
@@ -212,7 +227,7 @@ class DetectorInterface(HardwareInterface):
         except Exception as e:
             logging.exception("Error emitting acquired data")
     
-    def settingWidget(self, parent=None):
+    def settingWidget(self):
         """
         Returns a generic settings dialog.
 
@@ -224,9 +239,8 @@ class DetectorInterface(HardwareInterface):
         Returns:
             QDialog: The settings dialog.
         """
-        return QtWidgets.QDialog()
+        raise NotImplementedError("Subclass should implement this method.")
 
-    @abc.abstractmethod
     def _get(self):
         """
         Should be implemented in subclasses to provide device-specific logic for getting acquired data.
@@ -234,21 +248,28 @@ class DetectorInterface(HardwareInterface):
         Returns:
             dict: Mapping of indices (tuple) to their data frames (np.ndarray).
         """
-        pass
+        raise NotImplementedError("Sub-class should implement this method.")
 
-    @abc.abstractmethod
     def _stop(self):
         """
         Should be implemented in subclasses to provide device-specific logic for stopping acquisition.
         """
-        pass
+        raise NotImplementedError("Sub-class should implement this method.")
 
-    @abc.abstractmethod
     def _isAlive(self):
         """
         Should be implemented in subclasses to provide device-specific logic for returning alive state.
         """
-        pass
+        raise NotImplementedError("Sub-class should implement this method.")
+
+    def _run(self, streaming):
+        """
+        The sub-class of this class should implement _run method.
+
+        Args:
+            streaming(bool): Whether the measurement should be continuous.
+        """
+        raise NotImplementedError("This method should be implemented in sub class.")
 
 
 
