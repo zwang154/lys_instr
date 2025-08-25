@@ -1,11 +1,8 @@
-from lys import *
-from lys.Qt import QtWidgets, QtGui, QtCore
-from lys.widgets import LysSubWindow, lysCanvas, ScientificSpinBox
+from lys.Qt import QtWidgets, QtCore
 from lys.decorators import avoidCircularReference
 
 import numpy as np
-from scipy.interpolate import RBFInterpolator
-from lys import Wave, load
+from lys import Wave
 
 
 class CorrectMaker(QtCore.QObject):
@@ -146,114 +143,44 @@ class CorrectMaker(QtCore.QObject):
                 outputWave.export(fileName + "_output_for_" + IO["correctParamName"])
 
 
-class PreCorrector(QtCore.QObject):
-    addCorrectParamSignal = QtCore.pyqtSignal(object)
-    delCorrectParamSignal = QtCore.pyqtSignal(object)
-    addFuncSignal = QtCore.pyqtSignal(object)
-
-    def __init__(self):
+class PreCorrector:
+    def __init__(self, controllers):
         super().__init__()
-        #self._tem = tem
-        self._enable = False
-        #self._allScanParams = self._tem.getInfo().getScan()
-        #self._allScanParams.update(self._tem.getTIA().getScans())
-        self._allCorrectParams = {"x": 1, "y": 2}#self._tem.getStage().getScans()
-        #self._allCorrectParams.update(self._tem.getInfo().getScan(single=False))
-        #self._allCorrectParams.update(self._tem.getTIA().getScans())
-        #self._allCorrectParams.update(self._tem.getShiftScans())
-
-        #self._tem.valueSet.connect(self.doCorrection)
+        self._enabled = True
+        self._controllers = {}
+        for c in controllers:
+            c.valueChanged.connect(self._correct)
+            self._controllers.update({name: c for name in c.nameList})
 
         self._correctParams = dict()
 
-    def addCorrectParam(self, correctParamName):
-        if correctParamName not in self._correctParams.keys():
-            correctParam = _CorrectParameter(self._allCorrectParams[correctParamName])
-            self._correctParams[correctParamName] = correctParam
-            self.addCorrectParamSignal.emit({"correctParamName": correctParamName, "correctParam": correctParam})
-
-    def delCorrectParams(self, paramNames):
-        for paramName in list(self._correctParams.keys()):
-            if paramName in paramNames:
-                del self._correctParams[paramName]
-        self.delCorrectParamSignal.emit(paramNames)
-
-    def setEnabledCorrectParam(self, paramName, bool):
-        self._correctParams[paramName].enable = bool
-
-    def _getEnabledScanParams(self):
-        return set.union(*[correctParam.argNames(excludeFixed=True) for correctParam in self._correctParams.values()])
-
-    def _getEnabledCorrectParams(self):
-        return [key for key, value in self._correctParams.items() if value.enable]
+    @property
+    def parameters(self):
+        return self._controllers.keys()
+    
+    @property
+    def corrections(self):
+        return self._correctParams
 
     @avoidCircularReference
-    def doCorrection(self, values={}):
-        print("doCorre")
-        if not self._enable:
-            print("disable")
+    def _correct(self, values={}):
+        if not self._enabled:
             return
-
-        if not isinstance(values, (int, float)):
-            if bool(len(values)) == 0:
-                print("tuple?")
-                if len(set(self._getEnabledScanParams()) & set(values.keys())) == 0:
-                    return
-
-        if len(self._getEnabledCorrectParams()) == 0:
-            print("non CorrectParam")
-            return
-
-        usedScanValues = {paramName: self._allScanParams[paramName].get() for paramName in self._getEnabledScanParams()}
-
-        usedCorrectParams = self._getEnabledCorrectParams()
-
-        for used in usedCorrectParams:
-            value = self._correctParams[used](**usedScanValues)
-            if value.size == 1:
-                self._correctParams[used].set(value.item())
-            else:
-                self._correctParams[used].set(tuple(list(value.flat)))
+        
+        for name, func in self._correctParams.items():
+            if not func.enabled:
+                continue
+            elif any([arg in values for arg in func.argNames(excludeFixed=False)]):
+                params = {arg: self._controllers[arg].get()[arg] for arg in func.argNames()}
+                self._controllers[name].set(**{name: func(**params)})
 
 
-class _CorrectParameter(QtCore.QObject):
-    enableChanged = QtCore.pyqtSignal(object)
-
-    def __init__(self, scaner):
-        super().__init__()
-        self._corrector = _FunctionCombination()
-        self._scaner = scaner
-        self._enable = True
-
-    def get(self):
-        return self._scaner#.get()
-
-    def set(self, value):
-        return self._scaner.set(value)
-
-    @property
-    def enable(self):
-        return self._enable
-
-    @enable.setter
-    def enable(self, bool):
-        self._enable = bool
-        self.enableChanged.emit(bool)
-
-    def __getattr__(self, attr):
-        return getattr(self._corrector, attr)
-
-
-class _FunctionCombination(QtCore.QObject):
-    addFuncSignal = QtCore.pyqtSignal(object)  # {"funcName":funcName, "func":func}
-    delFuncsSignal = QtCore.pyqtSignal(object)  # funcsNames
-    formulaChanged = QtCore.pyqtSignal(object)  # formula
-    correctParamNameError = QtCore.pyqtSignal(object)  # correctParamName of load File
-
+class _FunctionCombination:
     def __init__(self):
         super().__init__()
         self._funcs = dict()
         self._formula = None
+        self.enabled = True
 
     def __call__(self, **scanParams):
         if self._formula is None:
@@ -264,63 +191,50 @@ class _FunctionCombination(QtCore.QObject):
             correctValue = eval(self._formula, {"__builtins__": None}, localVariables)
         return correctValue
 
-    def addFunction(self, name, func):
-        """
-        Add function.
-
-        Args:
-            name(str): The name of the function.
-            func(_NamedInterpolatedFunction): The function object.
-        """
-        self._funcs[name] = func
-        self.addFuncSignal.emit({"funcName": name, "func": func})
-
-    def deleteFunction(self, name):
-        """
-        Delete function by name.
-
-        Args:
-            name(str): The name of the function.
-        """
-        del self._funcs[name]
-        self.delFuncsSignal.emit(name)
-
-    def setFormula(self, formula):
-        self._formula = formula
+    @property
+    def functions(self):
+        return self._funcs
+    
+    @property
+    def expression(self):
+        return self._formula
+    
+    @expression.setter
+    def expression(self, value):
+        self._formula = value
 
     def argNames(self, excludeFixed=True):
-        return set.union(*[func.argNames(excludeFixed=excludeFixed) for func in self._funcs.values()])
+        res = []
+        for func in self._funcs.values():
+            for arg in func.argNames(excludeFixed=excludeFixed):
+                if arg not in res:
+                    res.append(arg)
+        return res
 
 
-class _NamedInterpolatedFunction(QtCore.QObject):
+class _InterpolatedFunction:
     """
     This class represents a function f(x,y) with the information of arguments name such as 'x'.
 
     Evaluation of the function can be done by __call__ like f(x=1, y=2).
     """
-    fixedValueChanged = QtCore.pyqtSignal(object)
 
-    def __init__(self, inputs, outputs, argNames):
+    def __init__(self, interpolator, argNames):
         super().__init__()
-
         self._argNames = argNames
-        self._interpolator = RBFInterpolator(inputs, outputs, kernel="linear")
+        self._interpolator = interpolator
         self._fixedValues = {}
 
     def __call__(self, **kwargs):
-        return self._interpolator([[self._fixedValues.get(arg, kwargs[arg]) for arg in self.argNames()]])
-
-    def setFixedValue(self, name, value):
-        """
-        Fix an arguments specified by name.
-        """
-        self._fixedValues[name] = value
-        self.fixedValueChanged.emit((name, value))
+        return self._interpolator([[self._fixedValues.get(arg, kwargs.get(arg, None)) for arg in self.argNames()]])[0]
+    
+    @property
+    def fixedValues(self):
+        """ a dictionary that specifies the fixed value."""
+        return self._fixedValues
 
     def argNames(self, excludeFixed=False):
-        """
-        Returns all arguments names of this function.
-        """
+        """Returns all arguments names of this function."""
         if excludeFixed:
             return [arg for arg in self._argNames if arg not in self._fixedValues]
         else:
@@ -559,458 +473,3 @@ class _IOWidget(QtWidgets.QWidget):
         outputShape = self._IO["scanWave"].shape
         self._shapeLabel.setText("input wave shape" + str(inputShape) + "\noutput wave shape" + str(outputShape))
 
-
-class PreCorrectorGUI(QtWidgets.QWidget):
-    def __init__(self, obj):
-        super().__init__()
-        self._obj = obj
-        self.__initUI()
-        self._signalConnect()
-
-    def _signalConnect(self):
-        self._obj.addCorrectParamSignal.connect(lambda kargs: self.__addCorrectParamsWidget(**kargs))
-        self._obj.delCorrectParamSignal.connect(self.__delCorrectParamsWidget)
-        self._correctBuilder.addRequest.connect(self._addCorrectParam)
-        self._correctBuilder.delRequest.connect(self._delCorrectParams)
-        self._correctBuilder.clearRequest.connect(self._clearCorrectParams)
-
-    def __initUI(self):
-        self._correctParamsList = QtWidgets.QListWidget()
-        self._correctParamsList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self._correctParamsList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self._correctBuilder = _contextMenuBuilder()
-        self._correctParamsList.customContextMenuRequested.connect(self._correctBuilder.build)
-
-        self._layout = QtWidgets.QVBoxLayout()
-        self._layout.addWidget(QtWidgets.QLabel("Correct Parameters"))
-        self._layout.addWidget(self._correctParamsList)
-
-        self.setLayout(self._layout)
-        self.adjustSize()
-
-    def _addCorrectParam(self):
-        additems = [key for key in self._obj._allCorrectParams.keys() if key not in self._obj._correctParams.keys()]
-        if len(additems) == 0:
-            return
-
-        item, ok = QtWidgets.QInputDialog.getItem(self._correctParamsList, "Add Correct Params", "Param", additems, editable=False)
-        if ok:
-            self._obj.addCorrectParam(item)
-
-    def _delCorrectParams(self):
-        correctParamNames = [self._correctParamsList.itemWidget(item).getCorrectParamName() for item in self._correctParamsList.selectedItems()]
-        ok = QtWidgets.QMessageBox.warning(self._correctParamsList, "Delete", 'This will delete all registered correction values. \n Do you really want to DELETE the parameter(s)? : ' + ", ".join(correctParamNames), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-        if ok:
-            self._obj.delCorrectParams(correctParamNames)
-
-    def _clearCorrectParams(self):
-        allItem = [self._correctParamsList.item(i) for i in range(self._correctParamsList.count())]
-        allCorrectPramNames = [self._correctParamsList.itemWidget(item).getCorrectParamName() for item in allItem]
-        ok = QtWidgets.QMessageBox.warning(self._correctParamsList, "Clear", "This will delete all registered correction values. \n Do you really want to CLEAR the all parameter(s)?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-        if ok:
-            self._obj.delCorrectParams(allCorrectPramNames)
-
-    def __addCorrectParamsWidget(self, correctParamName, correctParam):
-        item = QtWidgets.QListWidgetItem()
-        widget = CorrectParamWidget(correctParamName, correctParam)
-        widget.sizeChanged.connect(lambda sizeHint: item.setSizeHint(sizeHint))
-        item.setSizeHint(widget.sizeHint())
-        self._correctParamsList.addItem(item)
-        self._correctParamsList.setItemWidget(item, widget)
-
-    def __delCorrectParamsWidget(self, correctParamNames):
-        for i in reversed(range(self._correctParamsList.count())):
-            if self._correctParamsList.itemWidget(self._correctParamsList.item(i)).getCorrectParamName() in correctParamNames:
-                self._correctParamsList.takeItem(i)
-
-
-class _contextMenuBuilder(QtCore.QObject):
-    addRequest = QtCore.pyqtSignal()
-    delRequest = QtCore.pyqtSignal()
-    clearRequest = QtCore.pyqtSignal()
-
-    def __init__(self):
-        super().__init__()
-        self._SetDefaultMenu()
-
-    def _SetDefaultMenu(self):
-        self._add = QtWidgets.QAction('Add', triggered=self.addRequest.emit)
-        self._delete = QtWidgets.QAction('Delete', triggered=self.delRequest.emit)
-        self._clear = QtWidgets.QAction('Clear', triggered=self.clearRequest.emit)
-
-        menu = QtWidgets.QMenu()
-        menu.addAction(self._add)
-        menu.addAction(self._delete)
-        menu.addAction(self._clear)
-
-        self.__actions = menu
-
-    def build(self):
-        self.__actions.exec_(QtGui.QCursor.pos())
-
-
-class CorrectParamWidget(QtWidgets.QWidget):
-    sizeChanged = QtCore.pyqtSignal(object)
-
-    def __init__(self, correctParamName, correctParam: _CorrectParameter):
-        super().__init__()
-        self._correctParamName = correctParamName
-        self._correctParam = correctParam
-        self._funcsID = 0
-        self.__initUI()
-        self._funcIdCountor = 0
-        self._signalConnect()
-
-    def getCorrectParamName(self):
-        return self._correctParamName
-
-    def _signalConnect(self):
-        self._funcsListBilder.addRequest.connect(self._addFunc)
-        self._funcsListBilder.delRequest.connect(self._delFuncs)
-        self._funcsListBilder.clearRequest.connect(self._clearFuncs)
-        self._correctParam.addFuncSignal.connect(lambda kargs: self.__addFuncWidget(**kargs))
-        self._correctParam.addFuncSignal.connect(lambda _: self.__setFormulaWidgetVisible())
-        self._correctParam.delFuncsSignal.connect(lambda funcNames: self.__delFuncsWidget(funcNames))
-        self._correctParam.delFuncsSignal.connect(lambda _: self.__setFormulaWidgetVisible())
-        self._correctParam.correctParamNameError.connect(self.__raiseErrorMessage)
-        self.checkbox.toggled.connect(self._setEnabled)
-        self.formulaEdit.textChanged.connect(self._setFormula)
-
-    def __initUI(self):
-        layout = QtWidgets.QVBoxLayout(self)
-
-        # header
-        header_widget, self.checkbox = self.__makeHeader(self._correctParamName)
-        layout.addWidget(header_widget)
-
-        # detail_layout
-        self.detail_widget = QtWidgets.QWidget()
-        self.detail_Layout = QtWidgets.QVBoxLayout(self.detail_widget)
-        self.funcsListWidget, self._funcsList, self._funcsListBilder = self.__makeFuncListWidget()
-        self.formulaWidget, self.formulaEdit = self.__makeFormulaWidget()
-        self.formulaWidget.setVisible(False)
-
-        self.detail_Layout.addWidget(self.funcsListWidget)
-        self.detail_Layout.addWidget(self.formulaWidget)
-
-        layout.addWidget(self.detail_widget)
-
-    def __makeHeader(self, correctParamName):
-        header_widget = QtWidgets.QWidget()
-        header_layout = QtWidgets.QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.toggle_button = QtWidgets.QToolButton()
-        self.toggle_button.setCheckable(True)
-        self.toggle_button.setChecked(True)
-        self.toggle_button.clicked.connect(self.__toggle_detail)
-        self.toggle_button.setArrowType(QtCore.Qt.RightArrow if not self.toggle_button.isChecked() else QtCore.Qt.DownArrow)
-        header_layout.addWidget(self.toggle_button)
-
-        checkbox = QtWidgets.QCheckBox()
-        checkbox.setChecked(self._correctParam.enable)
-        header_layout.addWidget(checkbox)
-
-        label = QtWidgets.QLabel(correctParamName)
-        header_layout.addWidget(label)
-
-        header_layout.addStretch()
-
-        return header_widget, checkbox
-
-    def __toggle_detail(self):
-        self.detail_widget.setVisible(self.toggle_button.isChecked())
-        self.toggle_button.setArrowType(QtCore.Qt.RightArrow if not self.toggle_button.isChecked() else QtCore.Qt.DownArrow)
-        self.sizeChanged.emit(self.sizeHint())
-
-    def __makeFuncListWidget(self):
-        funcsListWidget = QtWidgets.QWidget()
-        funcsListBox = QtWidgets.QVBoxLayout(funcsListWidget)
-
-        funcsList = QtWidgets.QListWidget()
-        funcsList.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        funcsList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        funcsListBuilder = _contextMenuBuilder()
-        funcsList.customContextMenuRequested.connect(funcsListBuilder.build)
-
-        funcsListBox.addWidget(QtWidgets.QLabel("function list"))
-        funcsListBox.addWidget(funcsList)
-        return funcsListWidget, funcsList, funcsListBuilder
-
-    def __makeFormulaWidget(self):
-        formulaWidget = QtWidgets.QWidget()
-        formulaBox = QtWidgets.QVBoxLayout(formulaWidget)
-
-        formulaBox.addWidget(QtWidgets.QLabel("define correct value as formula by function Names (ex. func0 + func1*func2 - func3/func4 + 10.48) <br> If fomular None, correct value is func<i>N<\i> value (the N is the smallest number in function list)"))
-        formulaEdit = QtWidgets.QLineEdit()
-        formulaBox.addWidget(formulaEdit)
-        return formulaWidget, formulaEdit
-
-    def __setFormulaWidgetVisible(self):
-        self.formulaWidget.setVisible(self._funcsList.count() >= 2)
-        self.sizeChanged.emit(self.sizeHint())
-
-    def _addFunc(self):
-        dialog = _addFuncDialog(self)
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            if dialog.getMode() == "gridData":
-                gridWave = load(dialog.getGridDataPath())
-
-                data, axes, note = gridWave.data, gridWave.axes, gridWave.note
-                dimCorrect = 1 if isinstance(self._correctParam.get(), (int, float)) else len(self._correctParam.get())
-
-                outputAxis = -1  # if necessary, make it optional
-                if dimCorrect == 1 and data.shape[outputAxis] != 1:
-                    data = data[:, :, np.newaxis]
-                    axes.append(np.array([0]))
-
-                numOfPoints = np.prod((data.shape[:outputAxis]))  # if made optional, needs update
-                dimOutput = data.shape[outputAxis]
-                outputs = data.reshape(numOfPoints, dimOutput)
-
-                grids = np.array(np.meshgrid(*axes[:outputAxis], indexing="ij"))  # if made optional, needs update
-                inputs = grids.reshape(grids.shape[0], np.prod(grids.shape[1:])).T  # inputs.shape = (numOfPoints, dimInput)
-
-                inputWave = Wave(inputs, scanParamNames=note["scanParamNames"])
-                outputWave = Wave(outputs, correctParamName=note["correctParamName"])
-            else:
-                inputWave = load(dialog.getInputPath())
-                outputWave = load(dialog.getOutputPath())
-
-            name = "func"+str(self._funcsID)
-            func = _NamedInterpolatedFunction(inputWave.data, outputWave.data, inputWave.note["scanParamNames"])
-            self._correctParam.addFunction(name, func)
-            self._funcsID += 1
-
-    def _delFuncs(self):
-        selectedFuncNames = [self._funcsList.itemWidget(item).getFuncName() for item in self._funcsList.selectedItems()]
-        ok = QtWidgets.QMessageBox.warning(self._funcsList, "Delete", 'This will delete all registered correction values. \n Do you really want to DELETE the parameter(s)? : ' + ", ".join(selectedFuncNames), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-        if ok:
-            for name in selectedFuncNames:
-                self._correctParam.deleteFunction(name)
-
-    def _clearFuncs(self):
-        allFuncItems = [self._funcsList.item(i) for i in range(self._funcsList.count())]
-        allFuncNames = [self._funcsList.itemWidget(item).getFuncName() for item in allFuncItems]
-        ok = QtWidgets.QMessageBox.warning(self._funcsList, "Clear", "This will delete all registered correction values. \n Do you really want to CLEAR the all parameter(s)?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-        if ok:
-            self._obj.delCorrectParams(allFuncNames)
-
-    def __addFuncWidget(self, funcName, func):
-        item = QtWidgets.QListWidgetItem()
-        widget = FuncWidget(funcName, func)
-        self._funcsList.addItem(item)
-        self._funcsList.setItemWidget(item, widget)
-        item.setSizeHint(widget.sizeHint())
-        self.sizeChanged.emit(self.sizeHint())
-
-    def __delFuncsWidget(self, funcNames):
-        for i in reversed(range(self._funcsList.count())):
-            if self._funcsList.itemWidget(self._funcsList.item(i)).getFuncName() in funcNames:
-                self._funcsList.takeItem(i)
-        self.sizeChanged.emit(self.sizeHint())
-
-    def _setEnabled(self, checked):
-        self._correctParam.enable = checked
-
-    def _enableChanged(self, checked):
-        if checked == self.checkbox.isChecked():
-            return
-
-        self.checkbox.setChecked(checked)
-
-    def _setFormula(self, formula):
-        self._correctParam.setFormula(formula)
-
-    def _formulaChanged(self, formula):
-        if formula == self.formula.text():
-            return
-        self.formulaEdit.setText(formula)
-
-    def __raiseErrorMessage(self, errorCorrectParamName):
-        ok = QtWidgets.QMessageBox.warning(self._funcsList, "Error", "The loaded wave does not match the correctParamsName. loaded Wave:" + str(errorCorrectParamName), QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
-
-
-class _addFuncDialog(QtWidgets.QDialog):
-    def __init__(self, parent):
-        super().__init__(parent)
-
-        self.setWindowTitle("add function")
-
-        layout = QtWidgets.QVBoxLayout()
-
-        modeBox, self.radioButtonGrid, self.radioButtonIO = self.__makeModeBox()
-        self.gridDataWidget, self.gridDataLineEdit = self.__makeGridDataWidget()
-        self.IODataWidget, self.inputLineEdit, self.outputLineEdit = self.__makeIOWidget()
-
-        # buttons
-        button_layout = QtWidgets.QHBoxLayout()
-        ok_button = QtWidgets.QPushButton("add")
-        cancel_button = QtWidgets.QPushButton("cancel")
-        ok_button.clicked.connect(self.accept)
-        cancel_button.clicked.connect(self.reject)
-        button_layout.addWidget(ok_button)
-        button_layout.addWidget(cancel_button)
-
-        layout.addLayout(modeBox)
-        layout.addWidget(self.gridDataWidget)
-        layout.addWidget(self.IODataWidget)
-        layout.addLayout(button_layout)
-
-        self.radioButtonIO.setChecked(True)
-
-        self.setLayout(layout)
-
-    def getMode(self):
-        if self.radioButtonGrid.isChecked():
-            return "gridData"
-        else:
-            return "IOData"
-
-    def getInputPath(self):
-        return self.inputLineEdit.text()
-
-    def getOutputPath(self):
-        return self.outputLineEdit.text()
-
-    def getGridDataPath(self):
-        return self.gridDataLineEdit.text()
-
-    def __makeModeBox(self):
-        modeBox = QtWidgets.QHBoxLayout()
-        radio1 = QtWidgets.QRadioButton("grid data")
-        radio2 = QtWidgets.QRadioButton("I/O data")
-        group = QtWidgets.QButtonGroup()
-        group.addButton(radio1)
-        group.addButton(radio2)
-        radio1.toggled.connect(self.__toggleMode)
-        radio2.toggled.connect(self.__toggleMode)
-        modeBox.addWidget(radio1)
-        modeBox.addWidget(radio2)
-        return modeBox, radio1, radio2
-
-    def __toggleMode(self):
-        if self.radioButtonGrid.isChecked():
-            self.gridDataWidget.show()
-            self.IODataWidget.hide()
-        else:
-            self.gridDataWidget.hide()
-            self.IODataWidget.show()
-
-    def __makeGridDataWidget(self):
-        gridDataWidget = QtWidgets.QWidget()
-        gridDataBox = QtWidgets.QVBoxLayout(gridDataWidget)
-
-        gridDataLayout = QtWidgets.QHBoxLayout()
-        gridData = QtWidgets.QLineEdit("selct .npz file")
-        gridDataLayout.addWidget(QtWidgets.QLabel("grid wave data as shape(N1,N2,...,Nn,dimCorrectParam)"))
-        gridDataLayout.addWidget(gridData)
-        gridDataLayout.addWidget(QtWidgets.QPushButton("Select", clicked=lambda: self.__open(gridData)))
-
-        gridDataBox.addLayout(gridDataLayout)
-        return gridDataWidget, gridData
-
-    def __makeIOWidget(self):
-        IOWidget = QtWidgets.QWidget()
-        IOBox = QtWidgets.QVBoxLayout(IOWidget)
-
-        inputLayout = QtWidgets.QHBoxLayout()
-        input = QtWidgets.QLineEdit("select .npz file")
-        inputLayout.addWidget(QtWidgets.QLabel("input data as shape (Npoint, Num of Scan Parameters)"))
-        inputLayout.addWidget(input)
-        inputLayout.addWidget(QtWidgets.QPushButton("Select", clicked=lambda: self.__open(input)))
-
-        outputLayout = QtWidgets.QHBoxLayout()
-        output = QtWidgets.QLineEdit("select .npz file")
-        outputLayout.addWidget(QtWidgets.QLabel("output data as shape (Npoint, dim of correct Parameter)"))
-        outputLayout.addWidget(output)
-        outputLayout.addWidget(QtWidgets.QPushButton("Select", clicked=lambda: self.__open(output)))
-
-        IOBox.addLayout(inputLayout)
-        IOBox.addLayout(outputLayout)
-        return IOWidget, input, output
-
-    def __open(self, lineEdit):
-        file, _ = QtWidgets.QFileDialog.getOpenFileName(None, 'Open file', filter="npz(*.npz)")
-        if 0 != len(file):
-            lineEdit.setText(file)
-
-
-class FuncWidget(QtWidgets.QWidget):
-    def __init__(self, funcName, func):
-        super().__init__()
-        self._funcName = funcName
-        self._func = func
-        self._items = func.argNames()
-        self.__initUI()
-        self._func.fixedValueChanged.connect(lambda signal: self._fixedValueChanged(*signal))
-
-    def __initUI(self):
-        mainLayout = QtWidgets.QVBoxLayout(self)
-        mainLayout.addWidget(QtWidgets.QLabel(self._funcName))
-
-        self.argsInfo = []
-        for i in range(len(self._func.argNames())):
-            hLayout = QtWidgets.QHBoxLayout()
-
-            argNameLabel = QtWidgets.QLabel(f"scanParam{i + 1}")
-            argNameWidget = QtWidgets.QLabel(self._func.argNames()[i])
-
-            enableLabel = QtWidgets.QLabel("enable")
-            enableWidget = QtWidgets.QCheckBox()
-            enableWidget.setChecked(True)
-
-            fixedValueLabel = QtWidgets.QLabel("fixed value")
-            fixedValueWidget = ScientificSpinBox()
-            fixedValueWidget.setDisabled(enableWidget.isChecked())
-
-            enableWidget.toggled.connect(lambda checked, index=i: self._setEnabled(index, checked))
-            fixedValueWidget.valueChanged.connect(lambda value, index=i: self._setFixedValue(index, value))
-
-            hLayout.addWidget(argNameLabel)
-            hLayout.addWidget(argNameWidget)
-            hLayout.addWidget(enableLabel)
-            hLayout.addWidget(enableWidget)
-            hLayout.addWidget(fixedValueLabel)
-            hLayout.addWidget(fixedValueWidget)
-
-            mainLayout.addLayout(hLayout)
-
-            argInfo = {"argNameWidget": argNameWidget, "enableWidget": enableWidget, "fixedValueWidget": fixedValueWidget}
-            self.argsInfo.append(argInfo)
-
-        self.warningLabel = QtWidgets.QLabel("!Duplicate scan parameters have been selected")
-        self.warningLabel.setStyleSheet("color: red; font-weight: bold;")
-        self.warningLabel.hide()
-        mainLayout.addWidget(self.warningLabel)
-
-        self.setLayout(mainLayout)
-
-    def getFuncName(self):
-        return self._funcName
-
-    def _setEnabled(self, index, checked):
-        self.argsInfo[index]["fixedValueWidget"].setDisabled(checked)
-        if checked:
-            self._setFixedValue(index, None)
-        else:
-            self._setFixedValue(index, self.argsInfo[index]["fixedValueWidget"].value())
-
-    def _setFixedValue(self, index, value):
-        currentValues = [argInfo["fixedValueWidget"].value() if argInfo["enableWidget"].isChecked() else None for argInfo in self.argsInfo]
-        if currentValues[index] == value:
-            return
-        self._func.setFixedValue(index, value)
-
-    def _fixedValueChanged(self, index, value):
-        currentValues = [argInfo["fixedValueWidget"].value() if argInfo["enableWidget"].isChecked() else None for argInfo in self.argsInfo]
-        if currentValues[index] == value:
-            return
-
-        if value is None:
-            self.argsInfo[index]["enableWidget"].setChecked(True)
-            self.argsInfo[index]["fixedValueWidget"].setDisabled(True)
-        else:
-            self.argsInfo[index]["enableWidget"].setChecked(False)
-            self.argsInfo[index]["fixedValueWidget"].setDisabled(False)
-            self.argsInfo[index]["fixedValueWidget"].setValue(value)

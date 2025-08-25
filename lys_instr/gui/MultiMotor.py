@@ -32,10 +32,10 @@ class _MultiMotorSpecifics:
         self._SettableIndices = [self._allNames.index(name) for name in self._settableNameList]
 
         # Joggable
-        self._joggableNameList = axisNamesJoggable if axisNamesJoggable is not None else self._motor.getNamesAll()
+        self._joggableNameList = axisNamesJoggable if axisNamesJoggable is not None else self._motor.nameList
 
         # Offsettable
-        self._offsettableNameList = axisNamesOffsettable if axisNamesOffsettable is not None else self._motor.getNamesAll()
+        self._offsettableNameList = axisNamesOffsettable if axisNamesOffsettable is not None else self._motor.nameList
         self._offsetDict = {name: 0 for name in self._offsettableNameList}
 
     def __getattr__(self, name):
