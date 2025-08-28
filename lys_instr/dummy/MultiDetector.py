@@ -12,21 +12,21 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
     """
-    def __init__(self, indexShape, frameShape, frameTime=None, **kwargs):
+    def __init__(self, indexShape, frameShape, exposure=None, **kwargs):
         """
         Initializes the dummy multi-detector with the given parameters.
 
         Args:
             indexShape (tuple of int): Shape of the index grid.
             frameShape (tuple of int): Shape of each data frame.
-            frameTime (float, optional): Time per frame in seconds.
+            exposure (float, optional): Time per frame in seconds.
             **kwargs: Additional keyword arguments passed to the parent class.
         """
         super().__init__(**kwargs)
         self._data = {}
         self._frameShape = frameShape
         self._indexShape = indexShape
-        self.exposure = frameTime
+        self.exposure = exposure
         self._error = False
         self.start()
 
