@@ -27,7 +27,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         # Data display widget
         self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
         self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self._mcut.loadDefaultTemplate()
+        # self._mcut.loadDefaultTemplate()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
@@ -74,6 +74,10 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._mcut.cui.setRawWave(self._data)
 
     def _dataAcquired(self, data):
+        if not hasattr(self, "_data"):
+            self._frameCount = 0
+            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
+
         if data:
             for idx, frame in data.items():
                 self._data.data[idx[-frame.ndim:]] = frame
@@ -98,8 +102,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._obj.startAcq(iter=-1)
 
     def _setButtonState(self):
-        alive = self._obj.isAlive
-        if not alive:
+        if not self._obj.isAlive:
             self._acquire.setEnabled(False)
             self._stream.setEnabled(False)
             self._stop.setEnabled(False)

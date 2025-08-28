@@ -60,7 +60,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         pathLayout.addWidget(self._number, 1, 4)
         pathLayout.addWidget(self._savedIndicator, 2, 0)
         pathLayout.addWidget(self._savingState, 2, 1, 1, 3)
-        # pathLayout.addWidget(self._dataShapeText, 2, 3, 1, 2)
         pathLayout.addWidget(self._enabledCheck, 2, 4)
 
         mainLayout = QtWidgets.QVBoxLayout()
@@ -74,7 +73,7 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._settingPath = True
 
         # Update storage object properties from GUI fields
-        self._obj.base = self._base.text().rstrip("/\\")
+        self._obj.base = self._base.text()
         self._obj.folder = self._folder.text()
         self._obj.name = self._name.text()
         self._obj.numbered = self._numberedCheck.isChecked()
@@ -106,10 +105,12 @@ class DataStorageGUI(QtWidgets.QWidget):
         icon = qta.icon("ri.loader-2-line", color="orange") if saving else qta.icon("ri.check-line", color="green")
         self._savedIndicator.setPixmap(icon.pixmap(24, 24))
 
-    def _onExpandBtnClicked(self, checked):
-        self._optionsPanel.setVisible(checked)
-        self._expandBtn.setArrowType(QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow)
-        self.adjustSize()
+    # def setControlsEnabled(self, enabled):
+    #     self._base.setEnabled(enabled)
+    #     self._folder.setEnabled(enabled)
+    #     self._name.setEnabled(enabled)
+    #     self._numberedCheck.setEnabled(enabled)
+    #     self._enabledCheck.setEnabled(enabled)
 
 
 # To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.DataStorageGUI
