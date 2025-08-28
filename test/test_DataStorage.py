@@ -12,11 +12,11 @@ class TestDataStorage(unittest.TestCase):
 
     def test_init(self):
         storage = DataStorage()
-        self.assertEqual(storage.base, "")
-        self.assertEqual(storage.folder, "")
-        self.assertEqual(storage.name, "")
-        self.assertTrue(storage.enabled)
-        self.assertTrue(storage.numbered)
+        self.assertEqual(storage.base, ".", "Default base directory should be '.'.")
+        self.assertEqual(storage.folder, "folder", "Default folder should be 'folder'.")
+        self.assertEqual(storage.name, "data", "Default name should be 'data'.")
+        self.assertTrue(storage.enabled, "Storage should be enabled by default.")
+        self.assertTrue(storage.numbered, "Storage should use numbering by default.")
 
     def test_getNumber(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -27,34 +27,34 @@ class TestDataStorage(unittest.TestCase):
             n1 = storage.getNumber()
             storage.reserve(shape=(2, 2, 2, 2))
             n2 = storage.getNumber()
-            self.assertEqual(n2, n1 + 1)
+            self.assertEqual(n2, n1 + 1, "getNumber should increment after reserving a file.")
 
     def test_enabled_false(self):
         storage = DataStorage()
         storage.enabled = False
         storage.reserve(shape=(2, 2, 2, 2))
-        self.assertIsNone(storage._arr)
+        self.assertIsNone(storage._arr, "No array should be reserved when storage is disabled.")
 
     def test_numbered_false(self):
         storage = DataStorage()
         storage.numbered = False
         n = storage.getNumber()
-        self.assertIsNone(n)
+        self.assertIsNone(n, "getNumber should return None when numbering is disabled.")
 
     def test_reserve_update_save(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             storage = DataStorage()
-            storage.indexDim = (2, 2)
             storage.base = tmpdir
             storage.folder = "newFolder"
             storage.name = "newName"
+            indexShape = (2, 2)
 
             n = storage.getNumber()
             storage.reserve(shape=(2, 2, 2, 2), fillValue=5)
             data = {(0, 0): np.ones((2, 2))}
-            storage.update(data)
+            storage.update(indexShape, data)
             storage.save()
-            self.assertTrue(storage.saving)
+            self.assertTrue(storage.saving, "Storage should be saving after save() is called.")
 
             timeout = 5  # seconds
             start = time.time()
@@ -70,4 +70,4 @@ class TestDataStorage(unittest.TestCase):
                 arr_keys = npz.files
                 self.assertTrue(len(arr_keys) > 0, "No arrays found in saved file.")
                 arrFromFile = npz[arr_keys[0]]
-                self.assertTrue(np.array_equal(arrFromFile, storage._arr))
+                self.assertTrue(np.array_equal(arrFromFile, storage._arr), "Saved array does not match the storage buffer.")
