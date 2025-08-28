@@ -106,6 +106,28 @@ class DetectorInterface(HardwareInterface):
         Returns:
             dict or None: Acquired data if output is True, otherwise None.
         """
+        # if self._busy:
+        #     logging.warning("Detector is busy. Cannot start new acquisition.")
+        #     return
+        
+        # self._busy = True
+        # self.busyStateChanged.emit(True)
+
+        # self._thread = _AcqThread(self, iter=iter)
+        # self._thread.dataAcquired.connect(self.dataAcquired.emit)
+        # self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
+        # if wait and output:
+        #     buffer = {}
+        #     self._thread.dataAcquired.connect(buffer.update, type=QtCore.Qt.DirectConnection)
+
+        # self._thread.start()
+
+        # if wait:
+        #     self.waitForReady()
+        #     if output:
+        #         self._thread.dataAcquired.disconnect(buffer.update)
+        #         return buffer
+
         if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
             return
@@ -113,19 +135,20 @@ class DetectorInterface(HardwareInterface):
         self._busy = True
         self.busyStateChanged.emit(True)
 
-        self._thread = _AcqThread(self, iter=iter)
-        self._thread.dataAcquired.connect(self.dataAcquired.emit)
-        self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
+        thread = _AcqThread(self, iter=iter)
+        self._thread = thread
+        thread.dataAcquired.connect(self.dataAcquired.emit)
+        thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
         if wait and output:
             buffer = {}
-            self._thread.dataAcquired.connect(buffer.update, type=QtCore.Qt.DirectConnection)
+            thread.dataAcquired.connect(buffer.update, type=QtCore.Qt.DirectConnection)
 
-        self._thread.start()
+        thread.start()
 
         if wait:
             self.waitForReady()
             if output:
-                self.dataAcquired.disconnect(buffer.update)
+                thread.dataAcquired.disconnect(buffer.update)
                 return buffer
 
     def _onAcqFinished(self):
@@ -134,9 +157,10 @@ class DetectorInterface(HardwareInterface):
 
         Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.
         """
-        self._thread = None
+        # self._thread = None
         self._busy = False
         self.busyStateChanged.emit(False)
+        self._thread = None
 
     def waitForReady(self, interval=0.1):
         """

@@ -164,7 +164,7 @@ class DataStorage(QtCore.QObject):
         self._detector.busyStateChanged.connect(self._busyStateChanged)
 
     def _dataAcquired(self, data):
-        self.update(self._detector.indexDim, data)
+        self.update(self._detector.indexShape, data)
 
     def _busyStateChanged(self, busy):
         """
@@ -205,18 +205,18 @@ class DataStorage(QtCore.QObject):
         self._arr = np.full(shape, np.nan if fillValue is None else fillValue, dtype=float)
         self.savingStateChanged.emit(self.saving)
 
-    def update(self, indexDim, data):
+    def update(self, indexShape, data):
         """
         Updates the buffered data array with new values.
 
         Args:
-            indexDim (tuple): Index dimensions for the data.
+            indexShape (tuple): Index shape for the data.
             data (dict): Dictionary mapping indices to data arrays for updating the buffer.
         """
         if not self.enabled:
             return
         for idx, value in data.items():
-            self._arr[idx[-len(indexDim):]] = value
+            self._arr[idx[-len(indexShape):]] = value
 
     def save(self):
         """
