@@ -212,7 +212,7 @@ class MultiMotorInterface(HardwareInterface):
         """
         return list(self._info.keys())
     
-    def settingsWidget(self, parent=None):
+    def settingsWidget(self):
         """
         Returns a generic settings dialog.
 
@@ -222,9 +222,9 @@ class MultiMotorInterface(HardwareInterface):
             parent (QWidget, optional): Parent widget for the dialog.
 
         Returns:
-            QDialog: Settings dialog.
+            QDialog: The settings dialog.
         """
-        return QtWidgets.QDialog()
+        raise NotImplementedError("Subclass should implement this method.")
 
 
     @abc.abstractmethod

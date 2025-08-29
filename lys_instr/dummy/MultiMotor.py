@@ -2,6 +2,7 @@ import numpy as np
 import time
 
 from lys_instr import MultiMotorInterface
+from lys.Qt import QtWidgets, QtCore
 
 
 class MultiMotorDummy(MultiMotorInterface):
@@ -121,5 +122,52 @@ class MultiMotorDummy(MultiMotorInterface):
         """
         return {name: not self._error[i] for i, name in enumerate(self.nameList)}
 
+    def settingsWidget(self):
+        return _OptionalPanel(self)
 
 
+class _OptionalPanel(QtWidgets.QWidget):
+    """
+    Settings panel for a multi-axis motor device.
+
+    Allows viewing and toggling the alive/dead status and managing offsets for each axis.
+    """
+    offsetChanged = QtCore.pyqtSignal()
+
+    def __init__(self, obj):
+        super().__init__()
+        self._obj = obj
+        self._initLayout()
+
+    def _initLayout(self):
+        """
+        Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
+        """
+        switches = {name: QtWidgets.QPushButton("Change", clicked=lambda checked, n=name: self._toggleAlive(n)) for name in self._obj.nameList}
+        nameLabels = {name: QtWidgets.QLabel(name) for name in self._obj.nameList}
+
+        aliveLayout = QtWidgets.QGridLayout()
+        for i, name in enumerate(self._obj.nameList):
+            nameLabels[name].setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+            switches[name].setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+            aliveLayout.addWidget(nameLabels[name], i, 0, alignment=QtCore.Qt.AlignRight)
+            aliveLayout.addWidget(switches[name], i, 1, alignment=QtCore.Qt.AlignLeft)
+
+        group = QtWidgets.QWidget()
+        group.setLayout(aliveLayout)
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.addWidget(group, alignment=QtCore.Qt.AlignCenter)
+        self.setLayout(mainLayout)
+
+    def _toggleAlive(self, name):
+        """
+        Toggles the alive/dead state of the specified axis and emit the corresponding signal.
+
+        Args:
+            name (str): The axis name.
+        """
+        backend = self._obj
+        backend._error[backend.nameList.index(name)] = not backend._error[backend.nameList.index(name)]
+        backend.valueChanged.emit(backend.get())
+        backend.aliveStateChanged.emit({name: backend._info[name].alive})
