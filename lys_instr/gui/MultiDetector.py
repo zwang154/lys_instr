@@ -3,7 +3,7 @@ import numpy as np
 from lys import multicut, Wave
 from lys.Qt import QtWidgets, QtCore
 
-from .widgets import AliveIndicator, SettingButton
+from .widgets import AliveIndicator, SettingsButton
 
 
 class MultiDetectorGUI(QtWidgets.QWidget):
@@ -27,7 +27,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         # Data display widget
         self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
         self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        # self._mcut.loadDefaultTemplate()
+        self._mcut.loadDefaultTemplate()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
@@ -61,7 +61,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         controlsLayout.addWidget(self._acquire)
         controlsLayout.addWidget(self._stream)
         controlsLayout.addWidget(self._stop)
-        controlsLayout.addWidget(SettingButton(clicked=self._showSettings))
+        controlsLayout.addWidget(SettingsButton(clicked=self._showSettings))
 
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(imageLayout, stretch=1)
@@ -116,24 +116,24 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._stop.setEnabled(False)
 
     def _showSettings(self):
-        settingsWindow = _SettingDialog(self, self._obj, self._params)
+        settingsWindow = _SettingsDialog(self, self._obj, self._params)
         settingsWindow.updated.connect(self._update)
         settingsWindow.exec_()
 
 
-class _SettingDialog(QtWidgets.QDialog):
+class _SettingsDialog(QtWidgets.QDialog):
     updated = QtCore.pyqtSignal()
 
     def __init__(self, parent, obj, params):
         super().__init__(parent)
         self.setWindowTitle("Detector Settings")
 
-        tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(_GeneralPanel(params, updated=self.updated.emit), "General")
-        tabWidget.addTab(obj.settingWidget(), "Options")
+        tabs = QtWidgets.QTabWidget()
+        tabs.addTab(_GeneralPanel(params, updated=self.updated.emit), "General")
+        tabs.addTab(obj.settingsWidget(), "Optional")
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(tabWidget)
+        layout.addWidget(tabs)
         self.setLayout(layout)
 
 

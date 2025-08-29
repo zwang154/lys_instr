@@ -12,18 +12,17 @@ class _ScanRangeRow(QtWidgets.QGridLayout):
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
         self._scanAxis.addItems(list(scannerNames) + ["None"])
         self._scanAxis.currentTextChanged.connect(self._scanAxisChanged)
-        self._scanMode = QtWidgets.QComboBox(objectName="ScanRange_scan_" + title)
+        self._scanMode = QtWidgets.QComboBox(objectName="ScanRange_scanMode_" + title)
         self._scanMode.addItems(["Linear", "Free"])
         self._from = QtWidgets.QDoubleSpinBox(objectName="ScanRange_from_" + title)
-        self._step = QtWidgets.QDoubleSpinBox(objectName="ScanRange_step_" + title)
-        self._numSteps = QtWidgets.QSpinBox(objectName="ScanRange_numSteps_" + title)
         self._from.setRange(-np.inf, np.inf)
-        self._step.setRange(-np.inf, np.inf)
         self._from.setDecimals(4)
+        self._step = QtWidgets.QDoubleSpinBox(objectName="ScanRange_step_" + title)
+        self._step.setRange(-np.inf, np.inf)
         self._step.setDecimals(4)
+        self._numSteps = QtWidgets.QSpinBox(objectName="ScanRange_numSteps_" + title)
         self._numSteps.setRange(1, 100000)
         self._freeExpr = QtWidgets.QLineEdit(objectName="ScanRange_freeExpr_" + title)
-
         self._fromLabel = QtWidgets.QLabel("From")
         self._stepLabel = QtWidgets.QLabel("Step")
         self._numStepsLabel = QtWidgets.QLabel("Number of steps")
@@ -309,8 +308,8 @@ class ScanProcess(ProcessInterface):
         self._process.stop()
 
     def _statusUpdated(self, text):
-        value = self._obj.get()         # obj is a MultiMotor instance or a Loop instance
-        value = value.get(self._name, None)
+        values = self._obj.get()         # obj is a MultiMotor instance or a Loop instance
+        value = values.get(self._name, None)
         value = 0 if np.isclose(value, 0, atol=1e-15) else value
         status = f"{self._name}: {value:.5g}, {text}"
         self.statusUpdated.emit(status)

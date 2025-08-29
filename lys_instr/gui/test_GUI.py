@@ -15,7 +15,8 @@ class test_window(LysSubWindow):
         self._motor = dummy.MultiMotorDummy("x", "y", "z", "α", "β", "γ")
         self._storage.connect(self._detector)
         self._initLayout()
-        # self.adjustSize()
+        self.setSettingFile("TestGUI.dic")
+        self.adjustSize()
 
     def _initLayout(self):
         _storageGUI = gui.DataStorageGUI(self._storage)

@@ -76,39 +76,75 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     @property
     def frameShape(self):
+        """
+        Shape of each data frame acquired by the detector.
+
+        Returns:
+            tuple of int: The shape of each data frame.
+        """
         return self._frameShape
         
     @property
     def indexShape(self):
+        """
+        Shape of the index grid for data acquisition.
+
+        Returns:
+            tuple of int: The shape of the index grid.
+        """
         return self._indexShape
     
     @property
     def axes(self):
+        """
+        Coordinate axes for each dimension of the data.
+
+        Returns:
+            list[numpy.ndarray]: Coordinate axes for each dimension of the data.
+        """
         return [np.linspace(0, 1, s) for s in self.dataShape]
 
-    def settingWidget(self):
-        return _GeneralPanel(self)
+    def settingsWidget(self):
+        """
+        Returns a QWidget for optional settings.
+
+        Returns:
+            QtWidgets.QWidget: The optional settings panel.
+        """
+        return _OptionalPanel(self)
 
 
-class _GeneralPanel(QtWidgets.QWidget):
+class _OptionalPanel(QtWidgets.QWidget):
+    """
+    Optional settings panel for ``MultiDetectorDummy``.
+
+    Provides a button to toggle the simulated detector's alive state.
+    """
     def __init__(self, obj):
+        """
+        Initializes the optional settings panel with a reference to the backend object.
+
+        Args:
+            obj: The backend detector object.
+        """
         super().__init__()
         self.setWindowTitle("Settings")
         self._obj = obj
         self._initLayout()
 
     def _initLayout(self):
+        """
+        Initializes and arranges the widgets in the optional settings panel.
+        """
         self._switch = QtWidgets.QPushButton("Change", clicked=self._toggleAlive)
-
         aliveLayout = QtWidgets.QVBoxLayout()
         aliveLayout.addWidget(self._switch, alignment=QtCore.Qt.AlignCenter)
-
-        # Combine layouts
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addLayout(aliveLayout)
-        self.setLayout(mainLayout)
+        self.setLayout(aliveLayout)
         
     def _toggleAlive(self):
+        """
+        Toggles the alive state of the backend detector and emits relevant signals.
+        """
         backend = self._obj
         backend._error = not backend._error
         if (data := backend._get()):

@@ -1,6 +1,8 @@
 import qtawesome as qta
 import json
+
 from lys.Qt import QtCore, QtWidgets
+from .widgets import FolderButton
 
 
 class DataStorageGUI(QtWidgets.QWidget):
@@ -19,9 +21,8 @@ class DataStorageGUI(QtWidgets.QWidget):
 
     def _initLayout(self):
         # Widgets for data saving
-        browse = QtWidgets.QPushButton(qta.icon("ri.folder-open-fill"), "", clicked=self._browse)
-        browse.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
-        browse.setIconSize(QtCore.QSize(24, 24))
+        browse = FolderButton(clicked=self._browse)
+        browse.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
 
         self._base = QtWidgets.QLineEdit(objectName="DataStorage_base")
         self._folder = QtWidgets.QLineEdit(objectName="DataStorage_folder")
@@ -49,6 +50,7 @@ class DataStorageGUI(QtWidgets.QWidget):
 
         # Layout setup
         pathLayout = QtWidgets.QGridLayout()
+        pathLayout.setAlignment(QtCore.Qt.AlignTop)
         pathLayout.addWidget(browse, 1, 0)
         pathLayout.addWidget(QtWidgets.QLabel("Base Folder"), 0, 1)
         pathLayout.addWidget(QtWidgets.QLabel("Data Folder"), 0, 2)
@@ -105,12 +107,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         icon = qta.icon("ri.loader-2-line", color="orange") if saving else qta.icon("ri.check-line", color="green")
         self._savedIndicator.setPixmap(icon.pixmap(24, 24))
 
-    # def setControlsEnabled(self, enabled):
-    #     self._base.setEnabled(enabled)
-    #     self._folder.setEnabled(enabled)
-    #     self._name.setEnabled(enabled)
-    #     self._numberedCheck.setEnabled(enabled)
-    #     self._enabledCheck.setEnabled(enabled)
 
 
 # To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.DataStorageGUI
