@@ -9,10 +9,10 @@ this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
 setup(
-    name="lys_mat",
+    name="lys_instr",
     packages=find_packages(exclude=("test*",)),
     version="0.1.0",
-    description="Python code for measurement system.",
+    description="A Python package for building, controlling, and automating measurement systems.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Ziqian Wang",
