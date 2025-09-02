@@ -1,0 +1,433 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lys_instr.MultiDetector &mdash; lys_instr 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html">Common methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#device-interfaces">Device interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#module-lys_instr.dummy.MultiMotor">Dummy devices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test.html#graphical-user-interfaces">Graphical user interfaces</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lys_instr.MultiDetector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lys_instr.MultiDetector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">abc</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">HardwareInterface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtWidgets</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_AcqThread</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QThread</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Acquisition thread for ``DetectorInterface``.</span>
+
+<span class="sd">    Runs the detector&#39;s acquisition loop as a worker thread and emits signals when new data is acquired.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Signal (dict) emitted when new data is acquired.</span>
+    <span class="n">dataAcquired</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the acquisition thread for the detector.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            detector (DetectorInterface): The detector instance to run acquisition for.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span> <span class="o">=</span> <span class="n">detector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">.</span><span class="n">updated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_onUpdated</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the detector&#39;s acquisition loop.</span>
+
+<span class="sd">        Overrides the ``run()`` method of QThread and is called when the worker thread is started.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onUpdated</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Error in acquisition thread&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_onUpdated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Emits the ``dataAcquired`` signal with the latest acquired data.</span>
+
+<span class="sd">        Called in response to the detector&#39;s ``updated`` signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_detector</span><span class="o">.</span><span class="n">_get</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="DetectorInterface">
+<a class="viewcode-back" href="../../test.html#lys_instr.MultiDetector.DetectorInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DetectorInterface</span><span class="p">(</span><span class="n">HardwareInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract interface for detector devices.</span>
+
+<span class="sd">    This class provides background polling, threaded (worker) acquisition, and Qt signal management for detector state and data updates.</span>
+<span class="sd">    Subclasses must implement device-specific methods: ``_get()``, ``_stop()``, and ``_isAlive()``.</span>
+<span class="sd">    ``_get()`` and ``_stop()`` should raise ``RuntimeError`` if the device is not responding or a communication error occurs.</span>
+<span class="sd">    ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that causes interruption.</span>
+<span class="sd">    The ``updated`` signal should be emitted by the acquisition thread to inform when new data is acquired.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to QThread.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: Signal (bool) emitted when alive state changes.</span>
+    <span class="n">aliveStateChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Signal (bool) emitted when busy state changes.</span>
+    <span class="n">busyStateChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1">#: Signal (dict) emitted when data is acquired.</span>
+    <span class="n">dataAcquired</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="c1">#: Signal emitted by the acquisition thread when new data is acquired.</span>
+    <span class="n">updated</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the detector interface.</span>
+
+<span class="sd">        Sets up initial state and internal flags.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loadState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Polls the device and updates its state.</span>
+
+<span class="sd">        Emits the ``aliveStateChanged`` signal if the alive state has changed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">al</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isAlive</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">!=</span> <span class="n">al</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">=</span> <span class="n">al</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">al</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DetectorInterface.startAcq">
+<a class="viewcode-back" href="../../test.html#lys_instr.MultiDetector.DetectorInterface.startAcq">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">startAcq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts acquisition in an acquisition thread.</span>
+
+<span class="sd">        If both `wait` and `output` are True, the method blocks until acquisition is complete and returns the acquired data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wait (bool, optional): If True, blocks until acquisition is complete. Defaults to False.</span>
+<span class="sd">            output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the acquisition thread.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict or None: Acquired data if output is True, otherwise None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">busy</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Detector is busy. Cannot start new acquisition.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">_AcqThread</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">wait</span> <span class="ow">and</span> <span class="n">output</span><span class="p">:</span>
+            <span class="n">buffer</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">bufferSlot</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="n">buffer</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bufferSlot</span> <span class="o">=</span> <span class="n">bufferSlot</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bufferSlot</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DirectConnection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">emit</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_onAcqFinished</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DirectConnection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waitForReady</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bufferSlot</span><span class="p">)</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">):</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Tried to disconnect a slot that was not connected&quot;</span><span class="p">)</span>
+                <span class="c1"># print(buffer.keys())</span>
+                <span class="k">return</span> <span class="n">buffer</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_onAcqFinished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Cleans up after acquisition is finished.</span>
+
+<span class="sd">        Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DetectorInterface.waitForReady">
+<a class="viewcode-back" href="../../test.html#lys_instr.MultiDetector.DetectorInterface.waitForReady">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">waitForReady</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Blocks further interaction until the device is no longer busy.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            interval (float, optional): Polling interval in seconds. Defaults to 0.1.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True once all axes become idle.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isBusy</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">True</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns whether the detector is currently busy.</span>
+
+<span class="sd">        This property reflects the internal busy flag, which is True during acquisition.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the detector is busy, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">busy</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the current alive state of the detector.</span>
+
+<span class="sd">        This property should be implemented in subclasses to provide device-specific logic.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the detector is alive, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isAlive</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DetectorInterface.stop">
+<a class="viewcode-back" href="../../test.html#lys_instr.MultiDetector.DetectorInterface.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stops the acquisition and emits the latest acquired data.</span>
+
+<span class="sd">        This method waits for the acquisition worker thread to finish if it is running.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Error stopping detector&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">isRunning</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Error shutting down acquisition thread&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Error emitting acquired data&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="DetectorInterface.settingWidget">
+<a class="viewcode-back" href="../../test.html#lys_instr.MultiDetector.DetectorInterface.settingWidget">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settingWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a generic settings dialog.</span>
+
+<span class="sd">        This method is intended to be overridden in subclasses to provide a device-specific settings UI.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent (QWidget, optional): Parent widget for the dialog.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QDialog: The settings dialog.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDialog</span><span class="p">()</span></div>
+
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for getting acquired data.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Mapping of indices (tuple) to their data frames (np.ndarray).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for stopping acquisition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for returning alive state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+
+
+<div class="viewcode-block" id="MultiDetectorInterface">
+<a class="viewcode-back" href="../../test.html#lys_instr.MultiDetector.MultiDetectorInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiDetectorInterface</span><span class="p">(</span><span class="n">DetectorInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract interface for multi-detector devices.</span>
+
+<span class="sd">    This class extends DetectorInterface to support detectors that acquire multi-dimensional data frames.</span>
+<span class="sd">    Subclasses should implement device-specific logic for data acquisition and shape reporting.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexDim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the multi-detector interface.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            indexDim (tuple or None): Dimensions for indexing acquired data.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to DetectorInterface.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_indexDim</span> <span class="o">=</span> <span class="n">indexDim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acquiredIndices</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">indexDim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the dimensions for indexing acquired data frames.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple or None: Dimensions for indexing acquired data, or None if not set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indexDim</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acquiredIndices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the list of acquired indices.</span>
+
+<span class="sd">        Each index corresponds to a data frame acquired by the multi-detector.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: List of acquired data indices.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acquiredIndices</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dataShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the shape of the acquired data.</span>
+
+<span class="sd">        This property should be implemented in subclasses to provide the specific shape of the data frames.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple: Shape of the acquired data.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method to return the shape of the acquired data.&quot;</span><span class="p">)</span></div>
+
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

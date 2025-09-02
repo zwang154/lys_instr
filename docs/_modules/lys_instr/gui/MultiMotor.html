@@ -1,0 +1,890 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lys_instr.gui.MultiMotor &mdash; lys_instr 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=2709fde1"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html">Common methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#device-interfaces">Device interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#module-lys_instr.dummy.MultiMotor">Dummy devices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../test.html#graphical-user-interfaces">Graphical user interfaces</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lys_instr.gui.MultiMotor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lys_instr.gui.MultiMotor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">qtawesome</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">qta</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span><span class="p">,</span> <span class="n">QtCore</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_MultiMotorSpecifics</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provides feature management for a multi-axis motor, including settable, joggable, and offsettable axes.</span>
+
+<span class="sd">    This class acts as a wrapper around a motor object, filtering and managing which axes can be set, jogged, or offset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">motor</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesSettable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesJoggable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesOffsettable</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes MultiMotorSpecifics with axis feature sets.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            motor: The motor object to wrap.</span>
+<span class="sd">            axisNamesSettable (iterable, optional): Names of axes that can be set. Defaults to all axes.</span>
+<span class="sd">            axisNamesJoggable (iterable, optional): Names of axes that can be jogged. Defaults to all axes.</span>
+<span class="sd">            axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span> <span class="o">=</span> <span class="n">motor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_allNames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">nameList</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wait</span> <span class="o">=</span> <span class="n">wait</span>
+
+        <span class="c1"># Settable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">axisNamesSettable</span><span class="p">)</span> <span class="k">if</span> <span class="n">axisNamesSettable</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_allNames</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SettableIndices</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_allNames</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">]</span>
+
+        <span class="c1"># Joggable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joggableNameList</span> <span class="o">=</span> <span class="n">axisNamesJoggable</span> <span class="k">if</span> <span class="n">axisNamesJoggable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">getNamesAll</span><span class="p">()</span>
+
+        <span class="c1"># Offsettable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsettableNameList</span> <span class="o">=</span> <span class="n">axisNamesOffsettable</span> <span class="k">if</span> <span class="n">axisNamesOffsettable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">getNamesAll</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsetDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsettableNameList</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delegates attribute access to the underlying motor object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Attribute name.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Any: Attribute value from the motor object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets target values for settable axes.</span>
+
+<span class="sd">        Accepts values as a dict, sequence, or keyword arguments, and only applies to axes marked as settable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: Values to set, as a dict, sequence, or positional arguments.</span>
+<span class="sd">            wait (bool, optional): Whether to wait for the operation to complete.</span>
+<span class="sd">            **kwargs: Axis-value pairs to set.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the number of values does not match the number of settable axes.</span>
+<span class="sd">            TypeError: If the argument type is unsupported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">wait</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wait</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">filtered</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">filtered</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wait</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Length of values (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">) does not match number of Settable axes (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+                <span class="n">filtered</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">filtered</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wait</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">):</span>
+                <span class="n">filtered</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">filtered</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wait</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported argument type or wrong number of values for set(): </span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_wait</span><span class="p">,</span> <span class="o">**</span><span class="n">filtered</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">setOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">toCurrent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the offset for offsettable axes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            toCurrent (bool, optional): If True, set offsets to the current motor positions. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">toCurrent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offsetDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">clearOffset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears all offsets for offsettable axes and emit a valueChanged signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsetDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsettableNameList</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setNamesSettable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settableNameList</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the list of axes that are settable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            settableNameList (iterable): Names of settable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">settableNameList</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNamesSettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the list of settable axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: Names of settable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settableNameList</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setNamesJoggable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">joggableNameList</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the list of axes that are joggable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            joggableNameList (iterable): Names of joggable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_joggableNameList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">joggableNameList</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNamesJoggable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the list of joggable axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: Names of joggable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_joggableNameList</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setNamesOffsettable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offsettableNameList</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the list of axes that are offsettable.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            offsettableNameList (iterable): Names of offsettable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsettableNameList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">offsettableNameList</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNamesOffsettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the list of offsettable axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: Names of offsettable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsettableNameList</span>
+
+
+<div class="viewcode-block" id="MultiMotorGUI">
+<a class="viewcode-back" href="../../../test.html#lys_instr.gui.MultiMotor.MultiMotorGUI">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiMotorGUI</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GUI widget for controlling and monitoring a multi-axis motor.</span>
+
+<span class="sd">    Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesSettable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesJoggable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesOffsettable</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the MultiMotorGUI widget.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The motor&#39;s features object to control.</span>
+<span class="sd">            axisNamesSettable (iterable, optional): Names of axes that can be set. Defaults to all axes.</span>
+<span class="sd">            axisNamesJoggable (iterable, optional): Names of axes that can be jogged. Defaults to all axes.</span>
+<span class="sd">            axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">_MultiMotorSpecifics</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="n">wait</span><span class="p">,</span> <span class="n">axisNamesSettable</span><span class="o">=</span><span class="n">axisNamesSettable</span><span class="p">,</span> <span class="n">axisNamesJoggable</span><span class="o">=</span><span class="n">axisNamesJoggable</span><span class="p">,</span> <span class="n">axisNamesOffsettable</span><span class="o">=</span><span class="n">axisNamesOffsettable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_valueChanged</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_busyStateChanged</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aliveStateChanged</span><span class="p">)</span>
+        
+        <span class="c1"># Load memory file</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;.lys_instr&quot;</span><span class="p">,</span> <span class="s2">&quot;GUI&quot;</span><span class="p">,</span> <span class="s2">&quot;MultiMotor&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="s2">&quot;position_positionList.lst&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;File Load Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Could not read file:</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Initialize GUI layout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getNamesSettable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the list of settable axes from the features object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: Names of settable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;getNamesSettable&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">getNamesSettable</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getNamesJoggable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the list of joggable axes from the features object.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: Names of joggable axes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;getNamesJoggable&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">getNamesJoggable</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the GUI layout and widgets for the multi-motor control panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;QLineEdit {font-size: 14pt}&quot;</span>
+                           <span class="s2">&quot;QDoubleSpinBox {font-size: 14pt}&quot;</span>
+                           <span class="s2">&quot;QPushButton {font-size: 12pt}&quot;</span>
+                           <span class="s2">&quot;QLabel {font-size: 12pt}&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Create main panel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_axisNames</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axisNames</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="n">axisNameText</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Axis&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDoubleSpinBox</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">dsb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setButtonSymbols</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDoubleSpinBox</span><span class="o">.</span><span class="n">NoButtons</span><span class="p">)</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setDecimals</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: #f0f0f0;&quot;</span><span class="p">)</span>
+        <span class="n">nowAtText</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Now at&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesSettable</span><span class="p">()}</span>
+        <span class="n">moveToText</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Move to&quot;</span><span class="p">)</span>
+
+        <span class="n">jogText</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Jog&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.arrow-left-fill&quot;</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nega</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesJoggable</span><span class="p">()}</span>
+        <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">btn</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jogNegaReversed</span> <span class="o">=</span> <span class="p">{</span><span class="n">btn</span><span class="p">:</span> <span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.arrow-right-fill&quot;</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_posi</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesJoggable</span><span class="p">()}</span>
+        <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">btn</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosiReversed</span> <span class="o">=</span> <span class="p">{</span><span class="n">btn</span><span class="p">:</span> <span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDoubleSpinBox</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesJoggable</span><span class="p">()}</span>
+        <span class="k">for</span> <span class="n">dsb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+            <span class="n">dsb</span><span class="o">.</span><span class="n">setDecimals</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">jogStepText</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Step&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Go&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_setMoveToValue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interrupt</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Stop&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interrupt</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aliveIndicator</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">lbl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliveIndicator</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">alive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">isAlive</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">icon</span> <span class="o">=</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.checkbox-circle-fill&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">alive</span> <span class="k">else</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.close-circle-fill&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+            <span class="n">lbl</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">icon</span><span class="o">.</span><span class="n">pixmap</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+            <span class="n">lbl</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+
+        <span class="n">settings</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.settings-5-fill&quot;</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_showSettings</span><span class="p">)</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s2">&quot;Settings&quot;</span><span class="p">)</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">)</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+
+        <span class="c1"># Create collapsible panel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_collapsible</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QToolButton</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">setArrowType</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">RightArrow</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">setAutoRaise</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QSize</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">toggled</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_toggleMemoryTree</span><span class="p">)</span>
+
+        <span class="n">expanderLine</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFrame</span><span class="p">()</span>
+        <span class="n">expanderLine</span><span class="o">.</span><span class="n">setFrameShape</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFrame</span><span class="o">.</span><span class="n">HLine</span><span class="p">)</span>
+        <span class="n">expanderLine</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: lightgray;&quot;</span><span class="p">)</span>
+
+        <span class="n">collapsibleLayout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collapsible</span><span class="p">)</span>
+        <span class="n">collapsibleLayout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">collapsibleLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="p">)</span>
+        <span class="n">collapsibleLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">expanderLine</span><span class="p">)</span>
+        <span class="n">collapsibleLayout</span><span class="o">.</span><span class="n">setStretch</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Create memory panel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_memoryPanel</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">memoryPanelText</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Memory&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setColumnCount</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setHeaderLabels</span><span class="p">([</span><span class="s2">&quot;Label&quot;</span><span class="p">,</span> <span class="s2">&quot;Position&quot;</span><span class="p">,</span> <span class="s2">&quot;Memo&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setSelectionMode</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAbstractItemView</span><span class="o">.</span><span class="n">ExtendedSelection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">itemSelectionChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_updateMemoryBtns</span><span class="p">(</span><span class="n">load</span><span class="p">,</span> <span class="n">delete</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setIndentation</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setEditTriggers</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAbstractItemView</span><span class="o">.</span><span class="n">DoubleClicked</span> <span class="o">|</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAbstractItemView</span><span class="o">.</span><span class="n">SelectedClicked</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">itemChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_memoEdited</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">header</span><span class="p">()</span><span class="o">.</span><span class="n">setSectionResizeMode</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHeaderView</span><span class="o">.</span><span class="n">ResizeToContents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">header</span><span class="p">()</span><span class="o">.</span><span class="n">setSectionResizeMode</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHeaderView</span><span class="o">.</span><span class="n">ResizeToContents</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">header</span><span class="p">()</span><span class="o">.</span><span class="n">setSectionResizeMode</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHeaderView</span><span class="o">.</span><span class="n">Stretch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setItemDelegateForColumn</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_NoEditDelegate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">setItemDelegateForColumn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">_NoEditDelegate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="p">))</span>
+
+        <span class="n">save</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Save&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_save</span><span class="p">)</span>
+        <span class="n">save</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        
+        <span class="n">load</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Load&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">)</span>
+        <span class="n">load</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">delete</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Delete&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_delete</span><span class="p">)</span>
+        <span class="n">delete</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Main panel layout</span>
+        <span class="n">gl</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">axisNameText</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">nowAtText</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">moveToText</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">jogText</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">jogStepText</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">):</span>
+            <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aliveIndicator</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+            <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_axisNames</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesSettable</span><span class="p">():</span>
+                <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesJoggable</span><span class="p">():</span>
+                    <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+                    <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+                    <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interrupt</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+
+        <span class="c1"># Collapsible and memory panel layout</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_collapsible</span><span class="p">,</span> <span class="mi">2</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+        <span class="n">gl</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_memoryPanel</span><span class="p">,</span> <span class="mi">3</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">),</span> <span class="mi">7</span><span class="p">)</span>
+
+        <span class="c1"># Main layout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">gl</span><span class="p">)</span>
+
+        <span class="c1"># Collapsible panel layout</span>
+        <span class="n">btnGroup</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">btnGroup</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">save</span><span class="p">)</span>
+        <span class="n">btnGroup</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">load</span><span class="p">)</span>
+        <span class="n">btnGroup</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">delete</span><span class="p">)</span>
+
+        <span class="c1"># Memory panel layout</span>
+        <span class="n">memoryPanelLayout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_memoryPanel</span><span class="p">)</span>
+        <span class="n">memoryPanelLayout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">memoryPanelLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">memoryPanelText</span><span class="p">)</span>
+        <span class="n">memoryPanelLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="p">)</span>
+        <span class="n">memoryPanelLayout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">btnGroup</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_memoryPanel</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Show latest saved positions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateMemory</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setMoveToValue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets target positions for axes based on user input in the GUI.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">targetDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">current</span><span class="p">[</span><span class="n">name</span><span class="p">]):</span>
+                <span class="n">targetDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span>
+        <span class="k">if</span> <span class="n">targetDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="n">targetDict</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_valueChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valueList</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the displayed axis positions in the GUI.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            valueList (dict): Mapping of axis names to their new values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">valueList</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_busyStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">busy</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the GUI based on the busy state of the axes.</span>
+
+<span class="sd">        Disables jog buttons, nowAt spin boxes, and moveTo line edits for axes that are busy, and enables them for axes that are idle.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            busy (dict): Mapping of axis names to their busy state (bool).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">anyBusy</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">busy</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="n">allAlive</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">isAlive</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">anyBusy</span> <span class="ow">and</span> <span class="n">allAlive</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interrupt</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">anyBusy</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">btn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">anyBusy</span> <span class="ow">and</span> <span class="n">allAlive</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">btn</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">btn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">anyBusy</span> <span class="ow">and</span> <span class="n">allAlive</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;Moving&quot;</span> <span class="k">if</span> <span class="n">anyBusy</span> <span class="k">else</span> <span class="s2">&quot;Go&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_aliveStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alive</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the GUI controls based on the alive state of the axes.</span>
+
+<span class="sd">        Disable jog buttons, nowAt spin box and moveTo line edits when dead and enable them when alive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alive (dict): Mapping of axis names to alive state (bool).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">busy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">isBusy</span>
+        <span class="n">anyBusy</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">busy</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">allAlive</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">alive</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">anyBusy</span> <span class="ow">and</span> <span class="n">allAlive</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interrupt</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">anyBusy</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">alive</span><span class="p">:</span>
+            <span class="n">axisAlive</span> <span class="o">=</span> <span class="n">alive</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nowAt</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">axisAlive</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesSettable</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">busy</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">and</span> <span class="n">axisAlive</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesJoggable</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">busy</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">and</span> <span class="n">axisAlive</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="n">busy</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">and</span> <span class="n">axisAlive</span><span class="p">)</span>
+            <span class="n">icon</span> <span class="o">=</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.checkbox-circle-fill&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">axisAlive</span> <span class="k">else</span> <span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.close-circle-fill&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_aliveIndicator</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="n">icon</span><span class="o">.</span><span class="n">pixmap</span><span class="p">(</span><span class="mi">24</span><span class="p">,</span> <span class="mi">24</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nega</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handles negative jog button press for an axis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogNegaReversed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_posi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handles positive jog button press for an axis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosiReversed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_toggleMemoryTree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checked</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shows or hides the memory panel in the GUI.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            checked (bool): Whether the memory panel should be visible.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_memoryPanel</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="n">checked</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expandBtn</span><span class="o">.</span><span class="n">setArrowType</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DownArrow</span> <span class="k">if</span> <span class="n">checked</span> <span class="k">else</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">RightArrow</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjustSize</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the current axis positions to the memory file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">}</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">newlabel</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">newPosition</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">]</span>
+        <span class="n">newMemo</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">newlabel</span><span class="p">,</span> <span class="s2">&quot;position&quot;</span><span class="p">:</span> <span class="n">newPosition</span><span class="p">,</span> <span class="s2">&quot;memo&quot;</span><span class="p">:</span> <span class="n">newMemo</span><span class="p">})</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Save Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Could not update file:</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateMemory</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads a selected saved axis position item from the memory file and set the axes accordingly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">selectedItems</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">selections</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">selectedlabel</span> <span class="o">=</span> <span class="n">selections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">itemDict</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span> <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">selectedlabel</span><span class="p">)</span>
+            <span class="n">loadedValues</span> <span class="o">=</span> <span class="n">itemDict</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span>
+            <span class="n">settableNames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getNamesSettable</span><span class="p">()</span>
+            <span class="n">valueDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">loadedValues</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">settableNames</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="n">valueDict</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Load Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Could not load position:</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deletes selected saved positions from the memory file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selectedlabels</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">selectedItems</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span> <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">selectedlabels</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Delete Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Could not update file:</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateMemory</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateMemory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the memory panel with the latest saved positions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">itemDict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">:</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">itemDict</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="n">itemDict</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]</span>
+            <span class="n">memo</span> <span class="o">=</span> <span class="n">itemDict</span><span class="p">[</span><span class="s2">&quot;memo&quot;</span><span class="p">]</span>
+            <span class="n">displayedPosition</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">position</span><span class="p">)</span>
+            <span class="n">item</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTreeWidgetItem</span><span class="p">([</span><span class="n">label</span><span class="p">,</span> <span class="n">displayedPosition</span><span class="p">,</span> <span class="n">memo</span><span class="p">])</span>
+
+            <span class="c1"># Protect columns 0 and 1 from editing</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">setFlags</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">flags</span><span class="p">()</span> <span class="o">|</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">ItemIsEditable</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">addTopLevelItem</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">columnCount</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">resizeColumnToContents</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_memoEdited</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handles edits to the memo field in the memory panel.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            item (QTreeWidgetItem): The edited item.</span>
+<span class="sd">            column (int): The column index that was edited.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">column</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># The memo column</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">memo</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">pos</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">label</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">[</span><span class="n">idx</span><span class="p">][</span><span class="s2">&quot;memo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">memo</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_savedPositions</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMessageBox</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Memo Edit Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Could not update file:</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateMemoryBtns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadBtn</span><span class="p">,</span> <span class="n">deleteBtn</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enables or disables memory panel buttons based on selection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            loadBtn (QPushButton): The load button.</span>
+<span class="sd">            deleteBtn (QPushButton): The delete button.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_positionList</span><span class="o">.</span><span class="n">selectedItems</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">loadBtn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
+        <span class="n">deleteBtn</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_showSettings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Opens the settings dialog for the device.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dialog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">settingsWidget</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dialog</span><span class="p">,</span> <span class="s2">&quot;offsetChanged&quot;</span><span class="p">):</span>
+            <span class="n">dialog</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clearMoveToFields</span><span class="p">)</span>
+        <span class="n">dialog</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clearMoveToFields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears all move-to input fields in the GUI.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">le</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">le</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+<div class="viewcode-block" id="MultiMotorGUI.settingsWidget">
+<a class="viewcode-back" href="../../../test.html#lys_instr.gui.MultiMotor.MultiMotorGUI.settingsWidget">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a settings dialog for the device.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent (QWidget, optional): Parent widget for the dialog.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QDialog: The settings dialog for the device.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_settingsDialog</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_NoEditDelegate</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QStyledItemDelegate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delegate to prevent editing of certain columns in a QTreeWidget.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">createEditor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">option</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prevents editing by always returning None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_settingsDialog</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Settings dialog for a multi-axis motor device.</span>
+
+<span class="sd">    Allows viewing and toggling the alive/dead status and managing offsets for each axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">offsetChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the settings dialog.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj: The motor object whose settings are being managed.</span>
+<span class="sd">            parent (QWidget): The parent widget for this dialog.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Settings&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_updateAliveState</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;QLineEdit {font-size: 14pt}&quot;</span>
+                           <span class="s2">&quot;QLineEdit {border-radius: 12px}&quot;</span>
+                           <span class="s2">&quot;QDoubleSpinBox {font-size: 14pt}&quot;</span>
+                           <span class="s2">&quot;QPushButton {font-size: 12pt}&quot;</span>
+                           <span class="s2">&quot;QLabel {font-size: 12pt}&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Create alive panel</span>
+        <span class="n">aliveLayout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_switch</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Change&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="k">lambda</span> <span class="n">checked</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_toggleAlive</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">(</span><span class="s2">&quot;Alive&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">le</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">le</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">):</span>
+            <span class="n">aliveLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+            <span class="n">aliveLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_switch</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+
+        <span class="c1"># Create offset panel        </span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s2">&quot;_offsetDict&quot;</span><span class="p">):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFrame</span><span class="p">()</span>
+            <span class="n">line</span><span class="o">.</span><span class="n">setFrameShape</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFrame</span><span class="o">.</span><span class="n">HLine</span><span class="p">)</span>
+            <span class="n">line</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: lightgray;&quot;</span><span class="p">)</span>
+
+            <span class="n">offsetLayout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QGridLayout</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offsetBtns</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Offset&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="k">lambda</span> <span class="n">checked</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsetAxis</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_unsetBtns</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Unset&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="k">lambda</span> <span class="n">checked</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unsetAxis</span><span class="p">(</span><span class="n">n</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offsetLbls</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDoubleSpinBox</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">}</span>
+
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetLbls</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setButtonSymbols</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDoubleSpinBox</span><span class="o">.</span><span class="n">NoButtons</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setDecimals</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_unsetBtns</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">):</span>
+                <span class="n">offsetLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_offsetLbls</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">offsetLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">offsetLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_offsetBtns</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">offsetLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_unsetBtns</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Combine layouts</span>
+        <span class="n">mainLayout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">mainLayout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">aliveLayout</span><span class="p">)</span>
+        <span class="n">mainLayout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">mainLayout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">offsetLayout</span><span class="p">)</span>    
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">mainLayout</span><span class="p">)</span>
+
+        <span class="c1"># Initialize alive state  </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAliveState</span><span class="p">()</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_offsetAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the offset for a specific axis to its current value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The axis name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unsetBtns</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">name</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_unsetAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the offset for a specific axis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The axis name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unsetBtns</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_offsetDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsetEdits</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_toggleAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Toggles the alive/dead state of the specified axis and emit the corresponding signal.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The axis name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_error</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_error</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">alive</span><span class="p">})</span>
+        
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateAliveState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the displayed alive/dead status for each axis in the dialog.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">isAlive</span><span class="p">[</span><span class="n">name</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;Alive&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: #adff2f; color: #000000&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;Dead&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_aliveLineEdit</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: #ff0000; color: #ffffff&quot;</span><span class="p">)</span>
+
+
+
+
+
+<span class="c1"># To Test the GUI run in the src\python: python -m lys_instr.gui.MultiMotorGUI</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">fstem.lys_instr.dummy.MultiMotor</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorDummy</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span>
+
+    <span class="n">app</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="n">motor</span> <span class="o">=</span> <span class="n">MultiMotorDummy</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;α&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;β&quot;</span><span class="p">,</span> <span class="s2">&quot;γ&quot;</span><span class="p">)</span>
+    <span class="n">gui</span> <span class="o">=</span> <span class="n">MultiMotorGUI</span><span class="p">(</span><span class="n">motor</span><span class="p">,</span>
+                        <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">axisNamesSettable</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;α&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">),</span>
+                        <span class="n">axisNamesJoggable</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">),</span>
+                        <span class="n">axisNamesOffsettable</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">))</span>
+    <span class="n">gui</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">exec_</span><span class="p">())</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
