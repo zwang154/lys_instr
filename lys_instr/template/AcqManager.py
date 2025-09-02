@@ -1,9 +1,9 @@
 # Start on lys
 
 from lys.widgets import LysSubWindow
-from lys.Qt import QtWidgets, QtCore
+from lys.Qt import QtWidgets
 from lys_instr import DataStorage, gui, dummy
-from lys_instr.gui.Scan import ScanWidget
+from lys_instr.gui.MultiScan import ScanWidget
 
 
 class test_window(LysSubWindow):
