@@ -27,7 +27,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         # Data display widget
         self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
         self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self._mcut.loadDefaultTemplate()
+        # self._mcut.loadDefaultTemplate()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
