@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-lys_instr documentation
+lys_instr documentation!
 =======================
 
 Add your content using ``reStructuredText`` syntax. See the
