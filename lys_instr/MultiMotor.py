@@ -1,10 +1,9 @@
 import numpy as np
 import time
 import logging
-import abc
 
 from .Interfaces import HardwareInterface, lock
-from lys.Qt import QtCore, QtWidgets
+from lys.Qt import QtCore
 
 
 class _AxisInfo():
@@ -186,7 +185,7 @@ class MultiMotorInterface(HardwareInterface):
         Returns the current busy state of all axes.
 
         Returns:
-            dict: Mapping of axis names to their busy state (bool).
+            dict[str, bool]: Mapping of axis names to their busy state.
 
         Raises:
             RuntimeError: If the device is not responding or a communication error occurs.
@@ -200,7 +199,7 @@ class MultiMotorInterface(HardwareInterface):
         Returns the current alive state of all axes.
 
         Returns:
-            dict: Mapping of axis names to their alive state (bool).
+            dict[str, bool]: Mapping of axis names to their alive state.
         """
         return self._isAlive()
 
@@ -214,57 +213,64 @@ class MultiMotorInterface(HardwareInterface):
         """
         return list(self._info.keys())
     
-    def settingsWidget(self, parent=None):
+    def settingsWidget(self):
         """
         Returns a generic settings dialog.
 
         This method is intended to be overridden in subclasses to provide a device-specific settings UI.
 
-        Args:
-            parent (QWidget, optional): Parent widget for the dialog.
-
         Returns:
-            QDialog: Settings dialog.
+            QDialog: The settings dialog.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        return QtWidgets.QDialog()
+        raise NotImplementedError("Subclasses must implement this method.")
 
-
-    @abc.abstractmethod
     def _isBusy(self):
         """
         Should be implemented in subclasses to provide device-specific logic for determining busy state.
 
         Returns:
-            dict: Mapping of axis names to their busy state (bool).
-        """
-        pass
+            dict[str, bool]: Mapping of axis names to their busy state.
 
-    @abc.abstractmethod
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
     def _isAlive(self):
         """
         Should be implemented in subclasses to provide device-specific logic for determining alive state.
 
         Returns:
-            dict: Mapping of axis names to their alive state (bool).
-        """
-        pass
+            dict[str, bool]: Mapping of axis names to their alive state.
 
-    @abc.abstractmethod
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
     def _get(self):
         """
         Should be implemented in subclasses to provide device-specific logic for getting axis positions.
 
         Returns:
-            dict: Mapping of axis names to their current positions (float).
-        """
-        pass
+            dict[str, float]: Mapping of axis names to their current positions.
 
-    @abc.abstractmethod
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
     def _set(self, kwargs):
         """
         Should be implemented in subclasses to provide device-specific logic for setting axis positions.
 
         Args:
-            kwargs (dict): Axis-value pairs to set, e.g., x=1.0, y=2.0.
+            kwargs (dict[str, float]): Axis-value pairs to set, e.g., x=1.0, y=2.0.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement this method.")

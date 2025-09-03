@@ -2,6 +2,7 @@ import numpy as np
 import time
 
 from lys_instr import MultiMotorInterface
+from lys.Qt import QtWidgets, QtCore
 
 
 class MultiMotorDummy(MultiMotorInterface):
@@ -50,7 +51,7 @@ class MultiMotorDummy(MultiMotorInterface):
         Only the axes provided in the ``target`` dictionary will be updated; other axes remain unchanged.
 
         Args:
-            target (dict): Mapping of axis names to their target positions.
+            target (dict[str, float]): Mapping of axis names to their target positions.
         """
         self.__before = self.get(type=np.ndarray)
         self.__timing = np.full(len(self.nameList), self._time())
@@ -64,7 +65,7 @@ class MultiMotorDummy(MultiMotorInterface):
         Otherwise, the current position is returned.
 
         Returns:
-            dict: Mapping of axis names (str) to their current positions (float).
+            dict[str, float]: Mapping of axis names to their current positions.
         """
         val = {}
 
@@ -107,7 +108,7 @@ class MultiMotorDummy(MultiMotorInterface):
         Gets the busy state of all axes in the simulated multi-axis motor.
 
         Returns:
-            dict: Mapping of axis names (str) to busy states (bool).
+            dict[str, bool]: Mapping of axis names to busy states.
         """
         bs = (~np.isnan(self.__timing) & ~np.isnan(self.__target)).astype(bool)
         return {name: bs[i] for i, name in enumerate(self.nameList)}
@@ -117,9 +118,70 @@ class MultiMotorDummy(MultiMotorInterface):
         Gets the alive state of all axes in the simulated multi-axis motor.
 
         Returns:
-            dict: Mapping of axis names (str) to alive states (bool).
+            dict[str, bool]: Mapping of axis names to alive states.
         """
         return {name: not self._error[i] for i, name in enumerate(self.nameList)}
 
+    def settingsWidget(self):
+        """
+        Returns a QWidget for optional settings.
+
+        Returns:
+            QtWidgets.QWidget: The optional settings panel.
+        """
+        return _OptionalPanel(self)
 
 
+class _OptionalPanel(QtWidgets.QWidget):
+    """
+    Settings panel for a multi-axis motor device.
+
+    Allows viewing and toggling the alive state and managing offsets for each axis.
+    """
+    # Signal emitted when an offset is changed
+    offsetChanged = QtCore.pyqtSignal()
+
+    def __init__(self, obj):
+        """
+        Initializes the optional settings panel with a reference to the backend object.
+
+        Args:
+            obj: The backend motor object.
+        """
+        super().__init__()
+        self.setWindowTitle("Settings")
+        self._obj = obj
+        self._initLayout()
+
+    def _initLayout(self):
+        """
+        Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
+        """
+        switches = {name: QtWidgets.QPushButton("Change", clicked=lambda checked, n=name: self._toggleAlive(n)) for name in self._obj.nameList}
+        nameLabels = {name: QtWidgets.QLabel(name) for name in self._obj.nameList}
+
+        aliveLayout = QtWidgets.QGridLayout()
+        for i, name in enumerate(self._obj.nameList):
+            nameLabels[name].setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+            switches[name].setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+            aliveLayout.addWidget(nameLabels[name], i, 0, alignment=QtCore.Qt.AlignRight)
+            aliveLayout.addWidget(switches[name], i, 1, alignment=QtCore.Qt.AlignLeft)
+
+        group = QtWidgets.QWidget()
+        group.setLayout(aliveLayout)
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.addWidget(group, alignment=QtCore.Qt.AlignCenter)
+        self.setLayout(mainLayout)
+
+    def _toggleAlive(self, name):
+        """
+        Toggles the alive state of the specified axis and emit the corresponding signal.
+
+        Args:
+            name (str): The axis name.
+        """
+        backend = self._obj
+        backend._error[backend.nameList.index(name)] = not backend._error[backend.nameList.index(name)]
+        backend.valueChanged.emit(backend.get())
+        backend.aliveStateChanged.emit({name: backend._info[name].alive})

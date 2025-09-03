@@ -3,7 +3,7 @@ import numpy as np
 from lys import multicut, Wave
 from lys.Qt import QtWidgets, QtCore
 
-from .widgets import AliveIndicator, SettingButton
+from .widgets import AliveIndicator, SettingsButton
 
 
 class MultiDetectorGUI(QtWidgets.QWidget):
@@ -61,7 +61,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         controlsLayout.addWidget(self._acquire)
         controlsLayout.addWidget(self._stream)
         controlsLayout.addWidget(self._stop)
-        controlsLayout.addWidget(SettingButton(clicked=self._showSettings))
+        controlsLayout.addWidget(SettingsButton(clicked=self._showSettings))
 
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(imageLayout, stretch=1)
@@ -74,6 +74,10 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._mcut.cui.setRawWave(self._data)
 
     def _dataAcquired(self, data):
+        if not hasattr(self, "_data"):
+            self._frameCount = 0
+            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
+
         if data:
             for idx, frame in data.items():
                 self._data.data[idx[-frame.ndim:]] = frame
@@ -98,8 +102,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._obj.startAcq(iter=-1)
 
     def _setButtonState(self):
-        alive = self._obj.isAlive
-        if not alive:
+        if not self._obj.isAlive:
             self._acquire.setEnabled(False)
             self._stream.setEnabled(False)
             self._stop.setEnabled(False)
@@ -113,24 +116,24 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._stop.setEnabled(False)
 
     def _showSettings(self):
-        settingsWindow = _SettingDialog(self, self._obj, self._params)
+        settingsWindow = _SettingsDialog(self, self._obj, self._params)
         settingsWindow.updated.connect(self._update)
         settingsWindow.exec_()
 
 
-class _SettingDialog(QtWidgets.QDialog):
+class _SettingsDialog(QtWidgets.QDialog):
     updated = QtCore.pyqtSignal()
 
     def __init__(self, parent, obj, params):
         super().__init__(parent)
         self.setWindowTitle("Detector Settings")
 
-        tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(_GeneralPanel(params, updated=self.updated.emit), "General")
-        tabWidget.addTab(obj.settingWidget(), "Options")
+        tabs = QtWidgets.QTabWidget()
+        tabs.addTab(_GeneralPanel(params, updated=self.updated.emit), "General")
+        tabs.addTab(obj.settingsWidget(), "Optional")
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(tabWidget)
+        layout.addWidget(tabs)
         self.setLayout(layout)
 
 

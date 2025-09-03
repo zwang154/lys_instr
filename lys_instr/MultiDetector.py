@@ -104,7 +104,7 @@ class DetectorInterface(HardwareInterface):
             output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.
 
         Returns:
-            dict or None: Acquired data if output is True, otherwise None.
+            dict[tuple, np.ndarray] or None: Acquired data if output is True, otherwise None.
         """
         if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
@@ -125,7 +125,7 @@ class DetectorInterface(HardwareInterface):
         if wait:
             self.waitForReady()
             if output:
-                self.dataAcquired.disconnect(buffer.update)
+                self._thread.dataAcquired.disconnect(buffer.update)
                 return buffer
 
     def _onAcqFinished(self):
@@ -134,9 +134,9 @@ class DetectorInterface(HardwareInterface):
 
         Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.
         """
-        self._thread = None
         self._busy = False
         self.busyStateChanged.emit(False)
+        self._thread = None
 
     def waitForReady(self, interval=0.1):
         """
@@ -217,44 +217,56 @@ class DetectorInterface(HardwareInterface):
         Should be implemented in subclasses to provide device-specific logic for getting acquired data.
 
         Returns:
-            dict: Mapping of indices (tuple) to their data frames (np.ndarray).
+            dict[tuple, np.ndarray]: Mapping of indices to their data frames.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("Sub-class should implement this method.")
+        raise NotImplementedError("Subclasses must implement this method.")
 
     def _stop(self):
         """
         Should be implemented in subclasses to provide device-specific logic for stopping acquisition.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("Sub-class should implement this method.")
+        raise NotImplementedError("Subclasses must implement this method.")
 
     def _isAlive(self):
         """
         Should be implemented in subclasses to provide device-specific logic for returning alive state.
+        
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("Sub-class should implement this method.")
+        raise NotImplementedError("Subclasses must implement this method.")
 
     def _run(self, iter=1):
         """
-        The sub-class of this class should implement _run method.
+        Should be implemented in subclasses to provide device-specific logic for running the acquisition.
 
         Args:
             iter(int): Number of iterations. -1 means continuous run.
+        
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("This method should be implemented in sub class.")
+        raise NotImplementedError("Subclasses must implement this method.")
 
-    def settingWidget(self):
+    def settingsWidget(self):
         """
         Returns a generic settings dialog.
 
         This method is intended to be overridden in subclasses to provide a device-specific settings UI.
 
-        Args:
-            parent (QWidget, optional): Parent widget for the dialog.
-
         Returns:
             QDialog: The settings dialog.
+        
+        Raises:
+            NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("Subclass should implement this method.")
+        raise NotImplementedError("Subclasses must implement this method.")
     
 
 class MultiDetectorInterface(DetectorInterface):
@@ -267,17 +279,20 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def axes(self):
         """
-        Returns the axes for the full data.
+        The axes for the full data.
 
         Returns:
-            list of numpy array: The axes for the full data.
+            list of numpy.ndarray: The axes for the full data.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this property.
         """
-        raise NotImplementedError("The sub class should implement this property")
+        raise NotImplementedError("Subclasses must implement this property.")
 
     @property
     def frameDim(self):
         """
-        Returns the dimensions for the single data.
+        The dimensions for the single data.
 
         Returns:
             tuple: Dimensions for indexing acquired data.
@@ -287,7 +302,7 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def indexDim(self):
         """
-        Returns the dimensions for indexing acquired data frames.
+        The dimensions for indexing acquired data frames.
 
         Returns:
             tuple or None: Dimensions for indexing acquired data.
@@ -297,27 +312,33 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def frameShape(self):
         """
-        Returns the shape of the single frame.
+        The shape of a single frame.
 
         Returns:
-            tuple: Shape of the single data.
+            tuple: Shape of a single frame.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this property.
         """
-        raise NotImplementedError("Subclasses must implement this method.")
+        raise NotImplementedError("Subclasses must implement this property.")
 
     @property
     def indexShape(self):
         """
-        Returns the shape of the single frame.
+        The shape of the single frame.
 
         Returns:
             tuple: Shape of the indices.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this property.
         """
-        raise NotImplementedError("Subclasses must implement this method.")
+        raise NotImplementedError("Subclasses must implement this property.")
 
     @property
     def dataShape(self):
         """
-        Returns the shape of the acquired data.
+        The shape of the acquired data.
 
         Returns:
             tuple: Shape of the acquired data.
