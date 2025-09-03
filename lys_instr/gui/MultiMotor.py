@@ -4,7 +4,6 @@ import os
 import json
 
 from lys.Qt import QtWidgets, QtCore
-from lys.widgets import LysSubWindow
 from .widgets import AliveIndicator, SettingsButton
 
 
