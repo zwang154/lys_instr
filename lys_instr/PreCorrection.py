@@ -1,3 +1,4 @@
+from lys.Qt import QtCore
 from lys.decorators import avoidCircularReference
 
 
@@ -7,7 +8,8 @@ class PreCorrector:
         self._enabled = True
         self._controllers = {}
         for c in controllers:
-            c.valueChanged.connect(self._correct)
+            c.busyStateChanged.connect(self._busy, QtCore.Qt.DirectConnection)
+            c.valueChanged.connect(self._correct, QtCore.Qt.DirectConnection)
             self._controllers.update({name: c for name in c.nameList})
 
         self._correctParams = dict()
@@ -25,12 +27,34 @@ class PreCorrector:
         if not self._enabled:
             return
         
-        for name, func in self._correctParams.items():
+        for name, func in self.corrections.items():
             if not func.enabled:
                 continue
             elif any([arg in values for arg in func.argNames(excludeFixed=False)]):
                 params = {arg: self._controllers[arg].get()[arg] for arg in func.argNames()}
                 self._controllers[name].set(**{name: func(**params)})
+
+    def _busy(self, busy):
+        def busyFunc(p1, p2):
+            c1, c2 = self.controllers[p1], self.controllers[p2]
+            result = c1._isBusy_orig()
+            if c2._isBusy()[p2]:
+                result[p1] = True
+            return result
+
+        if not self._enabled:
+            return
+                       
+        for name, func in self.corrections.items(): # y = f(t,x)
+            if not func.enabled:
+                continue
+            for name2, b in busy.items():
+                if name2 in func.argNames(excludeFixed=True):
+                    if b:
+                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy
+                        self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
+                    else:
+                        self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
 
 
 class _FunctionCombination:
@@ -84,7 +108,10 @@ class _InterpolatedFunction:
         self._fixedValues = {}
 
     def __call__(self, **kwargs):
-        return self._interpolator([[self._fixedValues.get(arg, kwargs.get(arg, None)) for arg in self.argNames()]])[0][0]
+        val = self._interpolator([[self._fixedValues.get(arg, kwargs.get(arg, None)) for arg in self.argNames()]])[0]
+        if hasattr(val, "__iter__"):
+            val = val[0]
+        return val
     
     @property
     def fixedValues(self):

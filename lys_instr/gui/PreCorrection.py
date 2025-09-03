@@ -106,7 +106,7 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
 
     def _addVar(self, item):
         _, c = self._correction(item)
-        additems = [key for key in self._obj.parameters if key not in c.functions.keys()]
+        additems = [key for key in self._obj.controllers.keys() if key not in c.functions.keys()]
         var, ok = QtWidgets.QInputDialog.getItem(self, "Select variables", "Variables", additems, editable=False)
         if ok:
             f = _InterpolatedFunction(lambda x: x[0], [var])
