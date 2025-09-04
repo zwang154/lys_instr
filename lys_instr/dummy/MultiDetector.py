@@ -12,6 +12,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
     """
+
     def __init__(self, indexShape, frameShape, exposure=None, **kwargs):
         """
         Initializes the dummy multi-detector with the given parameters.
@@ -83,7 +84,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
             tuple of int: The shape of each data frame.
         """
         return self._frameShape
-        
+
     @property
     def indexShape(self):
         """
@@ -93,7 +94,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
             tuple of int: The shape of the index grid.
         """
         return self._indexShape
-    
+
     @property
     def axes(self):
         """
@@ -120,6 +121,7 @@ class _OptionalPanel(QtWidgets.QWidget):
 
     Provides a button to toggle the simulated detector's alive state.
     """
+
     def __init__(self, obj):
         """
         Initializes the optional settings panel with a reference to the backend object.
@@ -140,13 +142,14 @@ class _OptionalPanel(QtWidgets.QWidget):
         aliveLayout = QtWidgets.QVBoxLayout()
         aliveLayout.addWidget(self._switch, alignment=QtCore.Qt.AlignCenter)
         self.setLayout(aliveLayout)
-        
+
     def _toggleAlive(self):
         """
         Toggles the alive state of the backend detector and emits relevant signals.
         """
         backend = self._obj
         backend._error = not backend._error
-        if (data := backend._get()):
+        data = backend._get()
+        if data:
             backend.dataAcquired.emit(data)
         backend.aliveStateChanged.emit(backend.isAlive)

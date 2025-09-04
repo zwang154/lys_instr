@@ -14,6 +14,7 @@ class _AxisInfo():
         busy (bool): Whether the axis is currently busy.
         alive (bool): Whether the axis is currently alive (not in error).
     """
+
     def __init__(self, busy=False, alive=True):
         """
         Initializes the axis state.
@@ -52,7 +53,7 @@ class MultiMotorInterface(HardwareInterface):
     def __init__(self, *axisNamesAll, **kwargs):
         """
         Initializes the interface with the given axis names.
-        
+
         Args:
             *axisNamesAll: Names of all axes to manage.
             **kwargs: Additional keyword arguments passed to the base class.
@@ -74,9 +75,9 @@ class MultiMotorInterface(HardwareInterface):
             busyUpdate = {name: b for name, b in bs.items() if b != self._info[name].busy}
 
             # Emit valueChanged signal if any axis is busy
-            if any(bs.values()):
+            if any(bs.values()) or len(busyUpdate) > 0:
                 vs = self._get()
-                self.valueChanged.emit({name: vs[name] for name, b in bs.items() if b})
+                self.valueChanged.emit({name: vs[name] for name, b in bs.items() if b or name in busyUpdate})
 
             # Update busy state log and emit busyStateChanged signal if any axis has changed its busy state
             if busyUpdate:
@@ -96,7 +97,7 @@ class MultiMotorInterface(HardwareInterface):
                 for name, a in aliveUpdate.items():
                     self._info[name].alive = a
                 self.aliveStateChanged.emit(al)
-    
+
     def set(self, wait=False, waitInterval=0.1, **kwargs):
         """
         Sets target values for one or more axes.
@@ -127,11 +128,11 @@ class MultiMotorInterface(HardwareInterface):
                 self._info[name].busy = True
 
             # Set actual values for the axes in kwargs
-            self._set(kwargs)
+            self._set(**kwargs)
 
         if wait:
             self.waitForReady(waitInterval)
-   
+
     def get(self, type=dict):
         """
         Gets the current values of all axes in the specified data type.
@@ -192,7 +193,7 @@ class MultiMotorInterface(HardwareInterface):
         """
         with QtCore.QMutexLocker(self._mutex):
             return self._isBusy()
-    
+
     @property
     def isAlive(self):
         """
@@ -212,7 +213,7 @@ class MultiMotorInterface(HardwareInterface):
             list of str: List of axis names.
         """
         return list(self._info.keys())
-    
+
     def settingsWidget(self):
         """
         Returns a generic settings dialog.

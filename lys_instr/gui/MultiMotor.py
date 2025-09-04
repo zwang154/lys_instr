@@ -13,6 +13,7 @@ class _MultiMotorSpecifics:
 
     This class acts as a wrapper around a motor object, filtering and managing which axes can be set, jogged, or offset.
     """
+
     def __init__(self, motor, wait=None, axisNamesSettable=None, axisNamesJoggable=None, axisNamesOffsettable=None):
         """
         Initializes MultiMotorSpecifics with axis feature sets.
@@ -32,10 +33,10 @@ class _MultiMotorSpecifics:
         self._SettableIndices = [self._allNames.index(name) for name in self._settableNameList]
 
         # Joggable
-        self._joggableNameList = list(axisNamesJoggable) if axisNamesJoggable is not None else list(self._motor.getNamesAll())
+        self._joggableNameList = list(axisNamesJoggable) if axisNamesJoggable is not None else list(self._motor.nameList)
 
         # Offsettable
-        self._offsettableNameList = list(axisNamesOffsettable) if axisNamesOffsettable is not None else list(self._motor.getNamesAll())
+        self._offsettableNameList = list(axisNamesOffsettable) if axisNamesOffsettable is not None else list(self._motor.nameList)
         self._offsetDict = {name: 0 for name in self._offsettableNameList}
 
     def __getattr__(self, name):
@@ -85,7 +86,7 @@ class _MultiMotorSpecifics:
         else:
             filtered = {name: value for name, value in kwargs.items() if name in self._settableNameList}
             self._motor.set(wait=self._wait, **filtered)
-    
+
     def setOffset(self, *args, toCurrent=True, **kwargs):
         """
         Sets the offset for offsettable axes.
@@ -153,7 +154,7 @@ class _MultiMotorSpecifics:
             list: Names of offsettable axes.
         """
         return self._offsettableNameList
-    
+
     @namesOffsettable.setter
     def namesOffsettable(self, offsettableNameList):
         """
@@ -171,6 +172,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
 
     Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.
     """
+
     def __init__(self, obj, wait=None, axisNamesSettable=None, axisNamesJoggable=None, axisNamesOffsettable=None):
         """
         Initializes the MultiMotorGUI widget.
@@ -186,7 +188,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
         self._obj.valueChanged.connect(self._valueChanged)
         self._obj.busyStateChanged.connect(self._busyStateChanged)
         self._obj.aliveStateChanged.connect(self._aliveStateChanged)
-        
+
         # Load memory file
         dir = os.path.join(".lys_instr", "GUI", "MultiMotor")
         os.makedirs(dir, exist_ok=True)
@@ -196,9 +198,10 @@ class MultiMotorGUI(QtWidgets.QWidget):
         if os.path.exists(self._path):
             with open(self._path, "r") as f:
                 self._savedPositions = json.load(f)
-        
+
         # Initialize GUI layout
         self._initLayout()
+        self._valueChanged(obj.get())
 
     def _getNamesSettable(self):
         """
@@ -361,7 +364,6 @@ class MultiMotorGUI(QtWidgets.QWidget):
         """
         Sets target positions for axes based on user input in the GUI.
         """
-        current = self._obj.get()
         targetDict = {}
         for name in self._moveTo:
             text = self._moveTo[name].text()
@@ -369,9 +371,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
                 value = float(text)
             except ValueError:
                 continue
-            target = value + self._obj._offsetDict.get(name, 0)
-            if not np.isnan(target) and not np.isclose(target, current[name]):
-                targetDict[name] = target
+            targetDict[name] = value + self._obj._offsetDict.get(name, 0)
         if targetDict:
             self._obj.set(**targetDict)
 
@@ -569,6 +569,7 @@ class _NoEditDelegate(QtWidgets.QStyledItemDelegate):
     """
     Delegate to prevent editing of certain columns in a QTreeWidget.
     """
+
     def createEditor(self, parent, option, index):
         """
         Prevents editing by always returning None.
@@ -614,7 +615,7 @@ class _GeneralPanel(QtWidgets.QWidget):
         """
         Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
         """
-        # Create offset panel        
+        # Create offset panel
         if hasattr(self._obj, "_offsetDict"):
             self._offsetBtns = {name: QtWidgets.QPushButton("Offset", clicked=lambda checked, n=name: self._offsetAxis(n)) for name in self._obj._offsetDict}
             self._unsetBtns = {name: QtWidgets.QPushButton("Unset", clicked=lambda checked, n=name: self._unsetAxis(n)) for name in self._obj._offsetDict}
@@ -669,7 +670,6 @@ class _GeneralPanel(QtWidgets.QWidget):
         self._offsetEdits[name].setValue(0)
         self.offsetChanged.emit()
         self._obj.valueChanged.emit(self._obj.get())
-
 
 
 # To Test the GUI run in the src\python: python -m lys_instr.gui.MultiMotorGUI
