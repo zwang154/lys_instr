@@ -35,7 +35,7 @@ class SpectrometerDummy(dummy.MultiDetectorDummy):
 class window(LysSubWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Example 1")
+        self.setWindowTitle("Example 3")
         self._storage = DataStorage()
         self._detector = SpectrometerDummy(indexShape=(36,), frameShape=(600,))
         self._motor = dummy.MultiMotorDummy("x", "y")
