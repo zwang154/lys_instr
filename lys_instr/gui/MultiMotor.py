@@ -553,8 +553,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
 
     def _showSettings(self):
         settingsWindow = _SettingsDialog(self, self._obj)
-        if hasattr(settingsWindow, "offsetChanged"):
-            settingsWindow.offsetChanged.connect(self._clearMoveToFields)
+        settingsWindow.generalPanel.offsetChanged.connect(self._clearMoveToFields)
         settingsWindow.exec_()
 
     def _clearMoveToFields(self):
@@ -580,14 +579,28 @@ class _NoEditDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class _SettingsDialog(QtWidgets.QDialog):
+    """
+    Dialog for settings.
+
+    Provides a tabbed interface for general and optional settings of a device.
+    Emits an ``updated`` signal when offsets are changed in the general settings panel.
+    """
     updated = QtCore.pyqtSignal()
 
     def __init__(self, parent, obj):
+        """
+        Initializes the settings dialog.
+
+        Args:
+            parent (QWidget): The parent widget.
+            obj: The motor object to configure.
+        """
         super().__init__(parent)
         self.setWindowTitle("Motor Settings")
+        self.generalPanel = _GeneralPanel(obj, offsetChanged=self.updated.emit)
 
         tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(_GeneralPanel(obj, offsetChanged=self.updated.emit), "General")
+        tabWidget.addTab(self.generalPanel, "General")
         tabWidget.addTab(obj.settingsWidget(), "Optional")
 
         layout = QtWidgets.QVBoxLayout()
@@ -597,13 +610,20 @@ class _SettingsDialog(QtWidgets.QDialog):
 
 class _GeneralPanel(QtWidgets.QWidget):
     """
-    Settings panel for a multi-axis motor device.
+    General settings panel for the device.
 
     Allows viewing and toggling the alive/dead status and managing offsets for each axis.
     """
     offsetChanged = QtCore.pyqtSignal()
 
     def __init__(self, obj, offsetChanged=None):
+        """
+        Initializes the general settings panel.
+
+        Args:
+            obj: The motor object to configure.
+            offsetChanged (callable, optional): Slot to connect to the offsetChanged signal.
+        """
         super().__init__()
         self._obj = obj
         self._initLayout()
@@ -612,7 +632,7 @@ class _GeneralPanel(QtWidgets.QWidget):
 
     def _initLayout(self):
         """
-        Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
+        Creates and initializes all GUI components of the general settings panel, and connects signals to their respective slots.
         """
         # Create offset panel        
         if hasattr(self._obj, "_offsetDict"):
@@ -630,7 +650,7 @@ class _GeneralPanel(QtWidgets.QWidget):
                 self._offsetEdits[name].setValue(self._obj._offsetDict[name])
                 self._offsetEdits[name].setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
                 self._offsetEdits[name].setMinimumWidth(80)
-                self._unsetBtns[name].setEnabled(False)
+                self._unsetBtns[name].setEnabled(bool(self._obj._offsetDict[name]))
 
             offsetLayout = QtWidgets.QGridLayout()
             for i, name in enumerate(self._obj._offsetDict):
