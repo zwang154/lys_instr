@@ -82,7 +82,7 @@ class MultiMotorInterface(HardwareInterface):
             if busyUpdate:
                 for name, b in busyUpdate.items():
                     self._info[name].busy = b
-                self.busyStateChanged.emit(bs)
+                self.busyStateChanged.emit(busyUpdate)
 
         except RuntimeError as e:
             logging.warning("Runtime error in _loadState")
@@ -120,9 +120,11 @@ class MultiMotorInterface(HardwareInterface):
                 raise ValueError(f"Axis name(s) {invalid} not recognized. Available axes: {self.nameList}")
 
             # Update busy state for each axis in kwargs and emit busy state only for axes that are now busy
-            for name, value in kwargs.items():
-                self._info[name].busy = not np.isnan(value)
-            self.busyStateChanged.emit({name: True for name in kwargs if self._info[name].busy})
+            updated = {name: True for name in kwargs if not self._info[name].busy}
+            if len(updated) > 0:
+                self.busyStateChanged.emit(updated)
+            for name in kwargs.keys():
+                self._info[name].busy = True
 
             # Set actual values for the axes in kwargs
             self._set(kwargs)
