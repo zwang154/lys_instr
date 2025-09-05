@@ -1,11 +1,11 @@
 import numpy as np
 import qtawesome as qta
-import os
-import json
 
 from lys.Qt import QtWidgets, QtCore
 from lys_instr import MultiMotorInterface
+
 from .widgets import AliveIndicator, SettingsButton
+from .Memory import ControllerMemory
 
 
 class _MultiMotorSpecifics(QtCore.QObject):
@@ -69,7 +69,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
     Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.
     """
 
-    def __init__(self, obj, axisNamesSettable=None, axisNamesJoggable=None, axisNamesOffsettable=None):
+    def __init__(self, obj, axisNamesSettable=None, axisNamesJoggable=None, axisNamesOffsettable=None, memory=None, memoryPath=None):
         """
         Initializes the MultiMotorGUI widget.
 
@@ -78,6 +78,8 @@ class MultiMotorGUI(QtWidgets.QWidget):
             axisNamesSettable (iterable, optional): Names of axes that can be set. Defaults to all axes.
             axisNamesJoggable (iterable, optional): Names of axes that can be jogged. Defaults to all axes.
             axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.
+            memory ('bottom', 'right', or None): Position of the memory widget.
+            memoryPath (str): Name of the memory file. 
         """
         super().__init__()
 
@@ -85,7 +87,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
         joggable = self.controllers.keys() if axisNamesJoggable is None else list(axisNamesJoggable)
         settable = self.controllers.keys() if axisNamesSettable is None else list(axisNamesSettable)
 
-        self._initLayout(settable, joggable)
+        self._initLayout(settable, joggable, memory, memoryPath)
         for obj in self._objs:
             obj.busyStateChanged.connect(self._busyStateChanged)
             obj.aliveStateChanged.connect(self._aliveStateChanged)
@@ -107,7 +109,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
     def controllers(self):
         return {name: obj for obj in self._objs for name in obj.nameList}
 
-    def _initLayout(self, settable, joggable):
+    def _initLayout(self, settable, joggable, memory, path):
         """
         Initializes the GUI layout and widgets for the multi-motor control panel.
         """
@@ -120,7 +122,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
         self._interrupt.setEnabled(False)
 
         # Axis controls layout
-        gl = QtWidgets.QGridLayout(self)
+        gl = QtWidgets.QGridLayout()
         gl.setAlignment(QtCore.Qt.AlignTop)
         gl.addWidget(QtWidgets.QLabel("Axis"), 0, 1)
         gl.addWidget(QtWidgets.QLabel("Now at"), 0, 2)
@@ -133,6 +135,17 @@ class MultiMotorGUI(QtWidgets.QWidget):
         gl.addWidget(self._interrupt, 2 + len(self._items), 2)
         gl.addWidget(self._execute, 2 + len(self._items), 3)
         gl.addWidget(SettingsButton(clicked=self._showSettings), 2 + len(self._items), 0)
+
+        if memory is None:
+            self.setLayout(gl)
+        else:
+            if memory == "bottom":
+                box = QtWidgets.QVBoxLayout()
+            else:
+                box = QtWidgets.QHBoxLayout()
+            box.addLayout(gl)
+            box.addWidget(ControllerMemory(self._objs, path))
+            self.setLayout(box)
 
     def _setMoveToValue(self):
         """

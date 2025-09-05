@@ -4,20 +4,14 @@ from lys.Qt import QtWidgets, QtCore
 
 
 class ControllerMemory(QtWidgets.QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, objs, path=None, parent=None):
         super().__init__(parent)
+        self._objs = objs
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         self.__initLayout()
 
-        # Load memory file
-        dir = os.path.join(".lys_instr", "GUI", "MultiMotor")
-        os.makedirs(dir, exist_ok=True)
-        self._path = os.path.join(dir, "position_positionList.lst")
-
         self._savedPositions = []
-        if os.path.exists(self._path):
-            with open(self._path, "r") as f:
-                self._savedPositions = json.load(f)
+        self._import(path)
         self._updateMemory()
 
     def __initLayout(self):
@@ -53,6 +47,26 @@ class ControllerMemory(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel("Memory"))
         layout.addWidget(self._positionList)
         layout.addLayout(self._memoryBtnsLayout)
+        self.setLayout(layout)
+
+    def _import(self, path):
+        if path is None:
+            self._path = None
+
+        # Load memory file
+        dir = os.path.join(".lys", ".lys_instr")
+        os.makedirs(dir, exist_ok=True)
+        self._path = os.path.join(dir, path)
+
+        if os.path.exists(self._path):
+            with open(self._path, "r") as f:
+                self._savedPositions = json.load(f)
+
+    def _export(self):
+        if self._path is None:
+            return
+        with open(self._path, "w") as f:
+            json.dump(self._savedPositions, f)
 
     def _save(self):
         """
@@ -62,12 +76,11 @@ class ControllerMemory(QtWidgets.QWidget):
         i = 1
         while f"{i}" in labels:
             i += 1
-        newlabel = f"{i}"
-        newPosition = [self._obj.get()[name] for name in self._obj.nameList]
-        newMemo = ""
-        self._savedPositions.append({"label": newlabel, "position": newPosition, "memo": newMemo})
-        with open(self._path, "w") as f:
-            json.dump(self._savedPositions, f)
+        position = {}
+        for obj in self._objs:
+            position.update(obj.get())
+        self._savedPositions.append({"label": f"{i}", "position": position, "memo": ""})
+        self._export()
         self._updateMemory()
 
     def _load(self):
@@ -80,9 +93,9 @@ class ControllerMemory(QtWidgets.QWidget):
         selectedlabel = selections[0].text(0)
         itemDict = next(item for item in self._savedPositions if item["label"] == selectedlabel)
         loadedValues = itemDict["position"]
-        settableNames = self._getNamesSettable()
-        valueDict = {name: loadedValues[self._obj.nameList.index(name)] for name in settableNames}
-        self._obj.set(**valueDict)
+        for obj in self._objs:
+            value = {name: loadedValues[name] for name in obj.nameList}
+            obj.set(**value)
 
     def _delete(self):
         """
@@ -90,8 +103,7 @@ class ControllerMemory(QtWidgets.QWidget):
         """
         selectedlabels = {i.text(0) for i in self._positionList.selectedItems()}
         self._savedPositions = [item for item in self._savedPositions if item["label"] not in selectedlabels]
-        with open(self._path, "w") as f:
-            json.dump(self._savedPositions, f)
+        self._export()
         self._updateMemory()
 
     def _memoEdited(self, item, column):
@@ -108,8 +120,7 @@ class ControllerMemory(QtWidgets.QWidget):
             for idx, pos in enumerate(self._savedPositions):
                 if pos["label"] == label:
                     self._savedPositions[idx]["memo"] = memo
-                    with open(self._path, "w") as f:
-                        json.dump(self._savedPositions, f)
+                    self._export()
                     break
 
     def _updateMemory(self):
@@ -118,11 +129,8 @@ class ControllerMemory(QtWidgets.QWidget):
         """
         self._positionList.clear()
         for itemDict in self._savedPositions:
-            label = itemDict["label"]
-            position = itemDict["position"]
-            memo = itemDict["memo"]
-            displayedPosition = ", ".join(f"{v:.3f}" for v in position)
-            item = QtWidgets.QTreeWidgetItem([label, displayedPosition, memo])
+            displayedPosition = ", ".join(f"{v:.3f}" for v in itemDict["position"].values())
+            item = QtWidgets.QTreeWidgetItem([itemDict["label"], displayedPosition, itemDict["memo"]])
 
             # Protect columns 0 and 1 from editing
             item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
