@@ -4,6 +4,7 @@ import os
 import json
 
 from lys.Qt import QtWidgets, QtCore
+from lys_instr import MultiMotorInterface
 from .widgets import AliveIndicator, SettingsButton
 
 
@@ -79,26 +80,43 @@ class MultiMotorGUI(QtWidgets.QWidget):
             axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.
         """
         super().__init__()
-        self._obj = _MultiMotorSpecifics(obj, axisNamesOffsettable=axisNamesOffsettable)
 
-        # Initialize GUI layout
-        joggable = list(obj.nameList) if axisNamesJoggable is None else list(axisNamesJoggable)
-        settable = list(obj.nameList) if axisNamesSettable is None else list(axisNamesSettable)
+        self._objs = self._initMotors(obj, axisNamesOffsettable)
+        joggable = self.controllers.keys() if axisNamesJoggable is None else list(axisNamesJoggable)
+        settable = self.controllers.keys() if axisNamesSettable is None else list(axisNamesSettable)
 
         self._initLayout(settable, joggable)
-        self._obj.busyStateChanged.connect(self._busyStateChanged)
-        self._obj.aliveStateChanged.connect(self._aliveStateChanged)
+        for obj in self._objs:
+            obj.busyStateChanged.connect(self._busyStateChanged)
+            obj.aliveStateChanged.connect(self._aliveStateChanged)
+
+    def _initMotors(self, obj, axisNamesOffsettable):
+        if isinstance(obj, MultiMotorInterface):
+            obj = [obj]
+
+        objs = []
+        for o in obj:
+            if axisNamesOffsettable is None:
+                offsettable = list(o.nameList)
+            else:
+                offsettable = [name for name in axisNamesOffsettable if name in o.nameList]
+            objs.append(_MultiMotorSpecifics(o, offsettable))
+        return objs
+
+    @property
+    def controllers(self):
+        return {name: obj for obj in self._objs for name in obj.nameList}
 
     def _initLayout(self, settable, joggable):
         """
         Initializes the GUI layout and widgets for the multi-motor control panel.
         """
-        self._items = {name: _MotorRowLayout(self._obj, name) for name in self._obj.nameList}
+        self._items = {name: _MotorRowLayout(c, name) for name, c in self.controllers.items()}
 
         self._execute = QtWidgets.QPushButton("Go", clicked=self._setMoveToValue)
         self._execute.setEnabled(True)
 
-        self._interrupt = QtWidgets.QPushButton("Stop", clicked=self._obj.stop)
+        self._interrupt = QtWidgets.QPushButton("Stop", clicked=self._stop)
         self._interrupt.setEnabled(False)
 
         # Axis controls layout
@@ -120,9 +138,11 @@ class MultiMotorGUI(QtWidgets.QWidget):
         """
         Sets target positions for axes based on user input in the GUI.
         """
-        targetDict = {name: item.value() for name, item in self._items.items() if item.value() is not None}
-        if len(targetDict) > 0:
-            self._obj.set(**targetDict)
+        targetAll = {name: item.value() for name, item in self._items.items() if item.value() is not None}
+        for obj in self._objs:
+            targ = {name: value for name, value in targetAll.items() if name in obj.nameList}
+            if len(targ) > 0:
+                obj.set(**targ)
 
     def _busyStateChanged(self):
         """
@@ -154,8 +174,12 @@ class MultiMotorGUI(QtWidgets.QWidget):
         self._execute.setEnabled(not anyBusy and allAlive)
         self._interrupt.setEnabled(anyBusy)
 
+    def _stop(self):
+        for obj in self._objs:
+            obj.stop()
+
     def _showSettings(self):
-        settingsWindow = _SettingsDialog(self, self._obj)
+        settingsWindow = _SettingsDialog(self)
         settingsWindow.exec_()
 
     def _clearMoveToFields(self):
@@ -257,170 +281,14 @@ class _MotorRowLayout(QtCore.QObject):
         self._moveTo.setText(f"{target:.3f}")
 
 
-class MotorMemory(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
-        self.__initLayout()
-
-        # Load memory file
-        dir = os.path.join(".lys_instr", "GUI", "MultiMotor")
-        os.makedirs(dir, exist_ok=True)
-        self._path = os.path.join(dir, "position_positionList.lst")
-
-        self._savedPositions = []
-        if os.path.exists(self._path):
-            with open(self._path, "r") as f:
-                self._savedPositions = json.load(f)
-        self._updateMemory()
-
-    def __initLayout(self):
-        # Create memory panel
-        self._positionList = QtWidgets.QTreeWidget()
-        self._positionList.setColumnCount(3)
-        self._positionList.setHeaderLabels(["Label", "Position", "Memo"])
-        self._positionList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self._positionList.itemSelectionChanged.connect(lambda: self._updateMemoryBtns(load, delete))
-        self._positionList.setIndentation(0)
-        self._positionList.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.SelectedClicked)
-        self._positionList.itemChanged.connect(self._memoEdited)
-        self._positionList.header().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
-        self._positionList.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        self._positionList.header().setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-        self._positionList.setItemDelegateForColumn(0, _NoEditDelegate(self._positionList))
-        self._positionList.setItemDelegateForColumn(1, _NoEditDelegate(self._positionList))
-
-        # Collapsible panel layout
-        save = QtWidgets.QPushButton("Save", clicked=self._save)
-        save.setEnabled(True)
-        load = QtWidgets.QPushButton("Load", clicked=self._load)
-        load.setEnabled(False)
-        delete = QtWidgets.QPushButton("Delete", clicked=self._delete)
-        delete.setEnabled(False)
-
-        self._memoryBtnsLayout = QtWidgets.QHBoxLayout()
-        self._memoryBtnsLayout.addWidget(save)
-        self._memoryBtnsLayout.addWidget(load)
-        self._memoryBtnsLayout.addWidget(delete)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(QtWidgets.QLabel("Memory"))
-        layout.addWidget(self._positionList)
-        layout.addLayout(self._memoryBtnsLayout)
-
-    def _save(self):
-        """
-        Saves the current axis positions to the memory file.
-        """
-        labels = {item["label"] for item in self._savedPositions}
-        i = 1
-        while f"{i}" in labels:
-            i += 1
-        newlabel = f"{i}"
-        newPosition = [self._obj.get()[name] for name in self._obj.nameList]
-        newMemo = ""
-        self._savedPositions.append({"label": newlabel, "position": newPosition, "memo": newMemo})
-        with open(self._path, "w") as f:
-            json.dump(self._savedPositions, f)
-        self._updateMemory()
-
-    def _load(self):
-        """
-        Loads a selected saved axis position item from the memory file and set the axes accordingly.
-        """
-        selections = self._positionList.selectedItems()
-        if not selections:
-            return
-        selectedlabel = selections[0].text(0)
-        itemDict = next(item for item in self._savedPositions if item["label"] == selectedlabel)
-        loadedValues = itemDict["position"]
-        settableNames = self._getNamesSettable()
-        valueDict = {name: loadedValues[self._obj.nameList.index(name)] for name in settableNames}
-        self._obj.set(**valueDict)
-
-    def _delete(self):
-        """
-        Deletes selected saved positions from the memory file.
-        """
-        selectedlabels = {i.text(0) for i in self._positionList.selectedItems()}
-        self._savedPositions = [item for item in self._savedPositions if item["label"] not in selectedlabels]
-        with open(self._path, "w") as f:
-            json.dump(self._savedPositions, f)
-        self._updateMemory()
-
-    def _memoEdited(self, item, column):
-        """
-        Handles edits to the memo field in the memory panel.
-
-        Args:
-            item (QTreeWidgetItem): The edited item.
-            column (int): The column index that was edited.
-        """
-        if column == 2:
-            label = item.text(0)
-            memo = item.text(2)
-            for idx, pos in enumerate(self._savedPositions):
-                if pos["label"] == label:
-                    self._savedPositions[idx]["memo"] = memo
-                    with open(self._path, "w") as f:
-                        json.dump(self._savedPositions, f)
-                    break
-
-    def _updateMemory(self):
-        """
-        Updates the memory panel with the latest saved positions.
-        """
-        self._positionList.clear()
-        for itemDict in self._savedPositions:
-            label = itemDict["label"]
-            position = itemDict["position"]
-            memo = itemDict["memo"]
-            displayedPosition = ", ".join(f"{v:.3f}" for v in position)
-            item = QtWidgets.QTreeWidgetItem([label, displayedPosition, memo])
-
-            # Protect columns 0 and 1 from editing
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
-            self._positionList.addTopLevelItem(item)
-
-        for col in range(self._positionList.columnCount()):
-            self._positionList.resizeColumnToContents(col)
-
-    def _updateMemoryBtns(self, loadBtn, deleteBtn):
-        """
-        Enables or disables memory panel buttons based on selection.
-
-        Args:
-            loadBtn (QPushButton): The load button.
-            deleteBtn (QPushButton): The delete button.
-        """
-        selected = len(self._positionList.selectedItems()) > 0
-        loadBtn.setEnabled(selected)
-        deleteBtn.setEnabled(selected)
-
-
-class _NoEditDelegate(QtWidgets.QStyledItemDelegate):
-    """
-    Delegate to prevent editing of certain columns in a QTreeWidget.
-    """
-
-    def createEditor(self, parent, option, index):
-        """
-        Prevents editing by always returning None.
-
-        Returns:
-            None
-        """
-        return None
-
-
 class _SettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent, obj):
+    def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Motor Settings")
 
         tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(_GeneralPanel(obj), "General")
-        tabWidget.addTab(obj.settingsWidget(), "Optional")
+        tabWidget.addTab(_GeneralPanel(parent.controllers), "General")
+        #tabWidget.addTab(obj.settingsWidget(), "Optional")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(tabWidget)
@@ -434,33 +302,34 @@ class _GeneralPanel(QtWidgets.QWidget):
     Allows viewing and toggling the alive/dead status and managing offsets for each axis.
     """
 
-    def __init__(self, obj):
+    def __init__(self, controllers):
         super().__init__()
-        self._obj = obj
-        self._initLayout()
+        self._controllers = controllers
+        self._initLayout(controllers)
 
-    def _initLayout(self):
+    def _initLayout(self, controllers):
         """
         Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
         """
         # Create offset panel
-        self._offsetBtns = {name: QtWidgets.QPushButton("Offset", clicked=lambda checked, n=name: self._offsetAxis(n)) for name in self._obj.offset}
-        self._unsetBtns = {name: QtWidgets.QPushButton("Unset", clicked=lambda checked, n=name: self._unsetAxis(n)) for name in self._obj.offset}
-        self._offsetLbls = {name: QtWidgets.QLabel(name) for name in self._obj.offset}
-        self._offsetEdits = {name: QtWidgets.QDoubleSpinBox() for name in self._obj.offset}
+        offsettable = {name: c for name, c in controllers.items() if name in c.offset}
+        self._offsetBtns = {name: QtWidgets.QPushButton("Offset", clicked=lambda checked, n=name: self._offsetAxis(n)) for name in offsettable}
+        self._unsetBtns = {name: QtWidgets.QPushButton("Unset", clicked=lambda checked, n=name: self._unsetAxis(n)) for name in offsettable}
+        self._offsetLbls = {name: QtWidgets.QLabel(name) for name in offsettable}
+        self._offsetEdits = {name: QtWidgets.QDoubleSpinBox() for name in offsettable}
 
-        for name in self._obj.offset:
+        for name, c in offsettable.items():
             self._offsetLbls[name].setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
             self._offsetEdits[name].setRange(-np.inf, np.inf)
             self._offsetEdits[name].setReadOnly(True)
             self._offsetEdits[name].setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
             self._offsetEdits[name].setDecimals(3)
-            self._offsetEdits[name].setValue(self._obj.offset[name])
+            self._offsetEdits[name].setValue(c.offset[name])
             self._offsetEdits[name].setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
             self._offsetEdits[name].setMinimumWidth(80)
 
         offsetLayout = QtWidgets.QGridLayout()
-        for i, name in enumerate(self._obj.offset):
+        for i, name in enumerate(offsettable):
             offsetLayout.addWidget(self._offsetLbls[name], i, 0)
             offsetLayout.addWidget(self._offsetEdits[name], i, 1)
             offsetLayout.addWidget(self._offsetBtns[name], i, 2)
@@ -478,9 +347,10 @@ class _GeneralPanel(QtWidgets.QWidget):
         Args:
             name (str): The axis name.
         """
-        self._obj.offset[name] += self._obj.get()[name]
-        self._offsetEdits[name].setValue(self._obj.offset[name])
-        self._obj.valueChanged.emit(self._obj.get())
+        obj = self._controllers[name]
+        obj.offset[name] += obj.get()[name]
+        self._offsetEdits[name].setValue(obj.offset[name])
+        obj.valueChanged.emit(obj.get())
 
     def _unsetAxis(self, name):
         """
@@ -489,6 +359,7 @@ class _GeneralPanel(QtWidgets.QWidget):
         Args:
             name (str): The axis name.
         """
-        self._obj.offset[name] = 0
+        obj = self._controllers[name]
+        obj.offset[name] = 0
         self._offsetEdits[name].setValue(0)
-        self._obj.valueChanged.emit(self._obj.get())
+        obj.valueChanged.emit(obj.get())

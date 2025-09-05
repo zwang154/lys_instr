@@ -1,0 +1,159 @@
+import os
+import json
+from lys.Qt import QtWidgets, QtCore
+
+
+class ControllerMemory(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        self.__initLayout()
+
+        # Load memory file
+        dir = os.path.join(".lys_instr", "GUI", "MultiMotor")
+        os.makedirs(dir, exist_ok=True)
+        self._path = os.path.join(dir, "position_positionList.lst")
+
+        self._savedPositions = []
+        if os.path.exists(self._path):
+            with open(self._path, "r") as f:
+                self._savedPositions = json.load(f)
+        self._updateMemory()
+
+    def __initLayout(self):
+        # Create memory panel
+        self._positionList = QtWidgets.QTreeWidget()
+        self._positionList.setColumnCount(3)
+        self._positionList.setHeaderLabels(["Label", "Position", "Memo"])
+        self._positionList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self._positionList.itemSelectionChanged.connect(lambda: self._updateMemoryBtns(load, delete))
+        self._positionList.setIndentation(0)
+        self._positionList.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.SelectedClicked)
+        self._positionList.itemChanged.connect(self._memoEdited)
+        self._positionList.header().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
+        self._positionList.header().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+        self._positionList.header().setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+        self._positionList.setItemDelegateForColumn(0, _NoEditDelegate(self._positionList))
+        self._positionList.setItemDelegateForColumn(1, _NoEditDelegate(self._positionList))
+
+        # Collapsible panel layout
+        save = QtWidgets.QPushButton("Save", clicked=self._save)
+        save.setEnabled(True)
+        load = QtWidgets.QPushButton("Load", clicked=self._load)
+        load.setEnabled(False)
+        delete = QtWidgets.QPushButton("Delete", clicked=self._delete)
+        delete.setEnabled(False)
+
+        self._memoryBtnsLayout = QtWidgets.QHBoxLayout()
+        self._memoryBtnsLayout.addWidget(save)
+        self._memoryBtnsLayout.addWidget(load)
+        self._memoryBtnsLayout.addWidget(delete)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(QtWidgets.QLabel("Memory"))
+        layout.addWidget(self._positionList)
+        layout.addLayout(self._memoryBtnsLayout)
+
+    def _save(self):
+        """
+        Saves the current axis positions to the memory file.
+        """
+        labels = {item["label"] for item in self._savedPositions}
+        i = 1
+        while f"{i}" in labels:
+            i += 1
+        newlabel = f"{i}"
+        newPosition = [self._obj.get()[name] for name in self._obj.nameList]
+        newMemo = ""
+        self._savedPositions.append({"label": newlabel, "position": newPosition, "memo": newMemo})
+        with open(self._path, "w") as f:
+            json.dump(self._savedPositions, f)
+        self._updateMemory()
+
+    def _load(self):
+        """
+        Loads a selected saved axis position item from the memory file and set the axes accordingly.
+        """
+        selections = self._positionList.selectedItems()
+        if not selections:
+            return
+        selectedlabel = selections[0].text(0)
+        itemDict = next(item for item in self._savedPositions if item["label"] == selectedlabel)
+        loadedValues = itemDict["position"]
+        settableNames = self._getNamesSettable()
+        valueDict = {name: loadedValues[self._obj.nameList.index(name)] for name in settableNames}
+        self._obj.set(**valueDict)
+
+    def _delete(self):
+        """
+        Deletes selected saved positions from the memory file.
+        """
+        selectedlabels = {i.text(0) for i in self._positionList.selectedItems()}
+        self._savedPositions = [item for item in self._savedPositions if item["label"] not in selectedlabels]
+        with open(self._path, "w") as f:
+            json.dump(self._savedPositions, f)
+        self._updateMemory()
+
+    def _memoEdited(self, item, column):
+        """
+        Handles edits to the memo field in the memory panel.
+
+        Args:
+            item (QTreeWidgetItem): The edited item.
+            column (int): The column index that was edited.
+        """
+        if column == 2:
+            label = item.text(0)
+            memo = item.text(2)
+            for idx, pos in enumerate(self._savedPositions):
+                if pos["label"] == label:
+                    self._savedPositions[idx]["memo"] = memo
+                    with open(self._path, "w") as f:
+                        json.dump(self._savedPositions, f)
+                    break
+
+    def _updateMemory(self):
+        """
+        Updates the memory panel with the latest saved positions.
+        """
+        self._positionList.clear()
+        for itemDict in self._savedPositions:
+            label = itemDict["label"]
+            position = itemDict["position"]
+            memo = itemDict["memo"]
+            displayedPosition = ", ".join(f"{v:.3f}" for v in position)
+            item = QtWidgets.QTreeWidgetItem([label, displayedPosition, memo])
+
+            # Protect columns 0 and 1 from editing
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            self._positionList.addTopLevelItem(item)
+
+        for col in range(self._positionList.columnCount()):
+            self._positionList.resizeColumnToContents(col)
+
+    def _updateMemoryBtns(self, loadBtn, deleteBtn):
+        """
+        Enables or disables memory panel buttons based on selection.
+
+        Args:
+            loadBtn (QPushButton): The load button.
+            deleteBtn (QPushButton): The delete button.
+        """
+        selected = len(self._positionList.selectedItems()) > 0
+        loadBtn.setEnabled(selected)
+        deleteBtn.setEnabled(selected)
+
+
+class _NoEditDelegate(QtWidgets.QStyledItemDelegate):
+    """
+    Delegate to prevent editing of certain columns in a QTreeWidget.
+    """
+
+    def createEditor(self, parent, option, index):
+        """
+        Prevents editing by always returning None.
+
+        Returns:
+            None
+        """
+        return None

@@ -146,7 +146,7 @@ class ScanWidget(QtWidgets.QWidget):
         scansBox = QtWidgets.QGroupBox("Scan")
         scansBox.setLayout(scansLayout)
         return scansBox
-    
+
     def __detectorBox(self, detectors, scanners):
         self._detectorsBox = QtWidgets.QComboBox(objectName="ScanTab_detectors")
         self._detectorsBox.addItems(detectors.keys())
@@ -175,7 +175,7 @@ class ScanWidget(QtWidgets.QWidget):
         processBox = QtWidgets.QGroupBox("Process")
         processBox.setLayout(layout)
         return processBox
-        
+
     def _start(self):
         process = _DetectorProcess(self._detectors[self._detectorsBox.currentText()], self._exposure.value(), **self.__getRefInfo())
         for i, s in enumerate([s for s in self._scanRangeRows if s.scanName != "None"]):
@@ -266,7 +266,7 @@ class _DetectorProcess(QtCore.QObject):
     def execute(self, storage):
         oldFolder = storage.folder
         storage.folder = oldFolder + "/pump"
-        
+
         if self._detector.exposure is not None:
             self._detector.exposure = self._exposure
         self._acquire()
@@ -277,7 +277,7 @@ class _DetectorProcess(QtCore.QObject):
             self._acquire()
             self._controller.set(**{self._ref: oldValue}, wait=True)
         self.statusUpdated.emit(f"[Executing] Folder: {storage.folder} | Name: {storage.name}")
-        
+
         storage.folder = oldFolder
 
     def _acquire(self):
