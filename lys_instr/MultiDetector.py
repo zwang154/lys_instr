@@ -292,20 +292,20 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def frameDim(self):
         """
-        The dimensions for the single data.
+        The number of dimensions for a single frame of data.
 
         Returns:
-            tuple: Dimensions for indexing acquired data.
+            int: Number of dimensions for a single frame.
         """
         return len(self.frameShape)
 
     @property
     def indexDim(self):
         """
-        The dimensions for indexing acquired data frames.
+        The number of dimensions for indexing acquired data frames.
 
         Returns:
-            tuple or None: Dimensions for indexing acquired data.
+            int: Number of dimensions for indexing acquired data.
         """
         return len(self.indexShape)
 
