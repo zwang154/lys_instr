@@ -66,7 +66,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(imageLayout, stretch=1)
         mainLayout.addLayout(controlsLayout, stretch=0)
-        
+
         self.setLayout(mainLayout)
 
     def _update(self):
@@ -81,6 +81,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         if data:
             for idx, frame in data.items():
                 self._data.data[idx[-frame.ndim:]] = frame
+            self._data.axes = self._obj.axes
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame
@@ -178,5 +179,5 @@ class _GeneralPanel(QtWidgets.QWidget):
         if self._scheduledUpdateCheck.isChecked():
             self._params["interval"] = self._updateInterval.value()
         else:
-            self._params["interval"] = None         
+            self._params["interval"] = None
         self._params["iter"] = self._iter.value()
