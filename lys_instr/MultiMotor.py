@@ -264,7 +264,7 @@ class MultiMotorInterface(HardwareInterface):
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def _set(self, kwargs):
+    def _set(self, **kwargs):
         """
         Should be implemented in subclasses to provide device-specific logic for setting axis positions.
 
