@@ -32,10 +32,10 @@ class _MultiMotorSpecifics:
         self._SettableIndices = [self._allNames.index(name) for name in self._settableNameList]
 
         # Joggable
-        self._joggableNameList = list(axisNamesJoggable) if axisNamesJoggable is not None else list(self._motor.getNamesAll())
+        self._joggableNameList = list(axisNamesJoggable) if axisNamesJoggable is not None else list(self._allNames)
 
         # Offsettable
-        self._offsettableNameList = list(axisNamesOffsettable) if axisNamesOffsettable is not None else list(self._motor.getNamesAll())
+        self._offsettableNameList = list(axisNamesOffsettable) if axisNamesOffsettable is not None else list(self._allNames)
         self._offsetDict = {name: 0 for name in self._offsettableNameList}
 
     def __getattr__(self, name):
@@ -246,23 +246,32 @@ class MultiMotorGUI(QtWidgets.QWidget):
         self._moveTo = {name: QtWidgets.QLineEdit() for name in self._getNamesSettable()}
         moveToLabel = QtWidgets.QLabel("Move to")
 
-        jogLabel = QtWidgets.QLabel("Jog")
+        if self._getNamesJoggable():
+            jogLabel = QtWidgets.QLabel("Jog")
 
-        self._jogNega = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-left-fill"), "", clicked=self._nega) for name in self._getNamesJoggable()}
-        for btn in self._jogNega.values():
-            btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        self._jogNegaReversed = {btn: name for name, btn in self._jogNega.items()}
+            self._jogNega = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-left-fill"), "", clicked=self._nega) for name in self._getNamesJoggable()}
+            for btn in self._jogNega.values():
+                btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+            self._jogNegaReversed = {btn: name for name, btn in self._jogNega.items()}
 
-        self._jogPosi = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-right-fill"), "", clicked=self._posi) for name in self._getNamesJoggable()}
-        for btn in self._jogPosi.values():
-            btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
-        self._jogPosiReversed = {btn: name for name, btn in self._jogPosi.items()}
+            self._jogPosi = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-right-fill"), "", clicked=self._posi) for name in self._getNamesJoggable()}
+            for btn in self._jogPosi.values():
+                btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+            self._jogPosiReversed = {btn: name for name, btn in self._jogPosi.items()}
 
-        self._jogStep = {name: QtWidgets.QDoubleSpinBox() for name in self._getNamesJoggable()}
-        for dsb in self._jogStep.values():
-            dsb.setRange(0, np.inf)
-            dsb.setDecimals(2)
-        jogStepLabel = QtWidgets.QLabel("Step")
+            self._jogStep = {name: QtWidgets.QDoubleSpinBox() for name in self._getNamesJoggable()}
+            for dsb in self._jogStep.values():
+                dsb.setRange(0, np.inf)
+                dsb.setDecimals(2)
+            jogStepLabel = QtWidgets.QLabel("Step")
+        else:
+            jogLabel = None
+            self._jogNega = {}
+            self._jogNegaReversed = {}
+            self._jogPosi = {}
+            self._jogPosiReversed = {}
+            self._jogStep = {}
+            jogStepLabel = None
 
         self._execute = QtWidgets.QPushButton("Go", clicked=self._setMoveToValue)
         self._execute.setEnabled(True)
@@ -325,8 +334,10 @@ class MultiMotorGUI(QtWidgets.QWidget):
         gl.addWidget(axisNameLabel, 0, 1)
         gl.addWidget(nowAtLabel, 0, 2)
         gl.addWidget(moveToLabel, 0, 3)
-        gl.addWidget(jogLabel, 0, 4)
-        gl.addWidget(jogStepLabel, 0, 6)
+        if jogLabel:
+            gl.addWidget(jogLabel, 0, 4)
+        if jogStepLabel:
+            gl.addWidget(jogStepLabel, 0, 6)
         for i, name in enumerate(self._obj.nameList):
             gl.addWidget(aliveIndicator[name], 1 + i, 0, alignment=QtCore.Qt.AlignCenter)
             gl.addWidget(self._axisNames[name], 1 + i, 1)
