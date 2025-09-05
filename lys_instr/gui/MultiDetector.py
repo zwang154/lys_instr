@@ -150,17 +150,19 @@ class _GeneralPanel(QtWidgets.QWidget):
     def __initLayout(self, interval):
         self._iter = QtWidgets.QSpinBox()
         self._iter.setRange(1, 2**31 - 1)
-        self._iter.valueChanged.connect(self._changeInterval)
 
         self._updateInterval = QtWidgets.QSpinBox()
         self._updateInterval.setRange(1, 2**31 - 1)
-        self._updateInterval.valueChanged.connect(self._changeInterval)
         if interval is None:
             self._updateInterval.setEnabled(False)
         else:
             self._updateInterval.setValue(interval)
 
         self._scheduledUpdateCheck = QtWidgets.QCheckBox("Update every", checked=interval is not None, toggled=self._changeInterval)
+
+        # Connections
+        self._iter.valueChanged.connect(self._changeInterval)
+        self._updateInterval.valueChanged.connect(self._changeInterval)
         self._scheduledUpdateCheck.stateChanged.connect(self._updateInterval.setEnabled)
 
         grid = QtWidgets.QGridLayout()
