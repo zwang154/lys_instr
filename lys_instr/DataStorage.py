@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import logging
+
 from lys import Wave
 from lys.Qt import QtCore
 

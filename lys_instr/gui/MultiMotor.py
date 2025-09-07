@@ -4,7 +4,7 @@ import os
 import json
 
 from lys.Qt import QtWidgets, QtCore
-from .widgets import AliveIndicator, SettingsButton
+from .Widgets import AliveIndicator, SettingsButton
 
 
 class _MultiMotorSpecifics:

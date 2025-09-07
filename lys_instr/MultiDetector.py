@@ -2,7 +2,6 @@ import logging
 import time
 
 from lys.Qt import QtCore
-
 from .Interfaces import HardwareInterface
 
 

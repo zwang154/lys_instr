@@ -54,6 +54,7 @@ class DetectorT1GUI(gui.MultiDetectorGUI):
                 self._lastIdx = idx
             self._frameCount += 1
 
+            # Update frame display every N frames or on last frame
             if self._frameCount == np.prod(self._obj.indexShape):
                 update = True
             else:

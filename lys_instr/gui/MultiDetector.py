@@ -3,7 +3,7 @@ import numpy as np
 from lys import multicut, Wave
 from lys.Qt import QtWidgets, QtCore
 
-from .widgets import AliveIndicator, SettingsButton
+from .Widgets import AliveIndicator, SettingsButton
 
 
 class MultiDetectorGUI(QtWidgets.QWidget):

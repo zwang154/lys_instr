@@ -1,5 +1,5 @@
 from lys.Qt import QtCore
-from lys_instr.Commons import preciseSleep
+from .Utilities import preciseSleep
 
 
 def lock(func):
