@@ -20,7 +20,6 @@ def lock(func):
     """
     def wrapper(self, *args, **kwargs):
         with QtCore.QMutexLocker(self._mutex):
-            # func(self, *args, **kwargs)
             return func(self, *args, **kwargs)
     return wrapper
 
