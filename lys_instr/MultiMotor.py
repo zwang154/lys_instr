@@ -85,7 +85,7 @@ class MultiMotorInterface(HardwareInterface):
                 self.busyStateChanged.emit(busyUpdate)
 
         except RuntimeError as e:
-            logging.warning("Runtime error in _loadState")
+            logging.warning(f"Runtime error in _loadState: {e}")
 
         finally:
             al = self._isAlive()

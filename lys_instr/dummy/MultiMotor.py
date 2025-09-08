@@ -53,9 +53,13 @@ class MultiMotorDummy(MultiMotorInterface):
         Args:
             target (dict[str, float]): Mapping of axis names to their target positions.
         """
-        self.__before = self.get(type=np.ndarray)
-        self.__timing = np.full(len(self.nameList), self._time())
-        self.__target = np.array([target[name] if name in target else np.nan for name in self.nameList])
+        now = self._time()
+        before = self.get(type=np.ndarray)
+        for i, name in enumerate(self.nameList):
+            if name in target:
+                self.__before[i] = before[i]
+                self.__timing[i] = now
+                self.__target[i] = target[name]
 
     def _get(self):
         """
@@ -95,6 +99,7 @@ class MultiMotorDummy(MultiMotorInterface):
         for i, name in enumerate(self.nameList):
             if name not in val:
                 val[name] = float(self.__position[i])
+        print(f"DummyMotor._get called, returning: {val}")
         return val
 
     def _stop(self):
