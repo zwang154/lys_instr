@@ -8,10 +8,13 @@ class PreCorrector:
         self._enabled = True
         self._controllers = {}
         for c in controllers:
-            c.busyStateChanged.connect(self._busy, QtCore.Qt.DirectConnection)
-            c.valueChanged.connect(self._correct, QtCore.Qt.DirectConnection)
+            # c.busyStateChanged.connect(self._busy, QtCore.Qt.DirectConnection)
+            # c.valueChanged.connect(self._correct, QtCore.Qt.DirectConnection)
+            c.busyStateChanged.connect(self._busy, QtCore.Qt.QueuedConnection)
+            c.valueChanged.connect(self._correct, QtCore.Qt.QueuedConnection)
             self._controllers.update({name: c for name in c.nameList})
-
+            if not hasattr(c, "_isBusy_orig"):
+                c._isBusy_orig = c._isBusy
         self._correctParams = dict()
 
     @property
@@ -38,7 +41,7 @@ class PreCorrector:
         def busyFunc(p1, p2):
             c1, c2 = self.controllers[p1], self.controllers[p2]
             result = c1._isBusy_orig()
-            if c2._isBusy()[p2]:
+            if c2._isBusy_orig()[p2]:
                 result[p1] = True
             return result
 
@@ -51,10 +54,11 @@ class PreCorrector:
             for name2, b in busy.items():
                 if name2 in func.argNames(excludeFixed=True):
                     if b:
-                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy
-                        self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
+                        if self.controllers[name2]._isBusy is self.controllers[name2]._isBusy_orig:
+                            self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
                     else:
-                        self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
+                        if hasattr(self.controllers[name2], "_isBusy_orig"):
+                            self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
 
 
 class _FunctionCombination:
