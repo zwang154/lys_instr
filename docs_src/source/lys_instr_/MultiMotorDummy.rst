@@ -1,6 +1,6 @@
 
-MultiMotor
---------------------------
+Motor
+-----
 
 .. automodule:: lys_instr.dummy.MultiMotor
    :members:

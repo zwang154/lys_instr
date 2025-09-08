@@ -1,6 +1,6 @@
 
-Interfaces
---------------------------
+Base Classes
+------------
 
 .. automodule:: lys_instr.Interfaces
    :members:

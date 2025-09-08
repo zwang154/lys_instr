@@ -1,6 +1,6 @@
 
-MultiScan
---------------------------
+Scan
+----
 
 .. automodule:: lys_instr.gui.MultiScan
    :members:
