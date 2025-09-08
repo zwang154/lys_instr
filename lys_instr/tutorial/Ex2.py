@@ -9,7 +9,7 @@ from lys_instr import DataStorage, gui, dummy
 from lys_instr.gui.Scan import ScanWidget
 
 
-class DetectorT2(dummy.MultiDetectorDummy):
+class DetectorEx2(dummy.MultiDetectorDummy):
     def __init__(self, indexShape, frameShape, **kwargs):
         super().__init__(indexShape, frameShape, **kwargs)
         self._count = 0
@@ -38,13 +38,13 @@ class DetectorT2(dummy.MultiDetectorDummy):
 class window(LysSubWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Tutorial 2")
-        self._detector = DetectorT2(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
+        self.setWindowTitle("Example #2")
+        self._detector = DetectorEx2(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
         self._motor = dummy.MultiMotorDummy("x")
         self._storage = DataStorage()
         self._storage.connect(self._detector)
         self._initLayout()
-        self.setSettingFile("Tutorial2.dic")
+        self.setSettingFile("Ex2.dic")
         self.adjustSize()
 
     def _initLayout(self):
@@ -52,7 +52,7 @@ class window(LysSubWindow):
         _motorGUI = gui.MultiMotorGUI(self._motor, axisNamesJoggable=(), axisNamesOffsettable=("x"))
         _storageGUI = gui.DataStorageGUI(self._storage)
 
-        _scanGUI = ScanWidget(self._storage, [self._motor], {"DetectorT2": self._detector})
+        _scanGUI = ScanWidget(self._storage, [self._motor], {"DetectorEx2": self._detector})
 
         self._tab = QtWidgets.QTabWidget()
         self._tab.addTab(_motorGUI, "Motor")

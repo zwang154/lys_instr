@@ -54,6 +54,5 @@ class window(LysSubWindow):
         w = QtWidgets.QWidget()
         w.setLayout(VBox)
         self.setWidget(w)
-
-        # self.adjustSize()
+        
 

@@ -65,7 +65,6 @@ class window(LysSubWindow):
 
         w = QtWidgets.QWidget()
         w.setLayout(HBox)
-        self.setWidget(w)       # cannot set layout
+        self.setWidget(w)
 
-        # self.adjustSize()
 

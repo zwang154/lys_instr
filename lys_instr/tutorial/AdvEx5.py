@@ -28,29 +28,41 @@ class SpectrometerDummy(dummy.MultiDetectorDummy):
                 self.updated.emit()
             i += 1
 
-class SpectrometerGUI(gui.MultiDetectorGUI):
+class SpectrometerGUI_(gui.MultiDetectorGUI):
     def __init__(self, obj, wait=False, interval=1, iter=1):
         super().__init__(obj, wait=wait, interval=interval, iter=iter)
+        self._allData = []
 
     def _dataAcquired(self, data):
         if not hasattr(self, "_data"):
             self._frameCount = 0
-            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
+            # self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
 
         if data:
             for idx, frame in data.items():
                 self._data.data[idx] = frame    # Data registration revised
             self._frameCount += 1
 
-            # Update frame display every N frames or on last frame
-            if self._frameCount == np.prod(self._obj.indexShape):
-                update = True
-            else:
-                update = False if self._params["interval"] is None else self._frameCount % self._params["interval"] == 0
+            # # Update frame display every frames or on last frame
+            # if self._frameCount == np.prod(self._obj.indexShape):
+            #     update = True
+            # else:
+            #     update = False if self._params["interval"] is None else self._frameCount % self._params["interval"] == 0
 
-            if update:
-                self._update()
+            # if update:
+            #     self._update()
+            self._update()
+
+    def _onAcquire(self, mode="acquire"):
+        self._frameCount = 0
+        self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
+        self._mcut.cui.setRawWave(self._data)
+        if mode == "acquire":
+            self._obj.startAcq(wait=self._params["wait"], iter=self._params["iter"])
+        else:
+            self._obj.startAcq(iter=-1)
         
+
 class mappingWidget(gui.MultiScan.ScanWidget):
     def __init__(self, storage, motors, detectors):
         super().__init__(storage, motors, detectors)
@@ -61,7 +73,7 @@ class mappingWidget(gui.MultiScan.ScanWidget):
 class window(LysSubWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Example 4")
+        self.setWindowTitle("Example 5")
         self._storage = DataStorage()
         self._detector = SpectrometerDummy()
 
@@ -69,12 +81,12 @@ class window(LysSubWindow):
 
         self._storage.connect(self._detector)
         self._initLayout()
-        self.setSettingFile("Example4.dic")
+        self.setSettingFile("Example5.dic")
         self.adjustSize()
 
     def _initLayout(self):
         _storageGUI = gui.DataStorageGUI(self._storage)
-        _detectorGUI = SpectrometerGUI(self._detector)
+        _detectorGUI = SpectrometerGUI_(self._detector)
 
         VBox = QtWidgets.QVBoxLayout()
         VBox.addWidget(_storageGUI)
