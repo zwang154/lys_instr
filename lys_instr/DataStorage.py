@@ -17,9 +17,6 @@ class DataStorage(QtCore.QObject):
         **kwargs: Additional keyword arguments passed to QObject.
     """
 
-    #: Signal emitted when storage path changes.
-    pathChanged = QtCore.pyqtSignal()
-
     #: Signal (bool) emitted when saving state changes.
     savingStateChanged = QtCore.pyqtSignal(bool)
 
@@ -159,14 +156,8 @@ class DataStorage(QtCore.QObject):
         Args:
             detector (object): Detector instance emitting ``dataAcquired`` and ``busyStateChanged`` signals.
         """
-        detector.dataAcquired.connect(self._dataAcquired)
+        detector.dataAcquired.connect(self.update)
         detector.busyStateChanged.connect(lambda b: self._busyStateChanged(detector, b))
-
-    def _dataAcquired(self, data):
-        """
-        Slot to handle new data acquired from the detector.
-        """
-        self.update(data)
 
     def _busyStateChanged(self, detector, busy):
         """
@@ -238,7 +229,6 @@ class DataStorage(QtCore.QObject):
         self._threads.append(thread)
         thread.start()
 
-        self.pathChanged.emit()
         self.savingStateChanged.emit(self.saving)
 
     def _savingFinished(self):

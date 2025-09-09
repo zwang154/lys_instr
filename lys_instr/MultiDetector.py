@@ -109,12 +109,12 @@ class DetectorInterface(HardwareInterface):
         if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
             return
-        
+
         self._busy = True
         self.busyStateChanged.emit(True)
 
         self._thread = _AcqThread(self, iter=iter)
-        self._thread.dataAcquired.connect(self.dataAcquired.emit)
+        self._thread.dataAcquired.connect(self.dataAcquired.emit, type=QtCore.Qt.DirectConnection)
         self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
         if wait and output:
             buffer = {}
@@ -177,7 +177,7 @@ class DetectorInterface(HardwareInterface):
             float or None: The exposure time
         """
         return self._exposure
-    
+
     @exposure.setter
     def exposure(self, value):
         """
@@ -199,7 +199,7 @@ class DetectorInterface(HardwareInterface):
             bool: True if the detector is busy, False otherwise.
         """
         return self._busy
-    
+
     @property
     def isAlive(self):
         """
@@ -211,7 +211,7 @@ class DetectorInterface(HardwareInterface):
             bool: True if the detector is alive, False otherwise.
         """
         return self._isAlive()
-    
+
     def _get(self):
         """
         Should be implemented in subclasses to provide device-specific logic for getting acquired data.
@@ -236,7 +236,7 @@ class DetectorInterface(HardwareInterface):
     def _isAlive(self):
         """
         Should be implemented in subclasses to provide device-specific logic for returning alive state.
-        
+
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
@@ -248,7 +248,7 @@ class DetectorInterface(HardwareInterface):
 
         Args:
             iter(int): Number of iterations. -1 means continuous run.
-        
+
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
@@ -262,12 +262,12 @@ class DetectorInterface(HardwareInterface):
 
         Returns:
             QDialog: The settings dialog.
-        
+
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
 
 class MultiDetectorInterface(DetectorInterface):
     """
@@ -344,4 +344,3 @@ class MultiDetectorInterface(DetectorInterface):
             tuple: Shape of the acquired data.
         """
         return tuple([*self.indexShape, *self.frameShape])
-    

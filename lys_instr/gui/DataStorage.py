@@ -15,8 +15,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._obj.base = self._base.text()
         self._obj.folder = self._folder.text()
         self._obj.name = self._name.text()
-
-        self._obj.pathChanged.connect(self._pathChanged)
         self._obj.savingStateChanged.connect(self._savingStateChanged)
 
     def _initLayout(self):
@@ -71,7 +69,7 @@ class DataStorageGUI(QtWidgets.QWidget):
     def _pathChanged(self):
         if self._settingPath:
             return
-        
+
         self._settingPath = True
 
         # Update storage object properties from GUI fields
@@ -108,7 +106,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._savedIndicator.setPixmap(icon.pixmap(24, 24))
 
 
-
 # To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.DataStorageGUI
 if __name__ == "__main__":
     import sys
@@ -142,6 +139,5 @@ if __name__ == "__main__":
     storage.update((5, 5), data)
     storage.save()
     print(storage._arr[0, 0, 0, 0])
-
 
     sys.exit(app.exec_())

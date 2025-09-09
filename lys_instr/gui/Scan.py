@@ -322,12 +322,12 @@ class _ScanProcess(QtCore.QObject):
                 return
             self._obj.set(**{self._name: value}, wait=True)      # obj is a MultiMotor instance or a Loop instance
             if self._addFolder:
-                currentFolder = f"{oldFolder}/{self._name}{str(i).zfill(len(str(len(self._values))))}"
+                currentFolder = f"{oldFolder}/{self._name}_{str(i).zfill(len(str(len(self._values))))}"
                 storage.folder = currentFolder
             else:
                 storage.folder = currentFolder
             if self._addName:
-                storage.name = f"{oldName}_{self._name}{i}"
+                storage.name = f"{oldName}_{self._name}__{str(i).zfill(len(str(len(self._values))))}"
             self._process.execute(storage)          # At the beginning of execution (-> statusUpdated.emit -> _statusUpdated() -> self._obj.get()), the motor has already started moving.
 
         storage.folder = oldFolder
