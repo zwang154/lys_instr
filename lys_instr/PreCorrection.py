@@ -47,8 +47,14 @@ class PreCorrector:
 
         if not self._enabled:
             return
-                       
-        for name, func in self.corrections.items(): # y = f(t,x)
+
+        # Always restore all _isBusy to _isBusy_orig before patching
+        for c in self.controllers.values():
+            if hasattr(c, "_isBusy_orig"):
+                c._isBusy = c._isBusy_orig
+
+        # Patch as needed for current busy state
+        for name, func in self.corrections.items():  # y = f(t,x)
             if not func.enabled:
                 continue
             for name2, b in busy.items():
@@ -56,9 +62,6 @@ class PreCorrector:
                     if b:
                         if self.controllers[name2]._isBusy is self.controllers[name2]._isBusy_orig:
                             self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
-                    else:
-                        if hasattr(self.controllers[name2], "_isBusy_orig"):
-                            self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
 
 
 class _FunctionCombination:
