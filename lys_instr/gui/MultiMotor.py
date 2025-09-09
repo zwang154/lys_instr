@@ -8,60 +8,6 @@ from .widgets import AliveIndicator, SettingsButton
 from .Memory import ControllerMemory
 
 
-class _MultiMotorSpecifics(QtCore.QObject):
-    """
-    Provides feature management for a multi-axis motor, including settable, joggable, and offsettable axes.
-
-    This class acts as a wrapper around a motor object, filtering and managing which axes can be set, jogged, or offset.
-    """
-    valueChanged = QtCore.pyqtSignal(dict)
-
-    def __init__(self, motor, axisNamesOffsettable=None):
-        """
-        Initializes MultiMotorSpecifics with axis feature sets.
-
-        Args:
-            motor: The motor object to wrap.
-            axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.
-        """
-        super().__init__()
-        self._motor = motor
-        offsettable = list(axisNamesOffsettable) if axisNamesOffsettable is not None else list(self._motor.nameList)
-        self._offsetDict = {name: 0 for name in offsettable}
-        self._motor.valueChanged.connect(self._valueChanged)
-
-    def __getattr__(self, name):
-        """
-        Delegates attribute access to the underlying motor object.
-
-        Args:
-            name (str): Attribute name.
-
-        Returns:
-            Any: Attribute value from the motor object.
-        """
-        return getattr(self._motor, name)
-
-    def set(self, **kwargs):
-        """
-        Sets target values for settable axes.
-        """
-        kwargs = {key: value + self.offset.get(key, 0) for key, value in kwargs.items()}
-        self._motor.set(**kwargs)
-
-    def get(self):
-        """ Gets target values."""
-        res = self._motor.get()
-        return {key: value - self.offset.get(key, 0) for key, value in res.items()}
-
-    def _valueChanged(self, res):
-        self.valueChanged.emit({key: value - self.offset.get(key, 0) for key, value in res.items()})
-
-    @property
-    def offset(self):
-        return self._offsetDict
-
-
 class MultiMotorGUI(QtWidgets.QWidget):
     """
     GUI widget for controlling and monitoring a multi-axis motor.
@@ -83,27 +29,18 @@ class MultiMotorGUI(QtWidgets.QWidget):
         """
         super().__init__()
 
-        self._objs = self._initMotors(obj, axisNamesOffsettable)
+        if isinstance(obj, MultiMotorInterface):
+            obj = [obj]
+        self._objs = obj
+
         joggable = self.controllers.keys() if axisNamesJoggable is None else list(axisNamesJoggable)
         settable = self.controllers.keys() if axisNamesSettable is None else list(axisNamesSettable)
+        self._offsettable = self.controllers.keys() if axisNamesOffsettable is None else list(axisNamesOffsettable)
 
         self._initLayout(settable, joggable, memory, memoryPath)
         for obj in self._objs:
             obj.busyStateChanged.connect(self._busyStateChanged)
             obj.aliveStateChanged.connect(self._aliveStateChanged)
-
-    def _initMotors(self, obj, axisNamesOffsettable):
-        if isinstance(obj, MultiMotorInterface):
-            obj = [obj]
-
-        objs = []
-        for o in obj:
-            if axisNamesOffsettable is None:
-                offsettable = list(o.nameList)
-            else:
-                offsettable = [name for name in axisNamesOffsettable if name in o.nameList]
-            objs.append(_MultiMotorSpecifics(o, offsettable))
-        return objs
 
     @property
     def controllers(self):
@@ -192,7 +129,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
             obj.stop()
 
     def _showSettings(self):
-        settingsWindow = _SettingsDialog(self)
+        settingsWindow = _SettingsDialog(self, self._offsettable)
         settingsWindow.exec_()
 
     def _clearMoveToFields(self):
@@ -295,12 +232,12 @@ class _MotorRowLayout(QtCore.QObject):
 
 
 class _SettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, offsettable):
         super().__init__(parent)
         self.setWindowTitle("Motor Settings")
 
         tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(_GeneralPanel(parent.controllers), "General")
+        tabWidget.addTab(_GeneralPanel(parent.controllers, offsettable), "General")
         #tabWidget.addTab(obj.settingsWidget(), "Optional")
 
         layout = QtWidgets.QVBoxLayout()
@@ -315,17 +252,17 @@ class _GeneralPanel(QtWidgets.QWidget):
     Allows viewing and toggling the alive/dead status and managing offsets for each axis.
     """
 
-    def __init__(self, controllers):
+    def __init__(self, controllers, offsettable):
         super().__init__()
         self._controllers = controllers
-        self._initLayout(controllers)
+        self._initLayout(controllers, offsettable)
 
-    def _initLayout(self, controllers):
+    def _initLayout(self, controllers, offsettable):
         """
         Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.
         """
         # Create offset panel
-        offsettable = {name: c for name, c in controllers.items() if name in c.offset}
+        offsettable = {name: c for name, c in controllers.items() if name in offsettable}
         self._offsetBtns = {name: QtWidgets.QPushButton("Offset", clicked=lambda checked, n=name: self._offsetAxis(n)) for name in offsettable}
         self._unsetBtns = {name: QtWidgets.QPushButton("Unset", clicked=lambda checked, n=name: self._unsetAxis(n)) for name in offsettable}
         self._offsetLbls = {name: QtWidgets.QLabel(name) for name in offsettable}

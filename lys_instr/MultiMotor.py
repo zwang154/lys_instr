@@ -27,7 +27,7 @@ class _AxisInfo():
         self.alive = alive
 
 
-class MultiMotorInterface(HardwareInterface):
+class MultiMotorInterfaceBase(HardwareInterface):
     """
     Abstract interface for multi-axis motor controllers.
 
@@ -76,7 +76,7 @@ class MultiMotorInterface(HardwareInterface):
 
             # Emit valueChanged signal if any axis is busy
             if any(bs.values()) or len(busyUpdate) > 0:
-                vs = self._get()
+                vs = self.get()
                 self.valueChanged.emit({name: vs[name] for name, b in bs.items() if b or name in busyUpdate})
 
             # Update busy state log and emit busyStateChanged signal if any axis has changed its busy state
@@ -275,3 +275,39 @@ class MultiMotorInterface(HardwareInterface):
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError("Subclasses must implement this method.")
+
+
+class OffsettableMultiMotorInterface(MultiMotorInterfaceBase):
+    """
+    Add offset functionality for MultiMotor.
+    """
+
+    def __init__(self, *axesNames, **kwargs):
+        super().__init__(*axesNames, **kwargs)
+        self._offsetDict = {name: 0 for name in axesNames}
+
+    def set(self, **kwargs):
+        kwargs = {key: value + self.offset.get(key, 0) for key, value in kwargs.items()}
+        super().set(**kwargs)
+
+    def get(self, type=dict):
+        valueDict = {key: value - self.offset.get(key, 0) for key, value in super().get().items()}
+        if type is dict:
+            return valueDict
+        elif type is list:
+            return [valueDict[name] for name in self.nameList]
+        elif type is np.ndarray:
+            return np.array([valueDict[name] for name in self.nameList])
+        else:
+            raise TypeError("Unsupported type: {}".format(type))
+
+    @property
+    def offset(self):
+        """
+        Dictionary of offset for respective axes.
+        """
+        return self._offsetDict
+
+
+class MultiMotorInterface(OffsettableMultiMotorInterface):
+    pass
