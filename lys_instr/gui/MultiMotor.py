@@ -301,6 +301,7 @@ class _GeneralPanel(QtWidgets.QWidget):
         obj.offset[name] += obj.get()[name]
         self._offsetEdits[name].setValue(obj.offset[name])
         obj.valueChanged.emit(obj.get())
+        obj.save()
 
     def _unsetAxis(self, name):
         """
@@ -313,3 +314,4 @@ class _GeneralPanel(QtWidgets.QWidget):
         obj.offset[name] = 0
         self._offsetEdits[name].setValue(0)
         obj.valueChanged.emit(obj.get())
+        obj.save()
