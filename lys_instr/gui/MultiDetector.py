@@ -80,7 +80,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
         if data:
             for idx, frame in data.items():
-                self._data.data[idx[-frame.ndim:]] = frame
+                self._data.data[idx] = frame
             self._data.axes = self._obj.axes
             self._frameCount += 1
 

@@ -97,7 +97,7 @@ class DataStorage(QtCore.QObject):
         Sets the base file name for saving data files.
         """
         self._name = value
-    
+
     @property
     def numbered(self):
         """
@@ -124,7 +124,7 @@ class DataStorage(QtCore.QObject):
             bool: True if the ``DataStorage`` instance is enabled, False otherwise.
         """
         return self._enabled
-    
+
     @enabled.setter
     def enabled(self, value):
         """
@@ -159,17 +159,16 @@ class DataStorage(QtCore.QObject):
         Args:
             detector (object): Detector instance emitting ``dataAcquired`` and ``busyStateChanged`` signals.
         """
-        self._detector = detector
-        self._detector.dataAcquired.connect(self._dataAcquired)
-        self._detector.busyStateChanged.connect(self._busyStateChanged)
+        detector.dataAcquired.connect(self._dataAcquired)
+        detector.busyStateChanged.connect(lambda b: self._busyStateChanged(detector, b))
 
     def _dataAcquired(self, data):
         """
         Slot to handle new data acquired from the detector.
         """
-        self.update(self._detector.indexShape, data)
+        self.update(data)
 
-    def _busyStateChanged(self, busy):
+    def _busyStateChanged(self, detector, busy):
         """
         Reserves storage if busy, otherwise saves the buffered data.
 
@@ -177,7 +176,7 @@ class DataStorage(QtCore.QObject):
             busy (bool): If True, reserve storage; if False, save the buffered data.
         """
         if busy:
-            self.reserve(self._detector.dataShape)
+            self.reserve(detector.dataShape)
         else:
             self.save()
 
@@ -208,7 +207,7 @@ class DataStorage(QtCore.QObject):
         self._arr = np.full(shape, np.nan if fillValue is None else fillValue, dtype=float)
         self.savingStateChanged.emit(self.saving)
 
-    def update(self, indexShape, data):
+    def update(self, data):
         """
         Updates the buffered data array with new values.
 
@@ -219,7 +218,7 @@ class DataStorage(QtCore.QObject):
         if not self.enabled:
             return
         for idx, value in data.items():
-            self._arr[idx[-len(indexShape):]] = value
+            self._arr[idx] = value
 
     def save(self):
         """
@@ -264,8 +263,6 @@ class DataStorage(QtCore.QObject):
         return bool(self._threads or self._paths)
 
 
-
-
 class _SaveThread(QtCore.QThread):
     """
     Save thread for ``DataStorage``.
@@ -290,5 +287,3 @@ class _SaveThread(QtCore.QThread):
         Runs the save thread, exporting the Wave object to the specified path.
         """
         self.wave.export(self.path)
-
-
