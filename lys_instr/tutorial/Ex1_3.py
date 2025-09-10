@@ -8,7 +8,7 @@ from lys_instr import DataStorage, gui, dummy
 from lys_instr.gui.Scan import ScanWidget
 
 
-class DetectorEx2(dummy.MultiDetectorDummy):
+class DetectorEx1(dummy.MultiDetectorDummy):
     def __init__(self, indexShape, frameShape, **kwargs):
         super().__init__(indexShape, frameShape, **kwargs)
         self._count = 0
@@ -22,36 +22,53 @@ class DetectorEx2(dummy.MultiDetectorDummy):
                 if self._shouldStop:
                     return
                 time.sleep(self.exposure)
+                x = np.linspace(0, 255, 256)
                 x0 = (128 + 8 * self._count) % 256
-                x, y = np.meshgrid(np.linspace(0, 255, self.frameShape[1]), np.linspace(0, 255, self.frameShape[0]))
-                self._data[idx] = self._gauss2d(x, y, 1, x0, 128, 32, 32, 0)
+                y = self._gauss1d(x, 1, x0, 32, 0)
+                self._data[idx] = y
+                self.axes = [x]
                 self.updated.emit()
             i += 1
             self._count += 1
 
     @staticmethod
-    def _gauss2d(x, y, A, x0, y0, sigma_x, sigma_y, offset):
-        return A * np.exp(-((x - x0) ** 2 / (2 * sigma_x ** 2) + (y - y0) ** 2 / (2 * sigma_y ** 2))) + offset
+    def _gauss1d(x, A, x0, sigma, offset):
+        return A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2)) + offset
+
+    @property
+    def axes(self):
+        return [np.linspace(0, 1, s) for s in self.dataShape]
+    
+    @axes.setter
+    def axes(self, axes):
+        self._axes = axes
+
+
+class DetectorEx1GUI(gui.MultiDetectorGUI):
+    def _update(self):
+        if hasattr(self, "_data"):
+            self._data.axes = [self._obj.axes[0]]
+            self._mcut.cui.setRawWave(self._data)
 
 
 class window(LysSubWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Example #2")
-        self._detector = DetectorEx2(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
+        self.setWindowTitle("Example #1")
+        self._detector = DetectorEx1(indexShape=(1,), frameShape=(256,), exposure=0.1)
         self._motor = dummy.MultiMotorDummy("x")
         self._storage = DataStorage()
         self._storage.connect(self._detector)
         self._initLayout()
-        self.setSettingFile("Ex2.dic")
+        self.setSettingFile("Ex1.dic")
         self.adjustSize()
 
     def _initLayout(self):
-        _detectorGUI = gui.MultiDetectorGUI(self._detector)
+        _detectorGUI = DetectorEx1GUI(self._detector)
         _motorGUI = gui.MultiMotorGUI(self._motor, axisNamesJoggable=(), axisNamesOffsettable=("x"))
         _storageGUI = gui.DataStorageGUI(self._storage)
 
-        _scanGUI = ScanWidget(self._storage, [self._motor], {"DetectorEx2": self._detector})
+        _scanGUI = ScanWidget(self._storage, [self._motor], {"DetectorEx1": self._detector})
 
         self._tab = QtWidgets.QTabWidget()
         self._tab.addTab(_motorGUI, "Motor")
@@ -69,10 +86,11 @@ class window(LysSubWindow):
         w.setLayout(HBox)
         self.setWidget(w)
 
-        # Adapt multicut for 2D image display
-        mcut = _detectorGUI._mcut
-        # image = mcut.cui._children.addWave([1, 2])
-        axes = list(range(len(self._detector.dataShape)))[-self._detector.frameDim:]
-        image = mcut.cui._children.addWave(axes)
-        mcut.display(image, type="grid", pos=(0, 0), wid=(4, 4))
 
+
+        # Adapt multicut for 1D array display
+        mcut = _detectorGUI._mcut
+        graph = mcut.cui._children.addWave([1])
+        # axes = list(range(len(self._detector.dataShape)))[-self._detector.frameDim:]
+        # graph = mcut.cui._children.addWave(axes)
+        mcut.display(graph, type="grid", pos=(0, 0), wid=(4, 4))

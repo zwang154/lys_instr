@@ -1,13 +1,9 @@
-# Start on lys
-
-from lys.widgets import LysSubWindow
 from lys.Qt import QtWidgets
 from lys_instr import PreCorrector, gui, dummy
 from lys_instr.PreCorrection import _FunctionCombination, _InterpolatedFunction
 
 
-class window(LysSubWindow):
-# class window(QtWidgets.QGroupBox):
+class window(QtWidgets.QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Example #3")
@@ -35,10 +31,10 @@ class window(LysSubWindow):
         HBox = QtWidgets.QHBoxLayout()
         HBox.addLayout(VBox)
 
-        w = QtWidgets.QWidget()
-        w.setLayout(HBox)
-        self.setWidget(w)
-        # self.setLayout(HBox)
+        # w = QtWidgets.QWidget()
+        # w.setLayout(HBox)
+        # self.setWidget(w)
+        self.setLayout(HBox)
 
 
 

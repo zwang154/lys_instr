@@ -70,8 +70,8 @@ class window(LysSubWindow):
 
         # Adapt multicut for 1D array display
         mcut = _detectorGUI._mcut
-        # graph = mcut.cui._children.addWave([1])
-        axes = list(range(len(self._detector.dataShape)))[-self._detector.frameDim:]
-        graph = mcut.cui._children.addWave(axes)
+        graph = mcut.cui._children.addWave([1])
+        # axes = list(range(len(self._detector.dataShape)))[-self._detector.frameDim:]
+        # graph = mcut.cui._children.addWave(axes)
         mcut.display(graph, type="grid", pos=(0, 0), wid=(4, 4))
 
