@@ -99,7 +99,6 @@ class MultiMotorDummy(MultiMotorInterface):
         for i, name in enumerate(self.nameList):
             if name not in val:
                 val[name] = float(self.__position[i])
-        print(f"DummyMotor._get called, returning: {val}")
         return val
 
     def _stop(self):
