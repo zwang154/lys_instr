@@ -1,9 +1,8 @@
 Getting Started
-======================================
+===============
+.. toctree::
+   :maxdepth: 2
 
-Simple instrument control template
------------------------------------------
+   lys_instr_/tutorial_/essent
+   lys_instr_/tutorial_/adv
 
-1. 
-
-2. 
