@@ -13,6 +13,10 @@ class PreCorrectorGUI(QtWidgets.QWidget):
     def __init__(self, obj):
         super().__init__()
         self._obj = obj
+
+        if hasattr(self._obj, 'correctionsChanged'):
+            self._obj.correctionsChanged.connect(self._refreshTree)
+
         self.__initUI()
 
     def __initUI(self):
@@ -29,10 +33,14 @@ class PreCorrectorGUI(QtWidgets.QWidget):
 
         self.setLayout(self._layout)
         self.adjustSize()
+        self._refreshTree()
 
     def _new(self):
         gui = _NewFunctionWindow(self._obj)
         gui.show()
+
+    def _refreshTree(self):
+        self._tree.refresh()
 
 
 class _FunctionWidget(QtWidgets.QTreeWidget):
@@ -169,6 +177,23 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
         _, c = self._correction(item.parent())
         key = list(c.functions.keys())[item.parent().indexOfChild(item)]
         return c.functions[key]
+
+    def refresh(self):
+        self.clear()
+        for key, c in self._obj.corrections.items():
+            argSet = set()
+            for func in c.functions.values():
+                if hasattr(func, 'argNames'):
+                    argSet.update(func.argNames())
+            expr = ', '.join(sorted(argSet))
+            top = _EditableItem([key, expr])
+            self.addTopLevelItem(top)
+            for funcName, func in c.functions.items():
+                if hasattr(func, 'argNames'):
+                    funcExpr = f"{funcName}({', '.join(func.argNames())})"
+                else:
+                    funcExpr = funcName
+                top.addChild(_EditableItem([funcName, funcExpr]))
 
 
 class _EditableItem(QtWidgets.QTreeWidgetItem):
