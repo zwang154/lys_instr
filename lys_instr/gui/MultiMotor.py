@@ -4,7 +4,7 @@ import os
 import json
 
 from lys.Qt import QtWidgets, QtCore
-from .Widgets import AliveIndicator, SettingsButton
+from .Widgets import AliveIndicator, SettingsButton, MemoryButton
 
 
 class _MultiMotorSpecifics:
@@ -247,31 +247,23 @@ class MultiMotorGUI(QtWidgets.QWidget):
         moveToLabel = QtWidgets.QLabel("Move to")
 
         if self._getNamesJoggable():
-            jogLabel = QtWidgets.QLabel("Jog")
+            jogLabel = QtWidgets.QLabel("Jog") if any(name in self._getNamesSettable() for name in self._getNamesJoggable()) else None
 
             self._jogNega = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-left-fill"), "", clicked=self._nega) for name in self._getNamesJoggable()}
             for btn in self._jogNega.values():
-                btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+                btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
             self._jogNegaReversed = {btn: name for name, btn in self._jogNega.items()}
 
             self._jogPosi = {name: QtWidgets.QPushButton(qta.icon("ri.arrow-right-fill"), "", clicked=self._posi) for name in self._getNamesJoggable()}
             for btn in self._jogPosi.values():
-                btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+                btn.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed)
             self._jogPosiReversed = {btn: name for name, btn in self._jogPosi.items()}
 
             self._jogStep = {name: QtWidgets.QDoubleSpinBox() for name in self._getNamesJoggable()}
             for dsb in self._jogStep.values():
                 dsb.setRange(0, np.inf)
                 dsb.setDecimals(2)
-            jogStepLabel = QtWidgets.QLabel("Step")
-        else:
-            jogLabel = None
-            self._jogNega = {}
-            self._jogNegaReversed = {}
-            self._jogPosi = {}
-            self._jogPosiReversed = {}
-            self._jogStep = {}
-            jogStepLabel = None
+            jogStepLabel = QtWidgets.QLabel("Step") if any(name in self._getNamesSettable() for name in self._getNamesJoggable()) else None
 
         self._execute = QtWidgets.QPushButton("Go", clicked=self._setMoveToValue)
         self._execute.setEnabled(True)
@@ -283,24 +275,15 @@ class MultiMotorGUI(QtWidgets.QWidget):
 
         settings = SettingsButton(clicked=self._showSettings)
 
-        self._showMemory = QtWidgets.QToolButton()
-        self._showMemory.setArrowType(QtCore.Qt.RightArrow)
-        self._showMemory.setCheckable(True)
-        self._showMemory.setChecked(False)
-        self._showMemory.setAutoRaise(True)
-        self._showMemory.setIconSize(QtCore.QSize(14, 14))
-        self._showMemory.toggled.connect(self._toggleMemoryTree)
+        self._showMemory = MemoryButton(clicked=self._toggleMemoryTree)
 
         # Create memory panel
         self._memoryLabel = QtWidgets.QLabel("Memory")
         self._memoryLabel.setVisible(False)
-        self._memoryPanel = QtWidgets.QWidget()
-        self._memoryPanel.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
 
         self._positionList = QtWidgets.QTreeWidget()
         self._positionList.setColumnCount(3)
         self._positionList.setHeaderLabels(["Label", "Position", "Memo"])
-        # self._positionList.header().setFont(QtWidgets.QLabel().font())
         self._positionList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self._positionList.itemSelectionChanged.connect(lambda: self._updateMemoryBtns(load, delete))
         self._positionList.setIndentation(0)
@@ -311,8 +294,11 @@ class MultiMotorGUI(QtWidgets.QWidget):
         self._positionList.header().setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
         self._positionList.setItemDelegateForColumn(0, _NoEditDelegate(self._positionList))
         self._positionList.setItemDelegateForColumn(1, _NoEditDelegate(self._positionList))
+        self._positionList.setVisible(False)
+        font = self._positionList.font()
+        font.setPointSize(7)
+        self._positionList.setFont(font)
 
-        # Collapsible panel layout
         save = QtWidgets.QPushButton("Save", clicked=self._save)
         save.setEnabled(True)
         load = QtWidgets.QPushButton("Load", clicked=self._load)
@@ -328,7 +314,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
         self._memoryBtnsLayout.addWidget(delete)
         self._memoryBtns.setVisible(False)
 
-        # Axis controls layout
+        # Create main layout
         gl = QtWidgets.QGridLayout()
         gl.setAlignment(QtCore.Qt.AlignTop)
         gl.addWidget(axisNameLabel, 0, 1)
@@ -352,18 +338,12 @@ class MultiMotorGUI(QtWidgets.QWidget):
         gl.addWidget(self._execute, 1 + len(self._nowAt), 3)
         gl.addWidget(settings, 1 + len(self._nowAt), 0)
         gl.addWidget(self._showMemory, 1 + len(self._nowAt), 6, alignment=QtCore.Qt.AlignRight)
-
         gl.addWidget(self._memoryLabel, 0, 7)
-        gl.addWidget(self._memoryPanel, 1, 7, len(self._obj.nameList), 1)
+        gl.addWidget(self._positionList, 1, 7, len(self._obj.nameList), 1)
         gl.addWidget(self._memoryBtns, len(self._obj.nameList) + 1, 7)
 
+        # Set layout
         self.setLayout(gl)
-
-        # Memory panel layout
-        memoryPanelLayout = QtWidgets.QVBoxLayout(self._memoryPanel)
-        memoryPanelLayout.setContentsMargins(0, 0, 0, 0)
-        memoryPanelLayout.addWidget(self._positionList)
-        self._memoryPanel.setVisible(False)
 
         # Show latest saved positions
         self._updateMemory()
@@ -468,10 +448,9 @@ class MultiMotorGUI(QtWidgets.QWidget):
             checked (bool): Whether the memory panel should be visible.
         """
         self._memoryLabel.setVisible(checked)
-        self._memoryPanel.setVisible(checked)
+        self._positionList.setVisible(checked)
         self._memoryBtns.setVisible(checked)
-        self._showMemory.setArrowType(QtCore.Qt.LeftArrow if checked else QtCore.Qt.RightArrow)
-        # self.adjustSize()
+        self._showMemory.setChecked(checked)
 
     def _save(self):
         """
