@@ -1,4 +1,4 @@
-# lys_instr: A Python package for building, controlling, and automating measurement systems.
+# lys_instr: A Python package for instrument control and automated measurements.
 
 Check out for the [documentation](https://zwang154.github.io/lys_instr/index.html) for more information.
 

@@ -3,5 +3,5 @@
 
 
 def test():
-    from .AdvEx1 import window
-    return window()
+    from .t1 import AppWindow
+    return AppWindow()

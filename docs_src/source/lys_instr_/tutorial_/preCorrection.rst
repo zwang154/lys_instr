@@ -1,4 +1,4 @@
 
-Motor Axis Calibration and Dependency
-=====================================
+Axis Calibration and Dependency
+===============================
 
