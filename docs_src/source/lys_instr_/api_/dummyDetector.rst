@@ -1,6 +1,6 @@
 
-Detector
---------
+Dummy Detector
+==============
 
 .. automodule:: lys_instr.dummy.MultiDetector
    :members:

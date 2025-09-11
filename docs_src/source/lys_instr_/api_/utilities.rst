@@ -1,8 +1,6 @@
 
 Utilities
 =========
-.. toctree::
-   :maxdepth: 0
 
 .. automodule:: lys_instr.Utilities
    :members:
