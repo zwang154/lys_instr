@@ -169,7 +169,7 @@ class DataStorage(QtCore.QObject):
         if busy:
             self.reserve(detector.dataShape)
         else:
-            self.save()
+            self.save(detector.axes)
 
     def reserve(self, shape, fillValue=None):
         """
@@ -211,7 +211,7 @@ class DataStorage(QtCore.QObject):
         for idx, value in data.items():
             self._arr[idx] = value
 
-    def save(self):
+    def save(self, axes):
         """
         Saves the buffered data array asynchronously to disk.
 
@@ -220,7 +220,7 @@ class DataStorage(QtCore.QObject):
         if not self.enabled:
             return
 
-        wave = Wave(self._arr.copy())
+        wave = Wave(self._arr.copy(), *axes)
         wave.note = self._tags.pop(0)
         path = self._paths.pop(0)
 
