@@ -71,7 +71,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _update(self):
         if hasattr(self, "_data"):
-            self._mcut.cui.setRawWave(self._data)
+            self._mcut.cui.updateRawWave(axes=self._obj.axes)
 
     def _dataAcquired(self, data):
         if not hasattr(self, "_data"):
@@ -79,9 +79,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
 
         if data:
-            for idx, frame in data.items():
-                self._data.data[idx] = frame
-            self._data.axes = self._obj.axes
+            self._mcut.cui.updateRawWave(data,update=False)
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame

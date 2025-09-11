@@ -11,7 +11,7 @@ class test_window(LysSubWindow):
         super().__init__(parent)
         self.setWindowTitle("Test GUI")
         self._storage = DataStorage()
-        self._detector = dummy.MultiDetectorDummy((5, 5), (256, 256), exposure=0.1)
+        self._detector = dummy.MultiDetectorDummy((50, 50), (128, 128), exposure=0.1)
         self._motor = dummy.MultiMotorDummy("x", "y", "z", "α", "β", "γ")
         self._pre = PreCorrector([self._motor])
         self._storage.connect(self._detector)
