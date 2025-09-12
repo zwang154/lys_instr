@@ -27,7 +27,6 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         # Data display widget
         self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
         self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        # self._mcut.loadDefaultTemplate()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
@@ -76,7 +75,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
     def _dataAcquired(self, data):
         if not hasattr(self, "_data"):
             self._frameCount = 0
-            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
+            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
 
         if data:
             for idx, frame in data.items():
@@ -94,8 +93,6 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _onAcquire(self, mode="acquire"):
         self._frameCount = 0
-        self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
-        self._mcut.cui.setRawWave(self._data)
         if mode == "acquire":
             self._obj.startAcq(wait=self._params["wait"], iter=self._params["iter"])
         else:
