@@ -205,7 +205,7 @@ class _addFuncDialog(QtWidgets.QDialog):
 
     def getFunction(self):
         input = Wave(self._input.text())
-        f = RBFInterpolator(input.data, input.x, kernel="linear")
+        f = RBFInterpolator(input.x, input.data, kernel="linear")
         return _InterpolatedFunction(f, input.note["variables"])
 
     def __open(self, lineEdit):
