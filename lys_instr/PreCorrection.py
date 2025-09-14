@@ -44,14 +44,14 @@ class PreCorrector:
 
         if not self._enabled:
             return
-                       
-        for name, func in self.corrections.items(): # y = f(t,x)
+
+        for name, func in self.corrections.items():  # y = f(t,x)
             if not func.enabled:
                 continue
             for name2, b in busy.items():
                 if name2 in func.argNames(excludeFixed=True):
                     if b:
-                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy
+                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy if not hasattr(self.self.controllers[name2], "_isBusy_orig") else self.controllers[name2]._isBusy_orig
                         self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
                     else:
                         self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
