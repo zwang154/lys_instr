@@ -17,7 +17,7 @@ class PreCorrector:
     @property
     def controllers(self):
         return self._controllers
-    
+
     @property
     def corrections(self):
         return self._correctParams
@@ -26,7 +26,7 @@ class PreCorrector:
     def _correct(self, values={}):
         if not self._enabled:
             return
-        
+
         for name, func in self.corrections.items():
             if not func.enabled:
                 continue
@@ -51,7 +51,7 @@ class PreCorrector:
             for name2, b in busy.items():
                 if name2 in func.argNames(excludeFixed=True):
                     if b:
-                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy if not hasattr(self.self.controllers[name2], "_isBusy_orig") else self.controllers[name2]._isBusy_orig
+                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy if not hasattr(self.controllers[name2], "_isBusy_orig") else self.controllers[name2]._isBusy_orig
                         self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
                     else:
                         self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
@@ -76,11 +76,11 @@ class _FunctionCombination:
     @property
     def functions(self):
         return self._funcs
-    
+
     @property
     def expression(self):
         return self._formula
-    
+
     @expression.setter
     def expression(self, value):
         self._formula = value
@@ -112,7 +112,7 @@ class _InterpolatedFunction:
         if hasattr(val, "__iter__"):
             val = val[0]
         return val
-    
+
     @property
     def fixedValues(self):
         """ a dictionary that specifies the fixed value."""
@@ -124,4 +124,3 @@ class _InterpolatedFunction:
             return [arg for arg in self._argNames if arg not in self._fixedValues]
         else:
             return self._argNames
-
