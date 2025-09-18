@@ -264,8 +264,6 @@ class DataStorage(QtCore.QObject):
         return bool(self._threads or self._paths)
 
 
-
-
 class _SaveThread(QtCore.QThread):
     """
     Save thread for ``DataStorage``.

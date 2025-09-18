@@ -112,36 +112,35 @@ class DataStorageGUI(QtWidgets.QWidget):
 # To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.DataStorageGUI
 if __name__ == "__main__":
     import sys
-    from fstem.lys_instr.DataStorage import DataStorage
+    from lys_instr.DataStorage import DataStorage
     from lys.Qt import QtWidgets
-    import numpy as np
+    # import numpy as np
 
     app = QtWidgets.QApplication(sys.argv)
     storage = DataStorage()
     gui = DataStorageGUI(storage)
     gui.show()
 
-    storage.base = gui._base.text()
-    storage.folder = gui._folder.text()
-    storage.name = gui._name.text()
+    # storage.base = gui._base.text()
+    # storage.folder = gui._folder.text()
+    # storage.name = gui._name.text()
 
-    storage.reserve(shape=(5, 5, 256, 256), fillValue=0)
-    data = {(0, 0, 0): np.random.rand(256, 256)}
-    storage.update((5, 5), data)
-    storage.save()
-    print(storage._arr[0, 0, 0, 0])
+    # storage.reserve(shape=(5, 5, 256, 256), fillValue=0)
+    # data = {(0, 0, 0): np.random.rand(256, 256)}
+    # storage.update((5, 5), data)
+    # storage.save()
+    # print(storage._arr[0, 0, 0, 0])
 
-    storage.reserve(shape=(5, 5, 256, 256), fillValue=0)
-    data = {(0, 0, 0): np.random.rand(256, 256)}
-    storage.update((5, 5), data)
-    storage.save()
-    print(storage._arr[0, 0, 0, 0])
+    # storage.reserve(shape=(5, 5, 256, 256), fillValue=0)
+    # data = {(0, 0, 0): np.random.rand(256, 256)}
+    # storage.update((5, 5), data)
+    # storage.save()
+    # print(storage._arr[0, 0, 0, 0])
 
-    storage.reserve(shape=(5, 5, 256, 256), fillValue=0)
-    data = {(0, 0, 0): np.random.rand(256, 256)}
-    storage.update((5, 5), data)
-    storage.save()
-    print(storage._arr[0, 0, 0, 0])
-
+    # storage.reserve(shape=(5, 5, 256, 256), fillValue=0)
+    # data = {(0, 0, 0): np.random.rand(256, 256)}
+    # storage.update((5, 5), data)
+    # storage.save()
+    # print(storage._arr[0, 0, 0, 0])
 
     sys.exit(app.exec_())
