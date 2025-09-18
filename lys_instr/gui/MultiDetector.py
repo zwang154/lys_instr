@@ -25,8 +25,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _initLayout(self):
         # Data display widget
-        self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
-        self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.createDisplayWidget()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
@@ -49,9 +48,6 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         self._stop.setEnabled(False)
 
         # Layout setup
-        imageLayout = QtWidgets.QHBoxLayout()
-        imageLayout.addWidget(self._mcut.widget)
-
         controlsLayout = QtWidgets.QHBoxLayout()
         controlsLayout.addWidget(AliveIndicator(self._obj))
         if self._obj.exposure is not None:
@@ -63,10 +59,19 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         controlsLayout.addWidget(SettingsButton(clicked=self._showSettings))
 
         mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addLayout(imageLayout, stretch=1)
+        mainLayout.addLayout(self.createDisplayLayout())
         mainLayout.addLayout(controlsLayout, stretch=0)
         
         self.setLayout(mainLayout)
+
+    def createDisplayWidget(self):
+        self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
+        self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+    def createDisplayLayout(self):
+        imageLayout = QtWidgets.QHBoxLayout()
+        imageLayout.addWidget(self._mcut.widget, stretch=1)
+        return imageLayout
 
     def _update(self):
         if hasattr(self, "_data"):
