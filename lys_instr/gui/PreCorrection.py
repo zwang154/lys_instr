@@ -185,7 +185,7 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
             for func in c.functions.values():
                 if hasattr(func, 'argNames'):
                     argSet.update(func.argNames())
-            expr = ', '.join(sorted(argSet))
+            expr = getattr(c, "expression", ', '.join(sorted(argSet)))
             top = _EditableItem([key, expr])
             self.addTopLevelItem(top)
             for funcName, func in c.functions.items():
@@ -194,7 +194,7 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
                 else:
                     funcExpr = funcName
                 top.addChild(_EditableItem([funcName, funcExpr]))
-
+            
 
 class _EditableItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, *args, **kwargs):

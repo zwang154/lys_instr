@@ -21,6 +21,5 @@ Advanced
    lys_instr_/tutorial_/motorOptions
    lys_instr_/tutorial_/preCorrection
    lys_instr_/tutorial_/detectorOptions
-   lys_instr_/tutorial_/lysIntegration
    lys_instr_/tutorial_/advExamples
 

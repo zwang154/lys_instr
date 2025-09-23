@@ -8,8 +8,8 @@ It includes modules for essential components of measurement systems, such as mot
 Users can construct custom measurement processes by combining these modules. 
 Both character user interface (CUI) and graphical user interface (GUI) tools are provided.
 
-While *lys_instr* can be partially used independently for data acquisition, 
+While *lys_instr* can be used independently for data acquisition, 
 we recommend using it in conjunction with the *lys* package (https://github.com/lys-devel/lys), 
-which provides comprehensive functionality for data analysis and visualization.
+which empowers users to seamlessly integrate data acquisition, display, and analysis.
 
 We recommend following the :doc:`Getting Started </tutorial>` guide to become familiar with this package and referring to the examples there for various use cases.

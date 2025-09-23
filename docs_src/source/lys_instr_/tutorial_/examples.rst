@@ -2,8 +2,8 @@
 Basic Examples
 ==============
 
-Spectrum Acquisition (1D data + 1D Scan)
------------------------------------------
+Spectroscopy measurement
+------------------------
 
 This example demonstrates a simple spectrum acquisition GUI using a dummy 1D motor and a dummy 1D detector.
 
@@ -67,21 +67,15 @@ Adding the above code to ``proc.py`` in *lys* and then calling ``WindowEx1()`` i
 .. image:: /lys_instr_/tutorial_/Ex1.png
 
 
-Switch
---------------------------------------
+Pump-probe Measurement
+----------------------
 
-The :doc:`/lys_instr_/tutorial_/scan` has already demonstrated a simple video acquisition GUI using a dummy 1D motor and a dummy 2D detector.
-A more extensive example is provided by generalizing the motor concept.
-The motor could be a controller of temperature, electric or magnetic field, on/off switch, and miscellaneous.
-Then, the same code structure can be used as long as the field application logic can be implemented as an abstract motor instance inheriting from ``MultiMotorInterface``.
+This example demonstrates a combined motor and switch control GUI in a scan.
 
-By replacing the dummy motor with one generating 2D Gaussian instance, the same GUI can be used for real experiments.
-This example demonstrates a simple video acquisition GUI using a dummy 1D motor and a dummy 2D detector.
-
-Suppose we have a detector that acquires 2D images, e.g., from a camera.
-The previous dummy detector ``MultiDetectorDummy`` in :doc:`/lys_instr_/tutorial_/detector` simulates such data.
-We want to scan the electric or magnetic field applied on the sample while acquiring the image at each field value.
-
+Suppose we perform a pump-probe measurement, where an image is acquired at each ON/OFF state of the pump light while varying the delay time by moving a motor.
+A dummy switch ``MultiSwitchDummy`` and a dummy motor ``MultiMotorDummy`` simulate the pump light ON/OFF control and delay stage motion, respectively.
+A dummy detector ``DetectorEx2Dummy`` is provided to simulate the image data acquisition.
+A small modification of the previous example allows one to construct the GUI for this setup as follows:
 
 .. code-block:: python
 
@@ -89,11 +83,12 @@ We want to scan the electric or magnetic field applied on the sample while acqui
     from lys.Qt import QtWidgets
     from lys_instr import DataStorage, dummy, gui
 
-    class AppWindow(LysSubWindow):
+    class WindowEx2(LysSubWindow):
         def __init__(self):
             super().__init__()
-            self._motor = dummy.MultiMotorDummy("x", "y")
-            self._detector = dummy.MultiDetectorDummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
+            self._motor = dummy.MultiMotorDummy("x")
+            self._switch = dummy.MultiSwitchDummy("A")
+            self._detector = dummy.DetectorEx2Dummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
             self._storage = DataStorage()
             self._storage.connect(self._detector)
             self._initLayout()
@@ -102,12 +97,14 @@ We want to scan the electric or magnetic field applied on the sample while acqui
         def _initLayout(self):
             _detectorGUI = gui.MultiDetectorGUI(self._detector)
             _motorGUI = gui.MultiMotorGUI(self._motor)
+            _switchGUI = gui.MultiSwitchGUI(self._switch)
             _storageGUI = gui.DataStorageGUI(self._storage)
 
-            _scanGUI = gui.ScanWidget(self._storage, [self._motor], {"MultiDetectorDummy": self._detector})
+            _scanGUI = gui.ScanWidget(self._storage, [self._switch, self._motor], {"DetectorEx2Dummy": self._detector})
 
             self._tab = QtWidgets.QTabWidget()
             self._tab.addTab(_motorGUI, "Motor")
+            self._tab.addTab(_switchGUI, "Switch")
             self._tab.addTab(_scanGUI, "Scan")
 
             VBox = QtWidgets.QVBoxLayout()
@@ -125,3 +122,10 @@ We want to scan the electric or magnetic field applied on the sample while acqui
             mcut = _detectorGUI._mcut
             wave = mcut.cui._children.addWave([1, 2])
             mcut.display(wave, type="grid", pos=(0, 0), wid=(4, 4))
+
+Adding the above code to ``proc.py`` in *lys* and then calling ``WindowEx2()`` in the *lys* command line launches the GUI subwindow shown below:
+
+.. image:: /lys_instr_/tutorial_/Ex2.png
+
+Here, a "Switch" tab is added. On the "Scan" tab, both the switch axis and the motor axis can be selected for each base process.
+Choosing the "Free" mode and inputting a list such as ``[ON, OFF]`` as an expression allows the switch axis to alternate between ON and OFF states, mimicking the pump behavior.

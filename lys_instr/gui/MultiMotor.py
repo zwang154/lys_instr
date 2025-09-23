@@ -542,6 +542,9 @@ class MultiMotorGUI(QtWidgets.QWidget):
         deleteBtn.setEnabled(selected)
 
     def _showSettings(self):
+        """
+        Opens the settings dialog for the device.
+        """
         settingsWindow = _SettingsDialog(self, self._obj)
         settingsWindow.generalPanel.offsetChanged.connect(self._clearMoveToFields)
         settingsWindow.exec_()
