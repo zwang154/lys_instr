@@ -3,7 +3,6 @@ import time
 
 from lys_instr import MultiMotorInterface
 from lys_instr.dummy.MultiMotor import _OptionalPanel
-from lys.Qt import QtWidgets, QtCore
 
 
 class MultiSwitchDummy(MultiMotorInterface):
@@ -67,5 +66,11 @@ class MultiSwitchDummy(MultiMotorInterface):
         return {name: not self._error[i] for i, name in enumerate(self.nameList)}
 
     def settingsWidget(self):
+        """
+        Returns a QWidget for optional settings.
+
+        Returns:
+            QtWidgets.QWidget: The optional settings panel.
+        """
         return _OptionalPanel(self)
     
