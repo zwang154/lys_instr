@@ -94,7 +94,7 @@ class _ScanRangeRow(QtWidgets.QGridLayout):
 
 
 class ScanWidget(QtWidgets.QWidget):
-    def __init__(self, storage, motors, detectors):
+    def __init__(self, storage, motors, detectors, numScans=1):
         """
         Initializes the ScanTab with storage, motors, and detectors.
         Args:
@@ -106,6 +106,7 @@ class ScanWidget(QtWidgets.QWidget):
         self._storage = storage
         self._scanners = self._initScanners(motors)
         self._detectors = detectors
+        self._numScans = numScans
         self._initLayout(self._scanners, self._detectors)
 
     def _initScanners(self, motors):
@@ -137,7 +138,7 @@ class ScanWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def __scanBox(self, scanners):
-        self._scanRangeRows = [_ScanRangeRow(f"Scan {i}", scanners.keys()) for i in range(3)]
+        self._scanRangeRows = [_ScanRangeRow(f"Scan {i}", scanners.keys()) for i in range(self._numScans)]
 
         scansLayout = QtWidgets.QVBoxLayout()
         for s in self._scanRangeRows:

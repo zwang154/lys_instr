@@ -31,12 +31,12 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         if self._obj.exposure is not None:
             def setExposure(value):
                 self._obj.exposure = value
-            expTime = QtWidgets.QDoubleSpinBox()
-            expTime.setValue(self._obj.exposure)
-            expTime.setRange(0, np.infty)
-            expTime.setDecimals(3)
-            expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            expTime.valueChanged.connect(setExposure)
+            self._expTime = QtWidgets.QDoubleSpinBox()
+            self._expTime.setValue(self._obj.exposure)
+            self._expTime.setRange(0, np.infty)
+            self._expTime.setDecimals(3)
+            self._expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+            self._expTime.valueChanged.connect(setExposure)
 
             exposeLabel = QtWidgets.QLabel("Exp. (s)")
             exposeLabel.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
@@ -52,7 +52,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         controlsLayout.addWidget(AliveIndicator(self._obj))
         if self._obj.exposure is not None:
             controlsLayout.addWidget(exposeLabel)
-            controlsLayout.addWidget(expTime)
+            controlsLayout.addWidget(self._expTime)
         controlsLayout.addWidget(self._acquire)
         controlsLayout.addWidget(self._stream)
         controlsLayout.addWidget(self._stop)

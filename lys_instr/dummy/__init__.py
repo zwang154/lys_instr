@@ -3,4 +3,5 @@ from .MultiMotor import MultiMotorDummy
 from .MultiSwitch import MultiSwitchDummy
 from .DetectorEx1 import DetectorEx1Dummy
 from .DetectorEx2 import DetectorEx2Dummy
+from .DetectorAdvEx1 import DetectorAdvEx1Dummy
 from .DetectorAdvEx2 import DetectorAdvEx2Dummy
