@@ -64,8 +64,9 @@ class MultiMotorGUI(QtWidgets.QWidget):
         gl.addWidget(QtWidgets.QLabel("Axis"), 0, 1)
         gl.addWidget(QtWidgets.QLabel("Now at"), 0, 2)
         gl.addWidget(QtWidgets.QLabel("Move to"), 0, 3)
-        gl.addWidget(QtWidgets.QLabel("Jog"), 0, 4)
-        gl.addWidget(QtWidgets.QLabel("Step"), 0, 6)
+        if any(name in settable and name in joggable for name in self.controllers.keys()):
+            gl.addWidget(QtWidgets.QLabel("Jog"), 0, 4)
+            gl.addWidget(QtWidgets.QLabel("Step"), 0, 6)
 
         for i, (key, item) in enumerate(self._items.items()):
             item.addTo(gl, i+1, key in settable, key in joggable)
@@ -302,6 +303,8 @@ class _GeneralPanel(QtWidgets.QWidget):
         self._offsetEdits[name].setValue(obj.offset[name])
         obj.valueChanged.emit(obj.get())
         obj.save()
+        main = self.window().parent()
+        main._items[name].clear()
 
     def _unsetAxis(self, name):
         """
@@ -315,3 +318,15 @@ class _GeneralPanel(QtWidgets.QWidget):
         self._offsetEdits[name].setValue(0)
         obj.valueChanged.emit(obj.get())
         obj.save()
+
+
+if __name__ == "__main__":
+    import sys
+    from lys.Qt import QtWidgets
+    from lys_instr.dummy import MultiMotorDummy
+
+    app = QtWidgets.QApplication(sys.argv)
+    motor = MultiMotorDummy("x", "y", "z")
+    motorGUI = MultiMotorGUI(motor, axisNamesJoggable=())
+    motorGUI.show()
+    sys.exit(app.exec_())
