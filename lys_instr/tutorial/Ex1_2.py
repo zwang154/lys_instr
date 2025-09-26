@@ -2,6 +2,7 @@ import numpy as np
 import time
 import itertools
 
+from lys.widgets import LysSubWindow
 from lys.Qt import QtWidgets
 from lys_instr import DataStorage, gui, dummy
 from lys_instr.gui.Scan import ScanWidget
@@ -32,7 +33,7 @@ class DetectorEx1(dummy.MultiDetectorDummy):
         return A * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2)) + offset
 
 
-class window(QtWidgets.QGroupBox):
+class window(LysSubWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Example #1")
@@ -41,6 +42,7 @@ class window(QtWidgets.QGroupBox):
         self._storage = DataStorage()
         self._storage.connect(self._detector)
         self._initLayout()
+        self.setSettingFile("Ex1.dic")
         self.adjustSize()
 
     def _initLayout(self):
@@ -62,16 +64,14 @@ class window(QtWidgets.QGroupBox):
         HBox.addLayout(VBox)
         HBox.addWidget(_detectorGUI)
         
-        self.setLayout(HBox)
+        w = QtWidgets.QWidget()
+        w.setLayout(HBox)
+        self.setWidget(w)
 
+        # Adapt multicut for 1D array display
+        mcut = _detectorGUI._mcut
+        graph = mcut.cui._children.addWave([1])
+        # axes = list(range(len(self._detector.dataShape)))[-self._detector.frameDim:]
+        # graph = mcut.cui._children.addWave(axes)
+        mcut.display(graph, type="grid", pos=(0, 0), wid=(4, 4))
 
-# To Test the GUI run in the src\python: python -m lys_instr.tutorial.Ex1_1
-if __name__ == "__main__":
-    import sys
-    from lys.Qt import QtWidgets
-
-    app = QtWidgets.QApplication(sys.argv)
-    detector = DetectorEx1(indexShape=(5, 5), frameShape=(256, 256), exposure=0.1)
-    gui = window()
-    gui.show()
-    sys.exit(app.exec_())

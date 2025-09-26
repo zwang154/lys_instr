@@ -6,13 +6,14 @@ from lys_instr.PreCorrection import _FunctionCombination, _InterpolatedFunction
 class window(QtWidgets.QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Example #3")
+        # self.setWindowTitle("Example #3")
         self._motor = dummy.MultiMotorDummy("x", "y")
         self._corrector = PreCorrector([self._motor])
 
-        # Add a dependence y = 1 * x
+        # Add a dependence y = x/2
         self._corrector.corrections["y"] = _FunctionCombination()
-        self._corrector.corrections["y"].functions["x"] = _InterpolatedFunction(lambda x: 1 * x, ["x"])
+        self._corrector.corrections["y"].functions["x"] = _InterpolatedFunction(lambda x: x, ["x"])
+        self._corrector.corrections["y"].expression = "x/2"
 
         self._initLayout()
         self.adjustSize()
