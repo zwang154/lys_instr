@@ -20,14 +20,10 @@ class MultiSwitchDummy(MultiMotorInterface):
     def _time(self):
         return time.perf_counter()
 
-    def _set(self, target):
-        now = self._time()
-        before = self.get()
-        for i, name in enumerate(self.nameList):
-            if name in target:
-                self.__before[i] = before[name]
-                self.__timing[i] = now
-                self.__target[i] = bool(target[name])
+    def _set(self, **target):
+        self.__before = self.get(type=np.ndarray)
+        self.__timing = np.full(len(self.nameList), self._time())
+        self.__target = np.array([bool(target[name]) if name in target else np.nan for name in self.nameList])
 
     def _get(self):
         val = {}
@@ -54,9 +50,6 @@ class MultiSwitchDummy(MultiMotorInterface):
         for i, name in enumerate(self.nameList):
             val[name] = bool(self.__position[i])
         return val
-
-    def _stop(self):
-        self.__timing = np.full(len(self.nameList), np.nan)
 
     def _isBusy(self):
         bs = (~np.isnan(self.__timing) & ~np.isnan(self.__target)).astype(bool)

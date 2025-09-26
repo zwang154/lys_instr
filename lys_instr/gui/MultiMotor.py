@@ -133,13 +133,6 @@ class MultiMotorGUI(QtWidgets.QWidget):
         settingsWindow = _SettingsDialog(self, self._offsettable)
         settingsWindow.exec_()
 
-    def _clearMoveToFields(self):
-        """
-        Clears all move-to input fields in the GUI.
-        """
-        for item in self._items.values():
-            item.clear()
-
 
 class _MotorRowLayout(QtCore.QObject):
     def __init__(self, obj, label):

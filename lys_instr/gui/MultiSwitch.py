@@ -1,4 +1,5 @@
 from lys.Qt import QtWidgets, QtCore
+from lys_instr import MultiMotorInterface
 from .Widgets import AliveIndicator, SettingsButton
 
 
@@ -17,84 +18,55 @@ class MultiSwitchGUI(QtWidgets.QWidget):
             axisNamesSettable (iterable, optional): Names of axes that can be set. Defaults to all axes.
         """
         super().__init__()
-        self._obj = obj
-        self._axisNamesSettable = list(axisNamesSettable) if axisNamesSettable else list(self._obj.nameList)
-        self._obj.valueChanged.connect(self._valueChanged)
-        self._obj.busyStateChanged.connect(self._busyStateChanged)
-        self._obj.aliveStateChanged.connect(self._aliveStateChanged)
-        self._initLayout()
 
-    def _initLayout(self):
+        if isinstance(obj, MultiMotorInterface):
+            obj = [obj]
+        self._objs = obj
+
+        settable = self.controllers.keys() if axisNamesSettable is None else list(axisNamesSettable)
+
+        self._initLayout(settable)
+        for obj in self._objs:
+            obj.busyStateChanged.connect(self._busyStateChanged)
+            obj.aliveStateChanged.connect(self._aliveStateChanged)
+
+    @property
+    def controllers(self):
+        return {name: obj for obj in self._objs for name in obj.nameList}
+
+    def _initLayout(self, settable):
         """
         Initializes the GUI layout and widgets for the multi-switch control panel.
         """
-        # Axis labels
-        self._axisNames = {name: QtWidgets.QLabel(name) for name in self._obj.nameList}
-        for lbl in self._axisNames.values():
-            lbl.setAlignment(QtCore.Qt.AlignCenter)
-        axisNameLabel = QtWidgets.QLabel("Axis")
-
-        # Display current state (nowAt) as label
-        self._nowAt = {name: QtWidgets.QLineEdit("OFF") for name in self._obj.nameList}
-        for le in self._nowAt.values():
-            le.setAlignment(QtCore.Qt.AlignCenter)
-            le.setReadOnly(True)
-            le.setStyleSheet("background-color: #f0f0f0;")
-        nowAtLabel = QtWidgets.QLabel("Now at")
-
-        # Combo to set target state (moveTo)
-        self._moveTo = {name: QtWidgets.QComboBox() for name in self._axisNamesSettable}
-        for combo in self._moveTo.values():
-            combo.addItems(["OFF", "ON"])
-        moveToLabel = QtWidgets.QLabel("Set to")
+        self._items = {name: _SwitchRowLayout(c, name) for name, c in self.controllers.items()}
 
         self._execute = QtWidgets.QPushButton("Apply", clicked=self._setMoveToValue)
         self._execute.setEnabled(True)
 
-        aliveIndicator = {name: AliveIndicator(self._obj, axis=name) for name in self._obj.nameList}
-        
-        settings = SettingsButton(clicked=self._showSettings)
-
-        # Create main layout
+        # Axis controls layout
         gl = QtWidgets.QGridLayout()
         gl.setAlignment(QtCore.Qt.AlignTop)
-        gl.addWidget(axisNameLabel, 0, 1)
-        gl.addWidget(nowAtLabel, 0, 2)
-        gl.addWidget(moveToLabel, 0, 3)
-        for i, name in enumerate(self._obj.nameList):
-            gl.addWidget(aliveIndicator[name], 1 + i, 0, alignment=QtCore.Qt.AlignCenter)
-            gl.addWidget(self._axisNames[name], 1 + i, 1)
-            gl.addWidget(self._nowAt[name], 1 + i, 2)
-            if name in self._axisNamesSettable:
-                gl.addWidget(self._moveTo[name], 1 + i, 3)
-        gl.addWidget(self._execute, 1 + len(self._obj.nameList), 3)
-        gl.addWidget(settings, 1 + len(self._obj.nameList), 0)
+        gl.addWidget(QtWidgets.QLabel("Axis"), 0, 1)
+        gl.addWidget(QtWidgets.QLabel("Now at"), 0, 2)
+        gl.addWidget(QtWidgets.QLabel("Move to"), 0, 3)
+        for i, (key, item) in enumerate(self._items.items()):
+            item.addTo(gl, i+1, key in settable)
+        gl.addWidget(self._execute, 2 + len(self._items), 3)
+        gl.addWidget(SettingsButton(clicked=self._showSettings), 2 + len(self._items), 0)
 
-        # Set layout
         self.setLayout(gl)
 
     def _setMoveToValue(self):
         """
         Sets target switch states for axes based on user input in the GUI.
         """
-        targetDict = {}
-        for name in self._moveTo:
-            combo = self._moveTo[name]
-            targetDict[name] = bool(combo.currentIndex())
-        if targetDict:
-            self._obj.set(**targetDict)
+        targetAll = {name: item.value() for name, item in self._items.items() if item.value() is not None}
+        for obj in self._objs:
+            targ = {name: value for name, value in targetAll.items() if name in obj.nameList}
+            if len(targ) > 0:
+                obj.set(**targ)
 
-    def _valueChanged(self, valueList):
-        """
-        Updates the displayed axis states in the GUI.
-
-        Args:
-            valueList (dict): Mapping of axis names to their new values.
-        """
-        for key, value in valueList.items():
-            self._nowAt[key].setText("ON" if value else "OFF")
-
-    def _busyStateChanged(self, busy):
+    def _busyStateChanged(self):
         """
         Updates the GUI based on the busy state of the axes.
 
@@ -103,13 +75,11 @@ class MultiSwitchGUI(QtWidgets.QWidget):
         Args:
             busy (dict): Mapping of axis names to their busy state (bool).
         """
-        anyBusy = bool(any(busy.values()))
-        allAlive = all(self._obj.isAlive.values())
+        anyBusy = bool(any([item.busy for item in self._items.values()]))
+        allAlive = all([item.alive for item in self._items.values()])
         self._execute.setEnabled(not anyBusy and allAlive)
-        for name in self._moveTo:
-            self._moveTo[name].setEnabled(not busy.get(name, False) and allAlive)
 
-    def _aliveStateChanged(self, alive):
+    def _aliveStateChanged(self):
         """
         Updates the GUI controls based on the alive state of the axes.
 
@@ -118,20 +88,75 @@ class MultiSwitchGUI(QtWidgets.QWidget):
         Args:
             alive (dict): Mapping of axis names to alive state (bool).
         """
-        busy = self._obj.isBusy
-        anyBusy = any(busy.values())
-        allAlive = all(alive.values())
+        anyBusy = bool(any([item.busy for item in self._items.values()]))
+        allAlive = all([item.alive for item in self._items.values()])
         self._execute.setEnabled(not anyBusy and allAlive)
-        for name in self._moveTo:
-            axisAlive = alive.get(name, True)
-            self._moveTo[name].setEnabled(axisAlive and not busy.get(name, False))
 
     def _showSettings(self):
         """
         Opens the settings dialog for the device.
         """
-        settingsWindow = _SettingsDialog(self, self._obj)
+        settingsWindow = _SettingsDialog(self)
         settingsWindow.exec_()
+
+
+class _SwitchRowLayout(QtCore.QObject):
+    def __init__(self, obj, label):
+        super().__init__()
+        self._obj = obj
+        self._name = label
+        self.busy = False
+        self.alive = True
+        self.__initLayout(obj, label)
+
+        self._obj.valueChanged.connect(self._valueChanged)
+        self._obj.busyStateChanged.connect(self._busyChanged)
+        self._obj.aliveStateChanged.connect(self._aliveChanged)
+
+    def __initLayout(self, obj, label):
+        self._label = QtWidgets.QLabel(label)
+        self._label.setAlignment(QtCore.Qt.AlignCenter)
+
+        self._now = QtWidgets.QLineEdit("OFF" if not obj.get()[self._name] else "ON")
+        self._now.setAlignment(QtCore.Qt.AlignCenter)
+        self._now.setReadOnly(True)
+        self._now.setStyleSheet("background-color: #f0f0f0;")
+
+        self._moveTo = QtWidgets.QComboBox()
+        self._moveTo.addItems(["OFF", "ON"])
+
+        self._alive = AliveIndicator(obj, axis=label)
+
+    def addTo(self, grid, i, settable=True):
+        grid.addWidget(self._alive, 1 + i, 0, alignment=QtCore.Qt.AlignCenter)
+        grid.addWidget(self._label, 1 + i, 1)
+        grid.addWidget(self._now, 1 + i, 2)
+        if settable:
+            grid.addWidget(self._moveTo, 1 + i, 3)
+
+    def _valueChanged(self, value):
+        if self._name in value:
+            self._now.setText("ON" if value[self._name] else "OFF")
+
+    def _busyChanged(self, busy):
+        if self._name in busy:
+            self.busy = busy[self._name]
+            self._updateState()
+
+    def _aliveChanged(self, alive):
+        if self._name in alive:
+            self.alive = alive[self._name]
+            self._updateState()
+
+    def _updateState(self):
+        self._now.setEnabled(self.alive)
+        self._moveTo.setEnabled(not self.busy and self.alive)
+
+    def value(self):
+        try:
+            return bool(self._moveTo.currentIndex())
+        except ValueError:
+            return None
 
 
 class _SettingsDialog(QtWidgets.QDialog):
@@ -141,9 +166,8 @@ class _SettingsDialog(QtWidgets.QDialog):
     Provides a tabbed interface for general and optional settings of a device.
     Emits an ``updated`` signal when offsets are changed in the general settings panel.
     """
-    updated = QtCore.pyqtSignal()
 
-    def __init__(self, parent, obj):
+    def __init__(self, parent):
         """
         Initializes the settings dialog.
 
@@ -153,11 +177,10 @@ class _SettingsDialog(QtWidgets.QDialog):
         """
         super().__init__(parent)
         self.setWindowTitle("Switch Settings")
-        self.generalPanel = _GeneralPanel(obj)
 
         tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(self.generalPanel, "General")
-        tabWidget.addTab(obj.settingsWidget(), "Optional")
+        tabWidget.addTab(_GeneralPanel(parent.controllers), "General")
+        #tabWidget.addTab(obj.settingsWidget(), "Optional")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(tabWidget)
@@ -168,12 +191,12 @@ class _GeneralPanel(QtWidgets.QWidget):
     """
     General settings panel for the device.
     """
-    def __init__(self, obj):
+    def __init__(self, controllers):
         """
         Initializes the general panel for the device.
         """
         super().__init__()
-        self._obj = obj
+        self._controllers = controllers
 
 
 

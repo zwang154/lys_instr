@@ -11,6 +11,7 @@ class MultiMotorDummy(MultiMotorInterface):
 
     This class simulates a multi-axis motor controller, including axis positions, busy/alive state management, and per-axis error injection for testing purposes.
     """
+
     def __init__(self, *axisNamesAll, **kwargs):
         """
         Initializes the dummy multi-axis motor with the given axis names.
@@ -23,7 +24,7 @@ class MultiMotorDummy(MultiMotorInterface):
         Args:
             *axisNamesAll: Names of all axes to simulate.
             **kwargs: Additional keyword arguments passed to the parent class.
-        """        
+        """
         super().__init__(*axisNamesAll, **kwargs)
         n = len(self.nameList)
         self.__position = np.zeros(n)
@@ -44,7 +45,7 @@ class MultiMotorDummy(MultiMotorInterface):
         """
         return time.perf_counter()
 
-    def _set(self, target):
+    def _set(self, **target):
         """
         Sets target positions for the specified axes.
 
@@ -53,13 +54,9 @@ class MultiMotorDummy(MultiMotorInterface):
         Args:
             target (dict[str, float]): Mapping of axis names to their target positions.
         """
-        now = self._time()
-        before = self.get(type=np.ndarray)
-        for i, name in enumerate(self.nameList):
-            if name in target:
-                self.__before[i] = before[i]
-                self.__timing[i] = now
-                self.__target[i] = target[name]
+        self.__before = self.get(type=np.ndarray)
+        self.__timing = np.full(len(self.nameList), self._time())
+        self.__target = np.array([target[name] if name in target else np.nan for name in self.nameList])
 
     def _get(self):
         """
@@ -79,7 +76,7 @@ class MultiMotorDummy(MultiMotorInterface):
                 self._info[name].alive = False
             else:
                 self._info[name].alive = True
-        
+
         # When axes are at rest
         if np.all(np.isnan(self.__timing)):
             for i, name in enumerate(self.nameList):
@@ -116,7 +113,7 @@ class MultiMotorDummy(MultiMotorInterface):
         """
         bs = (~np.isnan(self.__timing) & ~np.isnan(self.__target)).astype(bool)
         return {name: bs[i] for i, name in enumerate(self.nameList)}
-    
+
     def _isAlive(self):
         """
         Gets the alive state of all axes in the simulated multi-axis motor.
