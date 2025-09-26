@@ -65,7 +65,7 @@ class _FunctionCombination:
         self.enabled = True
 
     def __call__(self, **scanParams):
-        if self._formula is None:
+        if self._formula is None or self._formula == "":
             firstFunc = next(iter(self._funcs.values()))
             correctValue = firstFunc(**scanParams)
         else:

@@ -36,7 +36,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             expTime = QtWidgets.QDoubleSpinBox()
             expTime.setValue(self._obj.exposure)
             expTime.setRange(0, np.infty)
-            expTime.setDecimals(3)
+            expTime.setDecimals(5)
             expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
             expTime.valueChanged.connect(setExposure)
 
@@ -79,7 +79,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
 
         if data:
-            self._mcut.cui.updateRawWave(data,update=False)
+            self._mcut.cui.updateRawWave(data, update=False)
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame
