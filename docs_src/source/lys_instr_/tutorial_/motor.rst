@@ -73,7 +73,7 @@ After starting *lys*, open the ``proc.py`` file (press Ctrl+P), add the code bel
             self.setWidget(motorGUI)                 # Set the motor GUI as the content of the lys subwindow
             self.adjustSize()
 
-Calling `AppWindow()` in the *lys* command line launches the GUI subwindow like the one below:
+Calling ``AppWindow()`` in the *lys* command line launches the GUI subwindow like the one below:
 
 .. image:: /lys_instr_/tutorial_/motor_2.png
 
@@ -85,7 +85,7 @@ Alternatively, the user can create a separate script file, e.g., ``your_script_n
         from path_to_your_script import your_script_name
         return your_script_name.AppWindow()
 
-Calling `any_name()` in the *lys* command line launches the same GUI subwindow.
+Calling ``any_name()`` in the *lys* command line launches the same GUI subwindow.
 
 
 Generalizing the Motor Concept

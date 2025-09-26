@@ -38,7 +38,7 @@ The instrument control GUI can be constructed as follows:
                 self._framePlot.clear()
                 self._framePlot.plot(self._obj._frame[0], self._obj._frame[1])
 
-    class AppWindow(LysSubWindow):
+    class WindowAdvEx1(LysSubWindow):
         def __init__(self, parent=None):
             super().__init__(parent)
             self.setWindowTitle("Advanced Example #1")      # Set window title
@@ -98,7 +98,7 @@ The instrument control GUI can be constructed as follows:
             _scanGUI._exposure.setValue(0.1)
 
 
-Adding the above code to ``proc.py`` in *lys* and calling ``AppWindow()`` from the *lys* command line will display the following GUI:
+Adding the above code to ``proc.py`` in *lys* and calling ``WindowAdvEx1()`` from the *lys* command line will display the following GUI:
 
 .. image:: /lys_instr_/tutorial_/advExamples_1.png
 
@@ -127,7 +127,7 @@ The instrument control GUI can be constructed as follows:
     from lys_instr import DataStorage, PreCorrector, gui, dummy
     from lys_instr.gui.MultiScan import ScanWidget
 
-    class AppWindow(LysSubWindow):
+    class WindowAdvEx2(LysSubWindow):
         def __init__(self, parent=None):
             super().__init__(parent)
             # self.setWindowTitle("Advanced Example 2")
@@ -184,7 +184,7 @@ The instrument control GUI can be constructed as follows:
             _scanGUI._combo_ref.setCurrentText("A")      # Reference axis is "A"
             _scanGUI._value_ref.setValue(False)          # Reference value is pump OFF
 
-Adding the above code to ``proc.py`` in *lys* and calling ``AppWindow()`` from the *lys* command line will display the following GUI:
+Adding the above code to ``proc.py`` in *lys* and calling ``WindowAdvEx2()`` from the *lys* command line will display the following GUI:
 
 .. image:: /lys_instr_/tutorial_/advExamples_2.png
 
