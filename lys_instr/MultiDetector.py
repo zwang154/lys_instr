@@ -113,7 +113,7 @@ class DetectorInterface(HardwareInterface):
         self.busyStateChanged.emit(True)
 
         self._thread = _AcqThread(self, iter=iter)
-        self._thread.dataAcquired.connect(self.dataAcquired.emit)
+        self._thread.dataAcquired.connect(self.dataAcquired.emit, type=QtCore.Qt.DirectConnection)
         self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
         if wait and output:
             buffer = {}
