@@ -39,8 +39,8 @@ class MultiDetectorDummy(MultiDetectorInterface):
         """
         self._shouldStop = False
 
-        # if self.frameDim == 2 and self.indexDim == 2:
-        #     return self._run_2d_2d(iter)
+        if self.frameDim == 2 and self.indexDim == 2:
+            return self._run_2d_2d(iter)
         i = 0
         while i != iter:
             for idx in itertools.product(*[range(j) for j in self.indexShape]):
