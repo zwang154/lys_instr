@@ -84,7 +84,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
         if data:
             for idx, frame in data.items():
-                self._data.data[idx[-frame.ndim:]] = frame
+                self._data.data[idx] = frame
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame
