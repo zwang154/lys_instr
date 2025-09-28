@@ -45,7 +45,7 @@ After starting *lys*, open the ``proc.py`` file (press Ctrl+P), add the code bel
 
 The code structure is similar to the motor GUI in lys, except the detector GUI is created by passing the detector instance to the ``MultiDetectorGUI`` class.
 
-Calling ``AppWindow()`` in the *lys* command line launches the GUI subwindow like the one below:
+Calling this ``AppWindow()`` in the *lys* command line launches the GUI subwindow like the one below:
 
 .. image:: /lys_instr_/tutorial_/detector_1.png
 

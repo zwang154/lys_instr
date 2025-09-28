@@ -58,7 +58,7 @@ a scan GUI can be constructed as follows:
             mcut.display(wave, type="grid", pos=(0, 0), wid=(4, 4))
 
 
-Adding the above code to ``proc.py`` in *lys* and then calling ``AppWindow()`` in the *lys* command line launches the GUI subwindow as follows:
+Adding the above code to ``proc.py`` in *lys* and then calling this ``AppWindow()`` in the *lys* command line launches the GUI subwindow as follows:
 
 .. image:: /lys_instr_/tutorial_/scan_1.png
 
@@ -74,4 +74,4 @@ User customization
 ------------------
 
 Users can create custom scan processes and GUI widgets by appropriately combining ``MultiMotor``, ``MultiDetector``, and ``DataStorage`` instances.
-See the next page for more example configurations.
+See the next `Advanced` section and examples there for details on more complex configurations.

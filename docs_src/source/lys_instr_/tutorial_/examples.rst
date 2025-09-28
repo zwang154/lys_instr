@@ -62,7 +62,7 @@ The GUI for this setup can be constructed as follows:
             graph = mcut.cui._children.addWave([1])
             mcut.display(graph, type="grid", pos=(0, 0), wid=(4, 4))
 
-Adding the above code to ``proc.py`` in *lys* and then calling ``WindowEx1()`` in the *lys* command line launches the GUI subwindow shown below:
+Adding the above code to ``proc.py`` in *lys* and then calling this ``WindowEx1()`` in the *lys* command line launches the GUI subwindow shown below:
 
 .. image:: /lys_instr_/tutorial_/Ex1.png
 
@@ -123,7 +123,7 @@ A small modification of the previous example allows one to construct the GUI for
             wave = mcut.cui._children.addWave([1, 2])
             mcut.display(wave, type="grid", pos=(0, 0), wid=(4, 4))
 
-Adding the above code to ``proc.py`` in *lys* and then calling ``WindowEx2()`` in the *lys* command line launches the GUI subwindow shown below:
+Adding the above code to ``proc.py`` in *lys* and then calling this ``WindowEx2()`` in the *lys* command line launches the GUI subwindow shown below:
 
 .. image:: /lys_instr_/tutorial_/Ex2.png
 

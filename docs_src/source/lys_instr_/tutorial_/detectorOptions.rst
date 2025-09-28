@@ -59,7 +59,7 @@ For demonstration, we show the following code with a few lines of *lys* configur
             self.setWidget(detectorGUI)
             self.adjustSize()
 
-Adding the above code to ``proc.py`` in *lys* and calling ``AppWindow()`` from the *lys* command line will display the following GUI:
+Adding the above code to ``proc.py`` in *lys* and calling this ``AppWindow()`` from the *lys* command line will display the following GUI:
 
 .. image:: /lys_instr_/tutorial_/detectorOptions_2.png
 
