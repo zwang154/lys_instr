@@ -296,8 +296,6 @@ class _GeneralPanel(QtWidgets.QWidget):
         self._offsetEdits[name].setValue(obj.offset[name])
         obj.valueChanged.emit(obj.get())
         obj.save()
-        main = self.window().parent()
-        main._items[name].clear()
 
     def _unsetAxis(self, name):
         """
