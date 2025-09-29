@@ -11,6 +11,7 @@ class PreCorrector:
             c.busyStateChanged.connect(self._busy, QtCore.Qt.DirectConnection)
             c.valueChanged.connect(self._correct, QtCore.Qt.DirectConnection)
             self._controllers.update({name: c for name in c.nameList})
+            c._isBusy_orig = c._isBusy
 
         self._correctParams = dict()
 
@@ -35,26 +36,35 @@ class PreCorrector:
                 self._controllers[name].set(**{name: func(**params)})
 
     def _busy(self, busy):
-        def busyFunc(p1, p2):
-            c1, c2 = self.controllers[p1], self.controllers[p2]
-            result = c1._isBusy_orig()
-            if c2._isBusy()[p2]:
-                result[p1] = True
-            return result
-
         if not self._enabled:
             return
 
-        for name, func in self.corrections.items():  # y = f(t,x)
-            if not func.enabled:
+        for y, f in self.corrections.items():  # y = f(t,x)
+            if not f.enabled:
                 continue
-            for name2, b in busy.items():
-                if name2 in func.argNames(excludeFixed=True):
-                    if b:
-                        self.controllers[name2]._isBusy_orig = self.controllers[name2]._isBusy if not hasattr(self.controllers[name2], "_isBusy_orig") else self.controllers[name2]._isBusy_orig
-                        self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
-                    else:
-                        self.controllers[name2]._isBusy = self.controllers[name2]._isBusy_orig
+
+            for arg, b in busy.items():
+                if arg in f.argNames(excludeFixed=True):  # e.g. arg is t
+                    self._replaceBusyMethod(arg, y, not b)
+
+    def _replaceBusyMethod(self, targ, dep, reset=False):
+        """
+        Replace busy method of targ.
+        New _isBusy method of targ returns True if _isBusy of dep is True. 
+        """
+        busy_targ = self.controllers[targ]._isBusy
+        busy_dep = self.controllers[dep]._isBusy
+
+        def busyFunc():
+            result = busy_targ()  # {..., f: False, ...}
+            dep_busy = busy_dep()[dep]
+            result[targ] = result[targ] or dep_busy
+            return result
+
+        if reset is True:
+            self.controllers[targ]._isBusy = self.controllers[targ]._isBusy_orig
+        else:
+            self.controllers[targ]._isBusy = busyFunc
 
 
 class _FunctionCombination:
