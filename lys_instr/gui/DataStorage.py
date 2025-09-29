@@ -2,7 +2,7 @@ import qtawesome as qta
 import json
 
 from lys.Qt import QtCore, QtWidgets
-from .Widgets import FolderButton
+from .widgets import FolderButton
 
 
 class DataStorageGUI(QtWidgets.QWidget):

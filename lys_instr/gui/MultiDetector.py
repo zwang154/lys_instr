@@ -3,7 +3,7 @@ import numpy as np
 from lys import multicut, Wave
 from lys.Qt import QtWidgets, QtCore
 
-from .Widgets import AliveIndicator, SettingsButton
+from .widgets import AliveIndicator, SettingsButton
 
 
 class MultiDetectorGUI(QtWidgets.QWidget):
@@ -25,18 +25,20 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _initLayout(self):
         # Data display widget
-        self.createDisplayWidget()
+        self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
+        self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self._mcut.loadDefaultTemplate()
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
             def setExposure(value):
                 self._obj.exposure = value
-            self._expTime = QtWidgets.QDoubleSpinBox()
-            self._expTime.setValue(self._obj.exposure)
-            self._expTime.setRange(0, np.infty)
-            self._expTime.setDecimals(3)
-            self._expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            self._expTime.valueChanged.connect(setExposure)
+            expTime = QtWidgets.QDoubleSpinBox()
+            expTime.setValue(self._obj.exposure)
+            expTime.setRange(0, np.infty)
+            expTime.setDecimals(3)
+            expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+            expTime.valueChanged.connect(setExposure)
 
             exposeLabel = QtWidgets.QLabel("Exp. (s)")
             exposeLabel.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
@@ -48,43 +50,36 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         self._stop.setEnabled(False)
 
         # Layout setup
+        imageLayout = QtWidgets.QHBoxLayout()
+        imageLayout.addWidget(self._mcut.widget)
+
         controlsLayout = QtWidgets.QHBoxLayout()
         controlsLayout.addWidget(AliveIndicator(self._obj))
         if self._obj.exposure is not None:
             controlsLayout.addWidget(exposeLabel)
-            controlsLayout.addWidget(self._expTime)
+            controlsLayout.addWidget(expTime)
         controlsLayout.addWidget(self._acquire)
         controlsLayout.addWidget(self._stream)
         controlsLayout.addWidget(self._stop)
         controlsLayout.addWidget(SettingsButton(clicked=self._showSettings))
 
         mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.addLayout(self.createDisplayLayout())
+        mainLayout.addLayout(imageLayout, stretch=1)
         mainLayout.addLayout(controlsLayout, stretch=0)
-        
+
         self.setLayout(mainLayout)
-
-    def createDisplayWidget(self):
-        self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
-        self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-    def createDisplayLayout(self):
-        imageLayout = QtWidgets.QHBoxLayout()
-        imageLayout.addWidget(self._mcut.widget, stretch=1)
-        return imageLayout
 
     def _update(self):
         if hasattr(self, "_data"):
-            self._mcut.cui.setRawWave(self._data)
+            self._mcut.cui.updateRawWave(axes=self._obj.axes)
 
     def _dataAcquired(self, data):
         if not hasattr(self, "_data"):
             self._frameCount = 0
-            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
+            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
 
         if data:
-            for idx, frame in data.items():
-                self._data.data[idx] = frame
+            self._mcut.cui.updateRawWave(data,update=False)
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame
@@ -98,6 +93,8 @@ class MultiDetectorGUI(QtWidgets.QWidget):
 
     def _onAcquire(self, mode="acquire"):
         self._frameCount = 0
+        self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
+        self._mcut.cui.setRawWave(self._data)
         if mode == "acquire":
             self._obj.startAcq(wait=self._params["wait"], iter=self._params["iter"])
         else:
@@ -162,7 +159,6 @@ class _GeneralPanel(QtWidgets.QWidget):
 
         self._scheduledUpdateCheck = QtWidgets.QCheckBox("Update every", checked=interval is not None, toggled=self._changeInterval)
 
-        # Connections
         self._iter.valueChanged.connect(self._changeInterval)
         self._updateInterval.valueChanged.connect(self._changeInterval)
         self._scheduledUpdateCheck.stateChanged.connect(self._updateInterval.setEnabled)
@@ -182,5 +178,5 @@ class _GeneralPanel(QtWidgets.QWidget):
         if self._scheduledUpdateCheck.isChecked():
             self._params["interval"] = self._updateInterval.value()
         else:
-            self._params["interval"] = None         
+            self._params["interval"] = None
         self._params["iter"] = self._iter.value()

@@ -4,7 +4,7 @@ import qtawesome as qta
 from lys.Qt import QtWidgets, QtCore
 from lys_instr import MultiMotorInterface
 
-from .Widgets import AliveIndicator, SettingsButton
+from .widgets import AliveIndicator, SettingsButton
 from .Memory import ControllerMemory
 
 
