@@ -1,9 +1,10 @@
 import numpy as np
 import time
-import itertools
 
 from lys_instr.MultiDetector import MultiDetectorInterface
 from lys.Qt import QtWidgets, QtCore
+
+from .detectorData import RandomData
 
 
 class MultiDetectorDummy(MultiDetectorInterface):
@@ -13,22 +14,26 @@ class MultiDetectorDummy(MultiDetectorInterface):
     This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
     """
 
-    def __init__(self, indexShape, frameShape, exposure=None, **kwargs):
+    def __init__(self, data=None, indexShape=(), frameShape=(100,100), exposure=None, **kwargs):
         """
         Initializes the dummy multi-detector with the given parameters.
 
         Args:
-            indexShape (tuple of int): Shape of the index grid.
-            frameShape (tuple of int): Shape of each data frame.
+            data (DummyDataInterface): The data to be used as dummy. If not specified, random data will be used based on indexShape and frameShape.
+            indexShape (tuple of int): Shape of the index grid for random data. This argument will be ignored when data is not None.
+            frameShape (tuple of int): Shape of each data frame for random data. This argument will be ignored when data is not None.
             exposure (float, optional): Time per frame in seconds.
             **kwargs: Additional keyword arguments passed to the parent class.
         """
         super().__init__(**kwargs)
+        if data is None:
+            self._obj = RandomData(indexShape, frameShape)
+        else:
+            self._obj = data
+
         self._data = {}
-        self._frameShape = frameShape
-        self._indexShape = indexShape
         self.exposure = exposure
-        self._error = False
+        self.error = False
         self.start()
 
     def _run(self, iter=1):
@@ -38,30 +43,14 @@ class MultiDetectorDummy(MultiDetectorInterface):
         This method generates random data frames at the specified frame time, updates the acquired indices, and emits an update signal after each frame is acquired.
         """
         self._shouldStop = False
-
-        if self.frameDim == 2 and self.indexDim == 2:
-            return self._run_2d_2d(iter)
+        
         i = 0
         while i != iter:
-            for idx in itertools.product(*[range(j) for j in self.indexShape]):
+            for idx, data in self._obj:
                 if self._shouldStop:
                     return
-                time.sleep(self.exposure)
-                self._data[idx] = np.random.rand(*self.frameShape)
-                self.updated.emit()
-            i += 1
-
-    def _run_2d_2d(self, iter=1):
-        """
-        _run method for 2D * 2D data.
-        """
-        i = 0
-        while i != iter:
-            for j in range(self.indexShape[0]):
-                if self._shouldStop:
-                    return
-                time.sleep(self.exposure*self.indexShape[1])
-                self._data[j] = np.random.rand(self.indexShape[1], *self.frameShape)
+                time.sleep(self.exposure*self._obj.nframes)
+                self._data[idx] = data
                 self.updated.emit()
             i += 1
 
@@ -89,7 +78,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
         Returns:
             bool: True if the detector is alive, False if it is dead.
         """
-        return not self._error
+        return not self.error
 
     @property
     def frameShape(self):
@@ -99,7 +88,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
         Returns:
             tuple of int: The shape of each data frame.
         """
-        return self._frameShape
+        return self._obj.frameShape
 
     @property
     def indexShape(self):
@@ -109,7 +98,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
         Returns:
             tuple of int: The shape of the index grid.
         """
-        return self._indexShape
+        return self._obj.indexShape
 
     @property
     def axes(self):
@@ -119,7 +108,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
         Returns:
             list[numpy.ndarray]: Coordinate axes for each dimension of the data.
         """
-        return [np.linspace(0, 1, s) for s in self.dataShape]
+        return self._obj.axes
 
     def settingsWidget(self):
         """
@@ -164,7 +153,7 @@ class _OptionalPanel(QtWidgets.QWidget):
         Toggles the alive state of the backend detector and emits relevant signals.
         """
         backend = self._obj
-        backend._error = not backend._error
+        backend.error = not backend.error
         data = backend._get()
         if data:
             backend.dataAcquired.emit(data)
