@@ -2,6 +2,7 @@ import pyqtgraph as pg
 from lys.widgets import LysSubWindow
 from lys.Qt import QtWidgets
 from lys_instr import DataStorage, gui, dummy
+from lys_instr.dummy.detectorData import RamanData
 
 
 class DetectorAdvEx1GUI(gui.MultiDetectorGUI):
@@ -18,7 +19,7 @@ class AppWindow(LysSubWindow):
         super().__init__(parent)
         self.setWindowTitle("Advanced Example #1-2")
         self._storage = DataStorage()
-        self._detector = dummy.DetectorAdvEx1Dummy(indexShape=(36,), frameShape=(600,), exposure=0.1)
+        self._detector = dummy.MultiDetectorDummy(data=RamanData(scanLevel=1), exposure=0.1)
         self._motor = dummy.MultiMotorDummy("x", "y")
         self._storage.connect(self._detector)
         self._initLayout()
@@ -27,7 +28,7 @@ class AppWindow(LysSubWindow):
 
     def _initLayout(self):
         _storageGUI = gui.DataStorageGUI(self._storage)
-        _detectorGUI = DetectorAdvEx1GUI(self._detector)
+        _detectorGUI = gui.MultiDetectorGUI(self._detector)
         _motorGUI = gui.MultiMotorGUI(self._motor)
         _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], {"DetectorAdvEx1Dummy": self._detector}, numScans=2)
 
@@ -52,10 +53,10 @@ class AppWindow(LysSubWindow):
         graph1 = mcut.cui._children.addWave([1, 0])
         mcut.display(graph1, type="grid", pos=(0, 0), wid=(3, 4))
 
-        # Add live frame display
-        self._frameView = pg.PlotWidget()
-        mcut._grid.layout.addWidget(self._frameView, 4, 0, 1, 4)
-        _detectorGUI._frameView = self._frameView
+        # # Add live frame display
+        # self._frameView = pg.PlotWidget()
+        # mcut._grid.layout.addWidget(self._frameView, 4, 0, 1, 4)
+        # _detectorGUI._frameView = self._frameView
 
         # Set scan parameters
         # Set scan axis 0 (second row) to 'y', linear mode, from 0, step 0.1, 9 steps
@@ -69,5 +70,5 @@ class AppWindow(LysSubWindow):
         
         # Enable exposure time setting in scan GUI and disable it in detector GUI
         _scanGUI._exposure.setValue(1)
-        _detectorGUI._expTime.setValue(0)
-        _detectorGUI._expTime.setEnabled(False)
+        # _detectorGUI._expTime.setValue(0)
+        # _detectorGUI._expTime.setEnabled(False)

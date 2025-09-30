@@ -1,6 +1,7 @@
 from lys.widgets import LysSubWindow
 from lys.Qt import QtWidgets
 from lys_instr import DataStorage, gui, dummy
+from lys_instr.dummy.detectorData import RamanData
 
 
 class AppWindow(LysSubWindow):
@@ -8,7 +9,7 @@ class AppWindow(LysSubWindow):
         super().__init__(parent)
         self.setWindowTitle("Advanced Example #1-1")
         self._storage = DataStorage()
-        self._detector = dummy.DetectorAdvEx1Dummy(indexShape=(1,), frameShape=(600,), exposure=0.1)
+        self._detector = dummy.MultiDetectorDummy(data=RamanData(scanLevel=0), exposure=0.1)
         self._motor = dummy.MultiMotorDummy("x", "y", "phi")
         self._storage.connect(self._detector)
         self._initLayout()
@@ -19,7 +20,7 @@ class AppWindow(LysSubWindow):
         _storageGUI = gui.DataStorageGUI(self._storage)
         _detectorGUI = gui.MultiDetectorGUI(self._detector)
         _motorGUI = gui.MultiMotorGUI(self._motor)
-        _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], {"DetectorAdvEx1Dummy": self._detector}, numScans=3)
+        _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], {"MultiDetectorDummy": self._detector}, numScans=3)
 
         self._tab = QtWidgets.QTabWidget()
         self._tab.addTab(_motorGUI, "Motor")
@@ -37,11 +38,6 @@ class AppWindow(LysSubWindow):
         w.setLayout(HBox)
         self.setWidget(w)
 
-        # Set multicut display style
-        mcut = _detectorGUI._mcut
-        graph1 = mcut.cui._children.addWave([1])
-        mcut.display(graph1, type="grid", pos=(0, 0), wid=(4, 4))
-
         # Set scan parameters
         # Set scan axis 0 (first row) to 'phi', linear mode, from 0, step 10, 36 steps
         _scanGUI._scanRangeRows[0]._scanAxis.setCurrentText("phi")
@@ -58,5 +54,5 @@ class AppWindow(LysSubWindow):
 
         # Enable exposure time setting in scan GUI and disable it in detector GUI
         _scanGUI._exposure.setValue(0.1)
-        _detectorGUI._expTime.setValue(0)
-        _detectorGUI._expTime.setEnabled(False)
+        # _detectorGUI._expTime.setValue(0)
+        # _detectorGUI._expTime.setEnabled(False)
