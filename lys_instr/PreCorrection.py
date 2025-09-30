@@ -2,14 +2,14 @@ from lys.Qt import QtCore
 from lys.decorators import avoidCircularReference
 
 
-class PreCorrector:
+class PreCorrector(QtCore.QObject):
     def __init__(self, controllers):
         super().__init__()
         self._enabled = True
         self._controllers = {}
         for c in controllers:
-            c.busyStateChanged.connect(self._busy, QtCore.Qt.DirectConnection)
-            c.valueChanged.connect(self._correct, QtCore.Qt.DirectConnection)
+            c.busyStateChanged.connect(self._busy, QtCore.Qt.QueuedConnection)
+            c.valueChanged.connect(self._correct, QtCore.Qt.QueuedConnection)
             self._controllers.update({name: c for name in c.nameList})
             c._isBusy_orig = c._isBusy
 

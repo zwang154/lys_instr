@@ -185,6 +185,23 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
         key = list(c.functions.keys())[item.parent().indexOfChild(item)]
         return c.functions[key]
 
+    def refresh(self):
+        self.clear()
+        for key, c in self._obj.corrections.items():
+            argSet = set()
+            for func in c.functions.values():
+                if hasattr(func, 'argNames'):
+                    argSet.update(func.argNames())
+            expr = getattr(c, "expression", ', '.join(sorted(argSet)))
+            top = _EditableItem([key, expr])
+            self.addTopLevelItem(top)
+            for funcName, func in c.functions.items():
+                if hasattr(func, 'argNames'):
+                    funcExpr = f"{funcName}({', '.join(func.argNames())})"
+                else:
+                    funcExpr = funcName
+                top.addChild(_EditableItem([funcName, funcExpr]))
+            
     def _copy(self):
         dics = []
         for i in range(self.topLevelItemCount()):

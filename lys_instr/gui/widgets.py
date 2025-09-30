@@ -45,3 +45,14 @@ class FolderButton(QtWidgets.QPushButton):
             self.clicked.connect(clicked)
         self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         self.setIconSize(QtCore.QSize(20, 20))
+
+class MemoryButton(QtWidgets.QPushButton):
+    _icon = qta.icon("ri.bookmark-2-fill")
+
+    def __init__(self, clicked=None):
+        super().__init__(self._icon, "")
+        self.setCheckable(True)
+        if clicked is not None:
+            self.clicked.connect(clicked)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        self.setIconSize(QtCore.QSize(20, 20))
