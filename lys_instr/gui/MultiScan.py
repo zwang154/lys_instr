@@ -154,6 +154,7 @@ class ScanWidget(QtWidgets.QWidget):
 
         self._exposure = QtWidgets.QDoubleSpinBox(objectName="ScanTab_exposure")
         self._exposure.setRange(0, np.inf)
+        self._exposure.setDecimals(5)
 
         self._combo_ref = QtWidgets.QComboBox(objectName="ScanTab_combo_ref")
         self._combo_ref.addItems(scanners.keys())

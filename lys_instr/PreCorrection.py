@@ -3,8 +3,6 @@ from lys.decorators import avoidCircularReference
 
 
 class PreCorrector(QtCore.QObject):
-    correctionsChanged = QtCore.pyqtSignal()
-
     def __init__(self, controllers):
         super().__init__()
         self._enabled = True
@@ -13,28 +11,23 @@ class PreCorrector(QtCore.QObject):
             c.busyStateChanged.connect(self._busy, QtCore.Qt.QueuedConnection)
             c.valueChanged.connect(self._correct, QtCore.Qt.QueuedConnection)
             self._controllers.update({name: c for name in c.nameList})
-            if not hasattr(c, "_isBusy_orig"):
-                c._isBusy_orig = c._isBusy
+            c._isBusy_orig = c._isBusy
+
         self._correctParams = dict()
 
     @property
     def controllers(self):
         return self._controllers
-    
+
     @property
     def corrections(self):
         return self._correctParams
-
-    @corrections.setter
-    def corrections(self, values):
-        self._correctParams = values
-        self.correctionsChanged.emit()
 
     @avoidCircularReference
     def _correct(self, values={}):
         if not self._enabled:
             return
-        
+
         for name, func in self.corrections.items():
             if not func.enabled:
                 continue
@@ -43,30 +36,35 @@ class PreCorrector(QtCore.QObject):
                 self._controllers[name].set(**{name: func(**params)})
 
     def _busy(self, busy):
-        def busyFunc(p1, p2):
-            c1, c2 = self.controllers[p1], self.controllers[p2]
-            result = c1._isBusy_orig()
-            if c2._isBusy_orig()[p2]:
-                result[p1] = True
-            return result
-
         if not self._enabled:
             return
 
-        # Always restore all _isBusy to _isBusy_orig before patching
-        for c in self.controllers.values():
-            if hasattr(c, "_isBusy_orig"):
-                c._isBusy = c._isBusy_orig
-
-        # Patch as needed for current busy state
-        for name, func in self.corrections.items():  # y = f(t,x)
-            if not func.enabled:
+        for y, f in self.corrections.items():  # y = f(t,x)
+            if not f.enabled:
                 continue
-            for name2, b in busy.items():
-                if name2 in func.argNames(excludeFixed=True):
-                    if b:
-                        if self.controllers[name2]._isBusy is self.controllers[name2]._isBusy_orig:
-                            self.controllers[name2]._isBusy = lambda p1=name2, p2=name: busyFunc(p1, p2)
+
+            for arg, b in busy.items():
+                if arg in f.argNames(excludeFixed=True):  # e.g. arg is t
+                    self._replaceBusyMethod(arg, y, not b)
+
+    def _replaceBusyMethod(self, targ, dep, reset=False):
+        """
+        Replace busy method of targ.
+        New _isBusy method of targ returns True if _isBusy of dep is True. 
+        """
+        busy_targ = self.controllers[targ]._isBusy
+        busy_dep = self.controllers[dep]._isBusy
+
+        def busyFunc():
+            result = busy_targ()  # {..., f: False, ...}
+            dep_busy = busy_dep()[dep]
+            result[targ] = result[targ] or dep_busy
+            return result
+
+        if reset is True:
+            self.controllers[targ]._isBusy = self.controllers[targ]._isBusy_orig
+        else:
+            self.controllers[targ]._isBusy = busyFunc
 
 
 class _FunctionCombination:
@@ -77,7 +75,7 @@ class _FunctionCombination:
         self.enabled = True
 
     def __call__(self, **scanParams):
-        if self._formula is None:
+        if self._formula is None or self._formula == "":
             firstFunc = next(iter(self._funcs.values()))
             correctValue = firstFunc(**scanParams)
         else:
@@ -88,11 +86,11 @@ class _FunctionCombination:
     @property
     def functions(self):
         return self._funcs
-    
+
     @property
     def expression(self):
         return self._formula
-    
+
     @expression.setter
     def expression(self, value):
         self._formula = value
@@ -124,7 +122,7 @@ class _InterpolatedFunction:
         if hasattr(val, "__iter__"):
             val = val[0]
         return val
-    
+
     @property
     def fixedValues(self):
         """ a dictionary that specifies the fixed value."""
@@ -136,4 +134,3 @@ class _InterpolatedFunction:
             return [arg for arg in self._argNames if arg not in self._fixedValues]
         else:
             return self._argNames
-

@@ -155,7 +155,7 @@ class _MotorRowLayout(QtCore.QObject):
         self._now.setRange(-np.inf, np.inf)
         self._now.setReadOnly(True)
         self._now.setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
-        self._now.setDecimals(3)
+        self._now.setDecimals(5)
         self._now.setStyleSheet("background-color: #f0f0f0;")
         self._now.setValue(obj.get()[self._name])
 
@@ -267,7 +267,7 @@ class _GeneralPanel(QtWidgets.QWidget):
             self._offsetEdits[name].setRange(-np.inf, np.inf)
             self._offsetEdits[name].setReadOnly(True)
             self._offsetEdits[name].setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
-            self._offsetEdits[name].setDecimals(3)
+            self._offsetEdits[name].setDecimals(5)
             self._offsetEdits[name].setValue(c.offset[name])
             self._offsetEdits[name].setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
             self._offsetEdits[name].setMinimumWidth(80)
