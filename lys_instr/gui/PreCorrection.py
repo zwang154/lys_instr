@@ -21,7 +21,7 @@ class PreCorrectorGUI(QtWidgets.QWidget):
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(QtWidgets.QLabel("Corrections"))
-        hbox.addWidget(QtWidgets.QPushButton("Create new function", clicked=self._new))        
+        hbox.addWidget(QtWidgets.QPushButton("Create new function", clicked=self._new))
 
         self._layout = QtWidgets.QVBoxLayout()
         self._layout.addLayout(hbox)
@@ -50,30 +50,35 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
 
         selected_items = self.selectedItems()
         if len(selected_items) > 0:
-            if selected_items[0].parent() is None: # Correction is selected
-                add_var = QtWidgets.QAction('Add new variable', triggered = lambda b, item=selected_items[0]: self._addVar(item))
-                add_func = QtWidgets.QAction('Add new function', triggered = lambda b, item=selected_items[0]: self._addFunc(item))
-                enable = QtWidgets.QAction('Enable/Disable', triggered = lambda b, item=selected_items[0]: self._enable(item))
-                del_ = QtWidgets.QAction('Delete target', triggered = lambda b, item=selected_items[0]: self._del(item))
+            if selected_items[0].parent() is None:  # Correction is selected
+                add_var = QtWidgets.QAction('Add new variable', triggered=lambda b, item=selected_items[0]: self._addVar(item))
+                add_func = QtWidgets.QAction('Add new function', triggered=lambda b, item=selected_items[0]: self._addFunc(item))
+                enable = QtWidgets.QAction('Enable/Disable', triggered=lambda b, item=selected_items[0]: self._enable(item))
+                del_ = QtWidgets.QAction('Delete target', triggered=lambda b, item=selected_items[0]: self._del(item))
                 menu.addAction(add_var)
                 menu.addAction(add_func)
                 menu.addAction(enable)
                 menu.addAction(del_)
             elif "Fix:" not in selected_items[0].text(0):
-                fix = QtWidgets.QAction('Fix a parameter', triggered = lambda b, item=selected_items[0]: self._fix(item))
-                del_func = QtWidgets.QAction('Delete function', triggered = lambda b, item=selected_items[0]: self._delFunc(item))
+                fix = QtWidgets.QAction('Fix a parameter', triggered=lambda b, item=selected_items[0]: self._fix(item))
+                del_func = QtWidgets.QAction('Delete function', triggered=lambda b, item=selected_items[0]: self._delFunc(item))
                 menu.addAction(fix)
                 menu.addAction(del_func)
             else:
-                del_fix = QtWidgets.QAction('Delete fixed param', triggered = lambda b, item=selected_items[0]: self._delFix(item))
+                del_fix = QtWidgets.QAction('Delete fixed param', triggered=lambda b, item=selected_items[0]: self._delFix(item))
                 menu.addAction(del_fix)
 
             menu.addSeparator()
 
-        add = QtWidgets.QAction('Add new target', triggered = self._add)
-        clear = QtWidgets.QAction('Clear all targets', triggered = self._clear)
+        add = QtWidgets.QAction('Add new target', triggered=self._add)
+        clear = QtWidgets.QAction('Clear all targets', triggered=self._clear)
         menu.addAction(add)
         menu.addAction(clear)
+
+        copy = QtWidgets.QAction('copy targets and functions', triggered=self._copy)
+        paste = QtWidgets.QAction('paste targets and functions', triggered=self._paste)
+        menu.addAction(copy)
+        menu.addAction(paste)
 
         menu.exec_(QtGui.QCursor.pos())
 
@@ -81,9 +86,12 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
         additems = [key for key in self._obj.controllers.keys() if key not in self._obj.corrections.keys()]
         item, ok = QtWidgets.QInputDialog.getItem(self, "Add Correct Params", "Param", additems, editable=False)
         if ok:
-            self._obj.corrections[item] = _FunctionCombination()
-            tree_item = _EditableItem([item])
-            self.addTopLevelItem(tree_item)
+            self._setTerget(item)
+
+    def _setTerget(self, item):
+        self._obj.corrections[item] = _FunctionCombination()
+        tree_item = _EditableItem([item])
+        self.addTopLevelItem(tree_item)
 
     def _clear(self):
         ok = QtWidgets.QMessageBox.warning(self, "Clear", "Do you really want to CLEAR the all target(s)?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
@@ -109,20 +117,27 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
         additems = [key for key in self._obj.controllers.keys() if key not in c.functions.keys()]
         var, ok = QtWidgets.QInputDialog.getItem(self, "Select variables", "Variables", additems, editable=False)
         if ok:
-            f = _InterpolatedFunction(lambda x: x[0], [var])
-            c.functions[var] = f
-            item.addChild(_EditableItem([var]))
+            self._setVar(item, var)
+
+    def _setVar(self, item, var):
+        _, c = self._correction(item)
+        f = _InterpolatedFunction(lambda x: x[0], [var])
+        c.functions[var] = f
+        item.addChild(_EditableItem([var]))
 
     def _addFunc(self, item):
         dialog = _addFuncDialog(self)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             f = dialog.getFunction()
-            _, c = self._correction(item)
-            i = 1
-            while "func" + str(i) in c.functions.keys():
-                i += 1
-            c.functions["func"+str(i)] = f
-            item.addChild(_EditableItem(["func"+str(i)+"("+",".join(f.argNames())+")"]))
+            self._setFunc(item, f)
+
+    def _setFunc(self, item, func):
+        _, c = self._correction(item)
+        i = 1
+        while "func" + str(i) in c.functions.keys():
+            i += 1
+        c.functions["func"+str(i)] = func
+        item.addChild(_EditableItem(["func"+str(i)+"("+",".join(func.argNames())+")"]))
 
     def _delFunc(self, item):
         ok = QtWidgets.QMessageBox.warning(self, "Clear", "Do you really want to DELETE this function?", QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
@@ -170,6 +185,64 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
         key = list(c.functions.keys())[item.parent().indexOfChild(item)]
         return c.functions[key]
 
+    def refresh(self):
+        self.clear()
+        for key, c in self._obj.corrections.items():
+            argSet = set()
+            for func in c.functions.values():
+                if hasattr(func, 'argNames'):
+                    argSet.update(func.argNames())
+            expr = getattr(c, "expression", ', '.join(sorted(argSet)))
+            top = _EditableItem([key, expr])
+            self.addTopLevelItem(top)
+            for funcName, func in c.functions.items():
+                if hasattr(func, 'argNames'):
+                    funcExpr = f"{funcName}({', '.join(func.argNames())})"
+                else:
+                    funcExpr = funcName
+                top.addChild(_EditableItem([funcName, funcExpr]))
+            
+    def _copy(self):
+        dics = []
+        for i in range(self.topLevelItemCount()):
+            item = self.topLevelItem(i)
+            key, _ = self._correction(item)
+
+            expression = item.text(1)
+            childItems = [item.child(i) for i in range(item.childCount())]
+            funcPathes = [self._function(child).path for child in childItems if type(self._function(child)) is _InterpolatedFunctionFromFile]
+            variables = [self._function(child).argNames()[0] for child in childItems if type(self._function(child)) is _InterpolatedFunction]
+            dics.append({"terget": key, "expression": expression, "funcs": funcPathes, "variables": variables})
+
+        with open(".lys_instr/copyPreCorrection.txt", 'w') as f:
+            f.write(str(dics))
+
+    def _paste(self):
+        self._obj.corrections.clear()
+        self.clear()
+
+        with open(".lys_instr/copyPreCorrection.txt", 'r') as f:
+            dicsAsStr = f.read()
+        dics = eval(dicsAsStr)
+
+        i = 0
+        for dic in dics:
+            self._setTerget(dic["terget"])
+            item = self.topLevelItem(i)
+            item.setText(1, str(dic["expression"]))
+
+            if len(dic["funcs"]) > 0:
+                for funcPath in dic["funcs"]:
+                    input = Wave(funcPath)
+                    f = RBFInterpolator(input.x, input.data, kernel="linear")
+                    func = _InterpolatedFunctionFromFile(f, input.note["variables"], funcPath)
+                    self._setFunc(item, func)
+
+            if len(dic["variables"]) > 0:
+                for var in dic["variables"]:
+                    self._setVar(item, var)
+            i += 1
+
 
 class _EditableItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, *args, **kwargs):
@@ -205,8 +278,11 @@ class _addFuncDialog(QtWidgets.QDialog):
 
     def getFunction(self):
         input = Wave(self._input.text())
-        f = RBFInterpolator(input.data, input.x, kernel="linear")
-        return _InterpolatedFunction(f, input.note["variables"])
+        f = RBFInterpolator(input.x, input.data, kernel="linear")
+        return _InterpolatedFunctionFromFile(f, input.note["variables"], self._input.text())
+
+    def getFunctionPath(self):
+        return self._input.text()
 
     def __open(self, lineEdit):
         file, _ = QtWidgets.QFileDialog.getOpenFileName(None, 'Open file', filter="npz(*.npz)")
@@ -245,18 +321,17 @@ class _NewFunctionWindow(LysSubWindow):
         menu = QtWidgets.QMenu()
         selected_items = self._tree.selectedItems()
 
-
         if len(selected_items) > 0:
-            exp = QtWidgets.QAction('Export correction table', triggered = lambda b, item=selected_items[0]: self._exportTable(item))
-            clear = QtWidgets.QAction('Clear correction table', triggered = lambda b, item=selected_items[0]: self._clearTable(item))
-            rem = QtWidgets.QAction('Remove correction table', triggered = lambda b, item=selected_items[0]: self._delCorrectParams(item))
+            exp = QtWidgets.QAction('Export correction table', triggered=lambda b, item=selected_items[0]: self._exportTable(item))
+            clear = QtWidgets.QAction('Clear correction table', triggered=lambda b, item=selected_items[0]: self._clearTable(item))
+            rem = QtWidgets.QAction('Remove correction table', triggered=lambda b, item=selected_items[0]: self._delCorrectParams(item))
             menu.addAction(exp)
             menu.addAction(clear)
             menu.addAction(rem)
             menu.addSeparator()
 
-        add = QtWidgets.QAction('Add new correction table', triggered = self._addCorrectParam)
-        cl = QtWidgets.QAction('Clear all tables', triggered = self._clearCorrectParams)
+        add = QtWidgets.QAction('Add new correction table', triggered=self._addCorrectParam)
+        cl = QtWidgets.QAction('Clear all tables', triggered=self._clearCorrectParams)
         menu.addAction(add)
         menu.addAction(cl)
 
@@ -277,14 +352,14 @@ class _NewFunctionWindow(LysSubWindow):
 
     def _delCorrectParams(self, item):
         key, _ = self._correction(item)
-        ok = QtWidgets.QMessageBox.warning(self, "Delete", 'Do you really want to DELETE the parameter ' + key + '?' , QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
+        ok = QtWidgets.QMessageBox.warning(self, "Delete", 'Do you really want to DELETE the parameter ' + key + '?', QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
         if ok:
             del self._corrections[key]
             self._tree.takeTopLevelItem(self._tree.indexOfTopLevelItem(item))
 
     def _clearTable(self, item):
         key, d = self._correction(item)
-        ok = QtWidgets.QMessageBox.warning(self, "Delete", 'Do you really want to CLEAR the table for  ' + key + '?' , QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
+        ok = QtWidgets.QMessageBox.warning(self, "Delete", 'Do you really want to CLEAR the table for  ' + key + '?', QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Cancel)
         if ok:
             d.clear()
             self._updateTree()
@@ -323,7 +398,7 @@ class _MakeFuncDialog(QtWidgets.QDialog):
     def __init__(self, parent, params):
         super().__init__(parent)
         self._params = list(params)
-        
+
         self.setWindowTitle("New function")
         self.__initLayout(params)
         self._updateWidgets()
@@ -363,7 +438,7 @@ class _MakeFuncDialog(QtWidgets.QDialog):
                 c.setCurrentText("")
             # remove empty
             if c.currentText() == "":
-                if self._args[i+1].currentText()!="":
+                if self._args[i+1].currentText() != "":
                     for j, c2 in enumerate(self._args[i:-1]):
                         c2.setCurrentText(self._args[j].currentText())
                 else:
@@ -378,7 +453,8 @@ class _MakeFuncDialog(QtWidgets.QDialog):
             c.setCurrentText(selected[i+1])
         # hide empty box
         for i, c in enumerate(self._args):
-            if i == 0: continue
+            if i == 0:
+                continue
             if self._args[i-1].currentText() == "":
                 c.hide()
             else:
@@ -387,7 +463,7 @@ class _MakeFuncDialog(QtWidgets.QDialog):
     @property
     def target(self):
         return self._targ.currentText()
-    
+
     @property
     def args(self):
         return [c.currentText() for c in self._args if c.currentText() != ""]
@@ -419,3 +495,13 @@ class _CorrectionData:
     @property
     def argNames(self):
         return self._argNames
+
+
+class _InterpolatedFunctionFromFile(_InterpolatedFunction):
+    def __init__(self, interpolator, argNames, path):
+        super().__init__(interpolator, argNames)
+        self._path = path
+
+    @property
+    def path(self):
+        return self._path

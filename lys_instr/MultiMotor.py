@@ -1,7 +1,9 @@
-import numpy as np
+import os
 import time
 import logging
+import weakref
 
+import numpy as np
 from .Interfaces import HardwareInterface, lock
 from lys.Qt import QtCore
 
@@ -14,6 +16,7 @@ class _AxisInfo():
         busy (bool): Whether the axis is currently busy.
         alive (bool): Whether the axis is currently alive (not in error).
     """
+
     def __init__(self, busy=False, alive=True):
         """
         Initializes the axis state.
@@ -26,7 +29,7 @@ class _AxisInfo():
         self.alive = alive
 
 
-class MultiMotorInterface(HardwareInterface):
+class MultiMotorInterfaceBase(HardwareInterface):
     """
     Abstract interface for multi-axis motor controllers.
 
@@ -52,7 +55,7 @@ class MultiMotorInterface(HardwareInterface):
     def __init__(self, *axisNamesAll, **kwargs):
         """
         Initializes the interface with the given axis names.
-        
+
         Args:
             *axisNamesAll: Names of all axes to manage.
             **kwargs: Additional keyword arguments passed to the base class.
@@ -74,9 +77,9 @@ class MultiMotorInterface(HardwareInterface):
             busyUpdate = {name: b for name, b in bs.items() if b != self._info[name].busy}
 
             # Emit valueChanged signal if any axis is busy
-            if any(bs.values()):
-                vs = self._get()
-                self.valueChanged.emit({name: vs[name] for name, b in bs.items() if b})
+            if any(bs.values()) or len(busyUpdate) > 0:
+                vs = self.get()
+                self.valueChanged.emit({name: vs[name] for name, b in bs.items() if b or name in busyUpdate})
 
             # Update busy state log and emit busyStateChanged signal if any axis has changed its busy state
             if busyUpdate:
@@ -85,7 +88,7 @@ class MultiMotorInterface(HardwareInterface):
                 self.busyStateChanged.emit(busyUpdate)
 
         except RuntimeError as e:
-            logging.warning("Runtime error in _loadState")
+            logging.warning(f"Runtime error in _loadState: {e}")
 
         finally:
             al = self._isAlive()
@@ -96,7 +99,7 @@ class MultiMotorInterface(HardwareInterface):
                 for name, a in aliveUpdate.items():
                     self._info[name].alive = a
                 self.aliveStateChanged.emit(al)
-    
+
     def set(self, wait=False, waitInterval=0.1, **kwargs):
         """
         Sets target values for one or more axes.
@@ -127,11 +130,11 @@ class MultiMotorInterface(HardwareInterface):
                 self._info[name].busy = True
 
             # Set actual values for the axes in kwargs
-            self._set(kwargs)
+            self._set(**kwargs)
 
         if wait:
             self.waitForReady(waitInterval)
-   
+
     def get(self, type=dict):
         """
         Gets the current values of all axes in the specified data type.
@@ -192,7 +195,7 @@ class MultiMotorInterface(HardwareInterface):
         """
         with QtCore.QMutexLocker(self._mutex):
             return self._isBusy()
-    
+
     @property
     def isAlive(self):
         """
@@ -212,7 +215,7 @@ class MultiMotorInterface(HardwareInterface):
             list of str: List of axis names.
         """
         return list(self._info.keys())
-    
+
     def settingsWidget(self):
         """
         Returns a generic settings dialog.
@@ -263,7 +266,7 @@ class MultiMotorInterface(HardwareInterface):
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def _set(self, kwargs):
+    def _set(self, **kwargs):
         """
         Should be implemented in subclasses to provide device-specific logic for setting axis positions.
 
@@ -274,3 +277,79 @@ class MultiMotorInterface(HardwareInterface):
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError("Subclasses must implement this method.")
+
+
+class OffsettableMultiMotorInterface(MultiMotorInterfaceBase):
+    """
+    Add offset functionality for MultiMotor.
+    """
+    offsetChanged = QtCore.pyqtSignal()
+
+    class offsetDict(dict):
+        valueChanged = QtCore.pyqtSignal()
+
+        def __init__(self, axesNames, parent):
+            super().__init__({name: 0 for name in axesNames})
+            self._parent = weakref.ref(parent)
+
+        def __setitem__(self, key, value):
+            super().__setitem__(key, value)
+            self._parent().offsetChanged.emit()
+
+    def __init__(self, *axesNames, autoSave=True, **kwargs):
+        super().__init__(*axesNames, **kwargs)
+        self._offsetDict = self.offsetDict(axesNames, self)
+        if autoSave:
+            self.load()
+            self.offsetChanged.connect(self.save)
+        self.offsetChanged.connect(lambda: self.valueChanged.emit(self.get()))
+
+    def _valueChanged(self):
+        self.valueChanged.emit(self.get())
+
+    def set(self, **kwargs):
+        kwargs = {key: value + self.offset.get(key, 0) for key, value in kwargs.items()}
+        super().set(**kwargs)
+
+    def get(self, type=dict):
+        valueDict = {key: value - self.offset.get(key, 0) for key, value in super().get().items()}
+        if type is dict:
+            return valueDict
+        elif type is list:
+            return [valueDict[name] for name in self.nameList]
+        elif type is np.ndarray:
+            return np.array([valueDict[name] for name in self.nameList])
+        else:
+            raise TypeError("Unsupported type: {}".format(type))
+
+    @property
+    def offset(self):
+        """
+        Dictionary of offset for respective axes.
+        """
+        return self._offsetDict
+
+    def save(self, path=".lys/lys_instr/motorOffsets"):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if os.path.exists(path):
+            with open(path, "r") as file:
+                txt = file.read()
+            d = eval(txt)
+        else:
+            d = {}
+        d.update(self.offset)
+        with open(path, "w") as file:
+            file.write(str(d))
+
+    def load(self, path=".lys/lys_instr/motorOffsets"):
+        if not os.path.exists(path):
+            return
+        with open(path, "r") as file:
+            txt = file.read()
+            d = eval(txt)
+            for key in self.offset.keys():
+                self.offset[key] = d.get(key, 0)
+
+
+class MultiMotorInterface(OffsettableMultiMotorInterface):
+    pass

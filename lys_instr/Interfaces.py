@@ -1,5 +1,5 @@
 from lys.Qt import QtCore
-from lys_instr.Commons import preciseSleep
+from .Utilities import preciseSleep
 
 
 def lock(func):
@@ -20,7 +20,6 @@ def lock(func):
     """
     def wrapper(self, *args, **kwargs):
         with QtCore.QMutexLocker(self._mutex):
-            # func(self, *args, **kwargs)
             return func(self, *args, **kwargs)
     return wrapper
 

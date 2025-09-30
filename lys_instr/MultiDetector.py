@@ -2,7 +2,6 @@ import logging
 import time
 
 from lys.Qt import QtCore
-
 from .Interfaces import HardwareInterface
 
 
@@ -114,7 +113,7 @@ class DetectorInterface(HardwareInterface):
         self.busyStateChanged.emit(True)
 
         self._thread = _AcqThread(self, iter=iter)
-        self._thread.dataAcquired.connect(self.dataAcquired.emit)
+        self._thread.dataAcquired.connect(self.dataAcquired.emit, type=QtCore.Qt.DirectConnection)
         self._thread.finished.connect(self._onAcqFinished, type=QtCore.Qt.DirectConnection)
         if wait and output:
             buffer = {}
@@ -292,20 +291,20 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def frameDim(self):
         """
-        The dimensions for the single data.
+        The number of dimensions for a single frame of data.
 
         Returns:
-            tuple: Dimensions for indexing acquired data.
+            int: Number of dimensions for a single frame.
         """
         return len(self.frameShape)
 
     @property
     def indexDim(self):
         """
-        The dimensions for indexing acquired data frames.
+        The number of dimensions for indexing acquired data frames.
 
         Returns:
-            tuple or None: Dimensions for indexing acquired data.
+            int: Number of dimensions for indexing acquired data.
         """
         return len(self.indexShape)
 

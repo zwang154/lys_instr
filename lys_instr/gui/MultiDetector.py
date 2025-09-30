@@ -36,7 +36,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             expTime = QtWidgets.QDoubleSpinBox()
             expTime.setValue(self._obj.exposure)
             expTime.setRange(0, np.infty)
-            expTime.setDecimals(3)
+            expTime.setDecimals(5)
             expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
             expTime.valueChanged.connect(setExposure)
 
@@ -66,12 +66,12 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.addLayout(imageLayout, stretch=1)
         mainLayout.addLayout(controlsLayout, stretch=0)
-        
+
         self.setLayout(mainLayout)
 
     def _update(self):
         if hasattr(self, "_data"):
-            self._mcut.cui.setRawWave(self._data)
+            self._mcut.cui.updateRawWave(axes=self._obj.axes)
 
     def _dataAcquired(self, data):
         if not hasattr(self, "_data"):
@@ -79,8 +79,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
 
         if data:
-            for idx, frame in data.items():
-                self._data.data[idx[-frame.ndim:]] = frame
+            self._mcut.cui.updateRawWave(data, update=False)
             self._frameCount += 1
 
             # Update frame display every N frames or on last frame
@@ -150,17 +149,18 @@ class _GeneralPanel(QtWidgets.QWidget):
     def __initLayout(self, interval):
         self._iter = QtWidgets.QSpinBox()
         self._iter.setRange(1, 2**31 - 1)
-        self._iter.valueChanged.connect(self._changeInterval)
 
         self._updateInterval = QtWidgets.QSpinBox()
         self._updateInterval.setRange(1, 2**31 - 1)
-        self._updateInterval.valueChanged.connect(self._changeInterval)
         if interval is None:
             self._updateInterval.setEnabled(False)
         else:
             self._updateInterval.setValue(interval)
 
         self._scheduledUpdateCheck = QtWidgets.QCheckBox("Update every", checked=interval is not None, toggled=self._changeInterval)
+
+        self._iter.valueChanged.connect(self._changeInterval)
+        self._updateInterval.valueChanged.connect(self._changeInterval)
         self._scheduledUpdateCheck.stateChanged.connect(self._updateInterval.setEnabled)
 
         grid = QtWidgets.QGridLayout()
@@ -178,5 +178,5 @@ class _GeneralPanel(QtWidgets.QWidget):
         if self._scheduledUpdateCheck.isChecked():
             self._params["interval"] = self._updateInterval.value()
         else:
-            self._params["interval"] = None         
+            self._params["interval"] = None
         self._params["iter"] = self._iter.value()
