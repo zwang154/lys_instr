@@ -1,10 +1,9 @@
-import numpy as np
 import time
 
 from lys_instr.MultiDetector import MultiDetectorInterface
 from lys.Qt import QtWidgets, QtCore
 
-from .detectorData import RandomData
+from .detectorData import RandomData, RamanData
 
 
 class MultiDetectorDummy(MultiDetectorInterface):
@@ -14,7 +13,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
     This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
     """
 
-    def __init__(self, data=None, indexShape=(), frameShape=(100,100), exposure=None, **kwargs):
+    def __init__(self, data=None, indexShape=(), frameShape=(100, 100), exposure=None, **kwargs):
         """
         Initializes the dummy multi-detector with the given parameters.
 
@@ -26,12 +25,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
             **kwargs: Additional keyword arguments passed to the parent class.
         """
         super().__init__(**kwargs)
-        if data is None:
-            self._obj = RandomData(indexShape, frameShape)
-        else:
-            self._obj = data
-
-        self._data = {}
+        self.setData(data, indexShape, frameShape)
         self.exposure = exposure
         self.error = False
         self.start()
@@ -49,7 +43,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
             for idx, data in self._obj:
                 if self._shouldStop:
                     return
-                time.sleep(self.exposure*self._obj.nframes)
+                time.sleep(self.exposure * self._obj.nframes)
                 self._data[idx] = data
                 self.updated.emit()
             i += 1
@@ -119,6 +113,13 @@ class MultiDetectorDummy(MultiDetectorInterface):
         """
         return _OptionalPanel(self)
 
+    def setData(self, data=None, indexShape=None, frameShape=None):
+        if data is None:
+            self._obj = RandomData(indexShape, frameShape)
+        else:
+            self._obj = data
+        self._data = {}
+
 
 class _OptionalPanel(QtWidgets.QWidget):
     """
@@ -144,9 +145,23 @@ class _OptionalPanel(QtWidgets.QWidget):
         Initializes and arranges the widgets in the optional settings panel.
         """
         self._switch = QtWidgets.QPushButton("Change", clicked=self._toggleAlive)
-        aliveLayout = QtWidgets.QVBoxLayout()
+        aliveLayout = QtWidgets.QHBoxLayout()
+        aliveLayout.addWidget(QtWidgets.QLabel("Alive State:"), alignment=QtCore.Qt.AlignCenter)
         aliveLayout.addWidget(self._switch, alignment=QtCore.Qt.AlignCenter)
-        self.setLayout(aliveLayout)
+
+        dummyOptionsLayout = QtWidgets.QHBoxLayout()
+        dummyOptions = {"Raman": RamanData(scanLevel=0), "Random": RandomData((), (600,))}
+        dummySelector = _DummySelector(self._obj, dummyOptions)
+        dummySelector.setCurrentByValue(self._obj._obj)
+        # dummySelector.changed.connect(self._obj.refreshGUI.emit)
+        dummyOptionsLayout.addWidget(QtWidgets.QLabel("Dummy Data:"), alignment=QtCore.Qt.AlignCenter)
+        dummyOptionsLayout.addWidget(dummySelector, alignment=QtCore.Qt.AlignCenter)
+
+        panelLayout = QtWidgets.QVBoxLayout()
+        panelLayout.addLayout(aliveLayout)
+        panelLayout.addLayout(dummyOptionsLayout)
+
+        self.setLayout(panelLayout)
 
     def _toggleAlive(self):
         """
@@ -158,3 +173,30 @@ class _OptionalPanel(QtWidgets.QWidget):
         if data:
             backend.dataAcquired.emit(data)
         backend.aliveStateChanged.emit(backend.isAlive)
+
+
+class _DummySelector(QtWidgets.QComboBox):
+
+    changed = QtCore.pyqtSignal(str)
+
+    def __init__(self, detector, dummyData):
+        super().__init__()
+        self._detector = detector
+        self._dummyData = dummyData
+        self._initLayout()
+        self.setObjectName("Dummy_options")
+
+    def _initLayout(self):
+        self.addItems(self._dummyData.keys())
+        self.currentTextChanged.connect(self._changed)
+
+    def _changed(self, text):
+        selected = self._dummyData[text]
+        self._detector.setData(data=selected)
+        self.changed.emit(text)
+
+    def setCurrentByValue(self, value):
+        for key, val in self._dummyData.items():
+            if type(val) == type(value):
+                self.setCurrentText(key)
+                break
