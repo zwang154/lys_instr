@@ -1,18 +1,24 @@
 import numpy as np
 import time
 
-from lys_instr import MultiMotorInterface
+from lys_instr import MultiControllerInterface
 from lys_instr.dummy.MultiMotor import _OptionalPanel
+from enum import Enum
 
 
-class MultiSwitchDummy(MultiMotorInterface):
-    def __init__(self, *axisNamesAll, **kwargs):      
+def Level(levelNames):
+    return Enum('Level', {name: i for i, name in enumerate(levelNames)})
+
+
+class MultiSwitchDummy(MultiControllerInterface):
+    def __init__(self, *axisNamesAll, levelNames=['OFF', 'LOW', 'MEDIUM', 'HIGH'], **kwargs):
         super().__init__(*axisNamesAll, **kwargs)
         n = len(self.nameList)
-        self.__position = np.zeros(n, dtype=bool)
+        self._level = Level(['NONE'] + levelNames)
+        self.__state = [self._level(0) for _ in range(n)]
+        self.__target = [self._level(0) for _ in range(n)]
+        self.__before = [self._level(0) for _ in range(n)]
         self.__timing = np.full(n, np.nan)
-        self.__target = np.zeros(n, dtype=bool)
-        self.__before = np.zeros(n, dtype=bool)
         self._switchInterval = 0.1
         self._error = np.full(n, False)
         self.start()
@@ -21,9 +27,13 @@ class MultiSwitchDummy(MultiMotorInterface):
         return time.perf_counter()
 
     def _set(self, **target):
-        self.__before = self.get(type=np.ndarray)
-        self.__timing = np.full(len(self.nameList), self._time())
-        self.__target = np.array([bool(target[name]) if name in target else np.nan for name in self.nameList])
+        now = self._time()
+        before = self.get()
+        for i, name in enumerate(self.nameList):
+            if name in target:
+                self.__before[i] = before[name]
+                self.__timing[i] = now
+                self.__target[i] = target[name]
 
     def _get(self):
         val = {}
@@ -35,24 +45,26 @@ class MultiSwitchDummy(MultiMotorInterface):
         # When axes are at rest
         if np.all(np.isnan(self.__timing)):
             for i, name in enumerate(self.nameList):
-                val[name] = bool(self.__position[i])
+                val[name] = self.__state[i]
             return val
 
         now = self._time()
         timeElapsed = now - self.__timing
-        movingIndices = np.where(~np.isnan(self.__target) & ~np.isnan(self.__timing))[0]
-        self.__position[movingIndices] = (self.__before[movingIndices] * (timeElapsed < self._switchInterval) + self.__target[movingIndices] * (timeElapsed >= self._switchInterval)).astype(bool)
-
-        finishedIndices = movingIndices[timeElapsed[movingIndices] >= self._switchInterval]
-        self.__timing[finishedIndices] = np.nan
-        self.__target[finishedIndices] = np.nan
+        busyIndices = [i for i, (t, target) in enumerate(zip(self.__timing, self.__target)) if not np.isnan(t) and target.name != 'NONE']
+        for i in busyIndices:
+            if timeElapsed[i] < self._switchInterval:
+                self.__state[i] = self.__before[i]
+            else:
+                self.__state[i] = self.__target[i]
+                self.__timing[i] = np.nan
+                self.__target[i] = self._level(0)
 
         for i, name in enumerate(self.nameList):
-            val[name] = bool(self.__position[i])
+            val[name] = self.__state[i]
         return val
 
     def _isBusy(self):
-        bs = (~np.isnan(self.__timing) & ~np.isnan(self.__target)).astype(bool)
+        bs = [not np.isnan(t) and target.name != 'NONE' for t, target in zip(self.__timing, self.__target)]
         return {name: bs[i] for i, name in enumerate(self.nameList)}
 
     def _isAlive(self):
