@@ -1,5 +1,15 @@
 
 class DummyDataInterface:
+    @classmethod
+    def name(cls):
+        """
+        Name of the dummy data set.
+
+        Returns:
+            str: Name of the dummy data set.
+        """
+        raise NotImplementedError("Dummy data class should impolement this method.")
+    
     @property
     def frameShape(self):
         """

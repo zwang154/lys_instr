@@ -7,6 +7,10 @@ class RandomData(DummyDataInterface):
         self._frameShape = frameShape
         self._indexShape = indexShape
 
+    @classmethod
+    def name(cls):
+        return "Random"
+
     @property
     def frameShape(self):
         return self._frameShape
@@ -46,3 +50,10 @@ class RandomData(DummyDataInterface):
             raise StopIteration()
         return np.unravel_index(self._n-1, self._indexShape_act), np.random.rand(*self._frameShape_act)
     
+class RandomData2D(RandomData):
+    def __init__(self):
+        super().__init__((), (100, 100))
+
+    @classmethod
+    def name(cls):
+        return "Random 2D"

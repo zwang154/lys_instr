@@ -3,7 +3,7 @@ import time
 from lys_instr.MultiDetector import MultiDetectorInterface
 from lys.Qt import QtWidgets, QtCore
 
-from .detectorData import RandomData, RamanData
+from .detectorData import RandomData, DummyDataSelector
 
 
 class MultiDetectorDummy(MultiDetectorInterface):
@@ -150,10 +150,8 @@ class _OptionalPanel(QtWidgets.QWidget):
         aliveLayout.addWidget(self._switch, alignment=QtCore.Qt.AlignCenter)
 
         dummyOptionsLayout = QtWidgets.QHBoxLayout()
-        dummyOptions = {"Raman": RamanData(scanLevel=0), "Random": RandomData((), (600,))}
-        dummySelector = _DummySelector(self._obj, dummyOptions)
-        dummySelector.setCurrentByValue(self._obj._obj)
-        # dummySelector.changed.connect(self._obj.refreshGUI.emit)
+        dummySelector = DummyDataSelector(self._obj)
+        dummySelector.changed.connect(lambda data: self._obj.setData(data))
         dummyOptionsLayout.addWidget(QtWidgets.QLabel("Dummy Data:"), alignment=QtCore.Qt.AlignCenter)
         dummyOptionsLayout.addWidget(dummySelector, alignment=QtCore.Qt.AlignCenter)
 
@@ -175,28 +173,3 @@ class _OptionalPanel(QtWidgets.QWidget):
         backend.aliveStateChanged.emit(backend.isAlive)
 
 
-class _DummySelector(QtWidgets.QComboBox):
-
-    changed = QtCore.pyqtSignal(str)
-
-    def __init__(self, detector, dummyData):
-        super().__init__()
-        self._detector = detector
-        self._dummyData = dummyData
-        self._initLayout()
-        self.setObjectName("Dummy_options")
-
-    def _initLayout(self):
-        self.addItems(self._dummyData.keys())
-        self.currentTextChanged.connect(self._changed)
-
-    def _changed(self, text):
-        selected = self._dummyData[text]
-        self._detector.setData(data=selected)
-        self.changed.emit(text)
-
-    def setCurrentByValue(self, value):
-        for key, val in self._dummyData.items():
-            if type(val) == type(value):
-                self.setCurrentText(key)
-                break

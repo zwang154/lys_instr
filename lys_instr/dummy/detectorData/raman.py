@@ -16,6 +16,10 @@ class RamanData(DummyDataInterface):
             raise NotImplementedError("scanLevel must be 0 or 1")
         self._count = 0
 
+    @classmethod
+    def name(cls):
+        return "Raman"
+
     @property
     def frameShape(self):
         return (self._data.shape[-1],)

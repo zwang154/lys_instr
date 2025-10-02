@@ -16,10 +16,12 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         super().__init__()
         self._obj = obj
         self._params = {"wait": wait, "interval": interval, "iter": iter}
+        self._frameCount = None
 
         self._obj.busyStateChanged.connect(self._setButtonState)
         self._obj.aliveStateChanged.connect(self._setButtonState)
         self._obj.dataAcquired.connect(self._dataAcquired)
+        self._obj.busyStateChanged.connect(self._onAcqFinished)
 
         self._initLayout()
 
@@ -28,6 +30,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         self._mcut = multicut(Wave(np.random.rand(*self._obj.dataShape), *self._obj.axes), returnInstance=True, subWindow=False)
         self._mcut.widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self._mcut.loadDefaultTemplate()
+        self._mcut.cui.dimensionChanged.connect(lambda: self._mcut.loadDefaultTemplate())
 
         # Acquisition control widgets
         if self._obj.exposure is not None:
@@ -70,15 +73,16 @@ class MultiDetectorGUI(QtWidgets.QWidget):
         self.setLayout(mainLayout)
 
     def _update(self):
-        if hasattr(self, "_data"):
+        if self._frameCount is not None:
             self._mcut.cui.updateRawWave(axes=self._obj.axes)
 
     def _dataAcquired(self, data):
-        if not hasattr(self, "_data"):
-            self._frameCount = 0
-            self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)       # Moved from _onAcquire to here?
-
         if data:
+            if self._frameCount is None:
+                self._frameCount = 0
+                d = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
+
+            self._mcut.cui.setRawWave(d)
             self._mcut.cui.updateRawWave(data, update=False)
             self._frameCount += 1
 
@@ -91,10 +95,11 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             if update:
                 self._update()
 
+    def _onAcqFinished(self, b):
+        if b is False:  # Not busy anymore
+            self._frameCount = None
+
     def _onAcquire(self, mode="acquire"):
-        self._frameCount = 0
-        self._data = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
-        self._mcut.cui.setRawWave(self._data)
         if mode == "acquire":
             self._obj.startAcq(wait=self._params["wait"], iter=self._params["iter"])
         else:
