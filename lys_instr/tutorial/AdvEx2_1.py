@@ -9,7 +9,7 @@ class AppWindow(LysSubWindow):
         super().__init__(parent)
         self.setWindowTitle("Advanced Example #2-1")
         self._storage = DataStorage()
-        self._detector = dummy.MultiDetectorDummy((8, 8), (256, 256), exposure=0.1)
+        self._detector = dummy.MultiDetectorDummy(indexShape=(8, 8), frameShape=(256, 256), exposure=0.1)
         self._motor = dummy.MultiMotorDummy("x", "y", "t")
         self._pre = PreCorrector([self._motor])
         self._switch = dummy.MultiSwitchDummy("A")
