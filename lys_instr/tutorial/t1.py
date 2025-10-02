@@ -1,21 +1,16 @@
 from lys.Qt import QtWidgets
 from lys_instr import PreCorrector, gui, dummy
-from lys_instr.PreCorrection import _FunctionCombination, _InterpolatedFunction
 
 class AppWindow(QtWidgets.QGroupBox):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._motor = dummy.MultiMotorDummy("x", "y")
+        self._motor = dummy.MultiMotorDummy("x", "y", "z")
         self._corrector = PreCorrector([self._motor])
         self._initLayout()
         self.adjustSize()
 
     def _initLayout(self):
-        _motorGUI = gui.MultiMotorGUI(self._motor, axisNamesSettable=("x",), axisNamesJoggable=("x",)) # only enable "x" axis control
-
-        self._corrector.corrections["y"] = _FunctionCombination()
-        self._corrector.corrections["y"].functions["x"] = _InterpolatedFunction(lambda x: x, ["x"])
-        self._corrector.corrections["y"].expression = "x/2"
+        _motorGUI = gui.MultiMotorGUI(self._motor, axisNamesSettable=("x", "y"), axisNamesJoggable=("x",)) # only enable "x" axis control
         _correctorGUI = gui.PreCorrectorGUI(self._corrector)
 
         self._tab = QtWidgets.QTabWidget()

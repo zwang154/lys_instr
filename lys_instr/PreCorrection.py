@@ -8,8 +8,7 @@ class PreCorrector(QtCore.QObject):
         self._enabled = True
         self._controllers = {}
         for c in controllers:
-            c.busyStateChanged.connect(self._busy, QtCore.Qt.QueuedConnection)
-            c.valueChanged.connect(self._correct, QtCore.Qt.QueuedConnection)
+            c.busyStateChanged.connect(self._busy, QtCore.Qt.DirectConnection)
             self._controllers.update({name: c for name in c.nameList})
             c._isBusy_orig = c._isBusy
 
@@ -23,18 +22,6 @@ class PreCorrector(QtCore.QObject):
     def corrections(self):
         return self._correctParams
 
-    @avoidCircularReference
-    def _correct(self, values={}):
-        if not self._enabled:
-            return
-
-        for name, func in self.corrections.items():
-            if not func.enabled:
-                continue
-            elif any([arg in values for arg in func.argNames(excludeFixed=False)]):
-                params = {arg: self._controllers[arg].get()[arg] for arg in func.argNames()}
-                self._controllers[name].set(**{name: func(**params)})
-
     def _busy(self, busy):
         if not self._enabled:
             return
@@ -43,9 +30,18 @@ class PreCorrector(QtCore.QObject):
             if not f.enabled:
                 continue
 
+            # Replace busy method of arg
+            flg =False
             for arg, b in busy.items():
                 if arg in f.argNames(excludeFixed=True):  # e.g. arg is t
                     self._replaceBusyMethod(arg, y, not b)
+                    flg = True
+
+            # set y if any arg is busy
+            if flg:
+                params = {arg: self._controllers[arg].get()[arg] for arg in f.argNames() if arg not in busy}
+                params.update({arg: self._controllers[arg].target[arg] for arg in f.argNames() if arg in busy})
+                self._controllers[y].set(**{y: f(**params)}, lock=False)
 
     def _replaceBusyMethod(self, targ, dep, reset=False):
         """

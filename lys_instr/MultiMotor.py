@@ -27,7 +27,7 @@ class _AxisInfo():
         """
         self.busy = busy
         self.alive = alive
-
+        self.target = None
 
 class MultiMotorInterfaceBase(HardwareInterface):
     """
@@ -85,6 +85,8 @@ class MultiMotorInterfaceBase(HardwareInterface):
             if busyUpdate:
                 for name, b in busyUpdate.items():
                     self._info[name].busy = b
+                    if b is False:
+                        self._info[name].target = None
                 self.busyStateChanged.emit(busyUpdate)
 
         except RuntimeError as e:
@@ -100,7 +102,7 @@ class MultiMotorInterfaceBase(HardwareInterface):
                     self._info[name].alive = a
                 self.aliveStateChanged.emit(al)
 
-    def set(self, wait=False, waitInterval=0.1, **kwargs):
+    def set(self, wait=False, waitInterval=0.1, lock=True, **kwargs):
         """
         Sets target values for one or more axes.
 
@@ -116,24 +118,31 @@ class MultiMotorInterfaceBase(HardwareInterface):
         Raises:
             ValueError: If any provided axis name is invalid.
         """
-        with QtCore.QMutexLocker(self._mutex):
-            # Validate axis names
-            invalid = [name for name in kwargs if name not in self._info]
-            if invalid:
-                raise ValueError(f"Axis name(s) {invalid} not recognized. Available axes: {self.nameList}")
-
-            # Update busy state for each axis in kwargs and emit busy state only for axes that are now busy
-            updated = {name: True for name in kwargs if not self._info[name].busy}
-            if len(updated) > 0:
-                self.busyStateChanged.emit(updated)
-            for name in kwargs.keys():
-                self._info[name].busy = True
-
-            # Set actual values for the axes in kwargs
-            self._set(**kwargs)
+        if lock:
+            with QtCore.QMutexLocker(self._mutex):
+                self._set_impl(**kwargs)
+        else:
+            self._set_impl(**kwargs)
 
         if wait:
             self.waitForReady(waitInterval)
+
+    def _set_impl(self, **kwargs):
+        # Validate axis names
+        invalid = [name for name in kwargs if name not in self._info]
+        if invalid:
+            raise ValueError(f"Axis name(s) {invalid} not recognized. Available axes: {self.nameList}")
+
+        # Update busy state for each axis in kwargs and emit busy state only for axes that are now busy
+        updated = {name: True for name in kwargs if not self._info[name].busy}
+        for name in kwargs.keys():
+            self._info[name].target = kwargs[name]
+            self._info[name].busy = True
+        if len(updated) > 0:
+            self.busyStateChanged.emit(updated)
+
+        # Set actual values for the axes in kwargs
+        self._set(**kwargs)
 
     def get(self, type=dict):
         """
@@ -215,6 +224,16 @@ class MultiMotorInterfaceBase(HardwareInterface):
             list of str: List of axis names.
         """
         return list(self._info.keys())
+    
+    @property
+    def target(self):
+        """
+        Returns the current target values of all axes.
+
+        Returns:
+            dict[str, float]: Mapping of axis names to their target positions.
+        """
+        return {name: info.target for name, info in self._info.items() if info.target is not None}
 
     def settingsWidget(self):
         """
