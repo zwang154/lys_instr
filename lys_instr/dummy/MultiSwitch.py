@@ -14,7 +14,7 @@ class MultiSwitchDummy(MultiControllerInterface):
     def __init__(self, *axisNamesAll, levelNames=['OFF', 'LOW', 'MEDIUM', 'HIGH'], **kwargs):
         super().__init__(*axisNamesAll, **kwargs)
         n = len(self.nameList)
-        self._level = Level(['NONE'] + levelNames)
+        self._level = Level([' '] + levelNames)
         self.__state = [self._level(0) for _ in range(n)]
         self.__target = [self._level(0) for _ in range(n)]
         self.__before = [self._level(0) for _ in range(n)]
@@ -50,7 +50,7 @@ class MultiSwitchDummy(MultiControllerInterface):
 
         now = self._time()
         timeElapsed = now - self.__timing
-        busyIndices = [i for i, (t, target) in enumerate(zip(self.__timing, self.__target)) if not np.isnan(t) and target.name != 'NONE']
+        busyIndices = [i for i, (t, target) in enumerate(zip(self.__timing, self.__target)) if not np.isnan(t) and target.name != ' ']
         for i in busyIndices:
             if timeElapsed[i] < self._switchInterval:
                 self.__state[i] = self.__before[i]
@@ -64,7 +64,7 @@ class MultiSwitchDummy(MultiControllerInterface):
         return val
 
     def _isBusy(self):
-        bs = [not np.isnan(t) and target.name != 'NONE' for t, target in zip(self.__timing, self.__target)]
+        bs = [not np.isnan(t) and target.name != ' ' for t, target in zip(self.__timing, self.__target)]
         return {name: bs[i] for i, name in enumerate(self.nameList)}
 
     def _isAlive(self):
