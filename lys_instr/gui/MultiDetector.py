@@ -81,8 +81,8 @@ class MultiDetectorGUI(QtWidgets.QWidget):
             if self._frameCount is None:
                 self._frameCount = 0
                 d = Wave(np.zeros(self._obj.dataShape), *self._obj.axes)
-
-            self._mcut.cui.setRawWave(d)
+                self._mcut.cui.setRawWave(d)
+                
             self._mcut.cui.updateRawWave(data, update=False)
             self._frameCount += 1
 
