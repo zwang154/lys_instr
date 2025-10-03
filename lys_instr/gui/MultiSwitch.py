@@ -107,7 +107,6 @@ class _SwitchRowLayout(QtCore.QObject):
         self._name = label
         self.busy = False
         self.alive = True
-        self._level_enum = getattr(obj, '_level', None)
         self.__initLayout(obj, label)
 
         self._obj.valueChanged.connect(self._valueChanged)
@@ -118,16 +117,13 @@ class _SwitchRowLayout(QtCore.QObject):
         self._label = QtWidgets.QLabel(label)
         self._label.setAlignment(QtCore.Qt.AlignCenter)
 
-        # self._now = QtWidgets.QLineEdit("OFF" if not obj.get()[self._name] else "ON")
-        now = obj.get()[self._name]
-        nowText = now.name if hasattr(now, 'name') else str(now)
-        self._now = QtWidgets.QLineEdit(nowText)
+        self._now = QtWidgets.QLineEdit(obj.get()[self._name])
         self._now.setAlignment(QtCore.Qt.AlignCenter)
         self._now.setReadOnly(True)
         self._now.setStyleSheet("background-color: #f0f0f0;")
 
         self._moveTo = QtWidgets.QComboBox()
-        self._moveTo.addItems([e.name for e in self._level_enum])
+        self._moveTo.addItems([" "] + obj.labelNames)
 
         self._alive = AliveIndicator(obj, axis=label)
 
@@ -140,8 +136,7 @@ class _SwitchRowLayout(QtCore.QObject):
 
     def _valueChanged(self, value):
         if self._name in value:
-            val = value[self._name]
-            self._now.setText(val.name if hasattr(val, 'name') else str(val))
+            self._now.setText(value[self._name])
 
     def _busyChanged(self, busy):
         if self._name in busy:
@@ -158,11 +153,10 @@ class _SwitchRowLayout(QtCore.QObject):
         self._moveTo.setEnabled(not self.busy and self.alive)
 
     def value(self):
-        try:
-            idx = self._moveTo.currentIndex()
-            return list(self._level_enum)[idx]
-        except ValueError:
+        v = self._moveTo.currentText()
+        if v == " ":
             return None
+        return v 
 
 
 class _SettingsDialog(QtWidgets.QDialog):

@@ -294,3 +294,13 @@ class MultiControllerInterface(HardwareInterface):
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError("Subclasses must implement this method.")
+
+
+class MultiSwitchInterface(MultiControllerInterface):
+    def __init__(self, labelNames, *axisNamesAll, **kwargs):
+        super().__init__(*axisNamesAll, **kwargs)
+        self._labels = labelNames
+
+    @property
+    def labelNames(self):
+        return self._labels
