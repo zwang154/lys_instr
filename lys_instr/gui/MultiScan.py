@@ -11,16 +11,19 @@ class _ScanRangeRow(QtWidgets.QWidget):
     def _initLayout(self, title, scannerNames):
         self._title = QtWidgets.QLabel(title)
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
-        self._scanAxis.addItems(list(scannerNames) + ["None"])
+        self._scanAxis.addItems(scannerNames)
         self._scanAxis.currentTextChanged.connect(self._scanAxisChanged)
         self._scanMode = QtWidgets.QComboBox(objectName="ScanRange_scanMode_" + title)
         self._scanMode.addItems(["Linear", "Free"])
+        self._scanMode.setEnabled(False)
         self._from = QtWidgets.QDoubleSpinBox(objectName="ScanRange_from_" + title)
         self._from.setRange(-np.inf, np.inf)
         self._from.setDecimals(4)
+        self._from.setEnabled(False)
         self._step = QtWidgets.QDoubleSpinBox(objectName="ScanRange_step_" + title)
         self._step.setRange(-np.inf, np.inf)
         self._step.setDecimals(4)
+        self._step.setEnabled(False)
         self._numSteps = QtWidgets.QSpinBox(objectName="ScanRange_numSteps_" + title)
         self._numSteps.setRange(1, 100000)
         self._freeExpr = QtWidgets.QLineEdit(objectName="ScanRange_freeExpr_" + title)
@@ -48,10 +51,8 @@ class _ScanRangeRow(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def _scanAxisChanged(self, text):
-        b = text not in ["None", "loop"]
-        if text == "None":
-            self._numSteps.setEnabled(False)
-        elif text == "loop":
+        b = text not in ["loop"]
+        if text == "loop":
             self._scanMode.setCurrentIndex(0)
             self._from.setValue(0)
             self._step.setValue(1)
@@ -201,16 +202,53 @@ class _ScanList(QtWidgets.QListWidget):
 
     def __iter__(self):
         return self._scans.__iter__()
-
+    
+    def __len__(self):
+        return len(self._scans)
+    
+    def __getitem__(self, index):
+        return self._scans[index]
+    
     def save(self):
-        return {"Scan" + str(i): scan.save() for i, scan in enumerate(self._scans)}
+        return {"Scan" + str(i+1): scan.save() for i, scan in enumerate(self._scans)}
     
     def load(self, d):
         self._clear()
         i = 0
-        while "Scan" + str(i) in d:
-            self._add(i, d["Scan" + str(i)])
+        while "Scan" + str(i+1) in d:
+            self._add(i, d["Scan" + str(i+1)])
             i += 1
+
+
+class _FileNameBox(QtWidgets.QGroupBox):
+    def __init__(self, scans):
+        super().__init__("Filename")
+        self.__initLayout()
+        self._scans = scans
+
+    def __initLayout(self):
+        self._name = QtWidgets.QLineEdit(objectName="scan_filename")
+        self._check = QtWidgets.QCheckBox("Default", toggled=self._toggled, objectName="scan_default")
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self._name, 0, 1)
+        layout.addWidget(self._check, 0, 2)
+
+        v = QtWidgets.QVBoxLayout()
+        v.addLayout(layout)
+        v.addWidget(QtWidgets.QLabel("{1}: the first scan param, {2}: the second scan param, ..."))
+        v.addWidget(QtWidgets.QLabel("[1]: the first scan index, [2]: the second scan index, ..."))
+        self.setLayout(v)
+
+    def _toggled(self):
+        self._name.setEnabled(not self._check.isChecked())
+        if self._check.isChecked():
+            strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]              
+            self._name.setText("/".join(strings))
+
+    @property
+    def text(self):
+        return self._name.text()
 
 
 class ScanWidget(QtWidgets.QWidget):
@@ -238,9 +276,10 @@ class ScanWidget(QtWidgets.QWidget):
     def _initLayout(self, scanners, process):
         self._statusLabel = QtWidgets.QLabel("[Status] Idle.")
 
-        self._list = ScanList(self._scanners)
+        self._list = _ScanList(scanners)
+        self._nameBox = _FileNameBox(self._list)
 
-        processBox = self.__detectorBox(process, scanners)
+        processBox = self.__detectorBox(process)
 
         self._startBtn = QtWidgets.QPushButton("Start", clicked=self._start)
         self._stopBtn = QtWidgets.QPushButton("Stop", clicked=self._stop)
@@ -254,12 +293,13 @@ class ScanWidget(QtWidgets.QWidget):
         layout.addWidget(self._statusLabel)
         layout.addWidget(self._list)
         layout.addWidget(processBox)
+        layout.addWidget(self._nameBox)
         layout.addLayout(btnsLayout)
         layout.addStretch()
 
         self.setLayout(layout)
     
-    def __detectorBox(self, detectors, scanners):
+    def __detectorBox(self, detectors):
         self._detectorsBox = QtWidgets.QComboBox(objectName="ScanTab_detectors")
         self._detectorsBox.addItems(detectors.keys())
 
@@ -267,70 +307,58 @@ class ScanWidget(QtWidgets.QWidget):
         self._exposure.setRange(0, np.inf)
         self._exposure.setDecimals(5)
 
-        self._combo_ref = QtWidgets.QComboBox(objectName="ScanTab_combo_ref")
-        self._combo_ref.addItems(scanners.keys())
-        self._combo_ref.setEnabled(False)
-        self._value_ref = QtWidgets.QDoubleSpinBox(objectName="ScanTab_value_ref")
-        self._value_ref.setEnabled(False)
-        self._check_ref = QtWidgets.QCheckBox("Reference", objectName="ScanTab_reference")
-        self._check_ref.toggled.connect(self._combo_ref.setEnabled)
-        self._check_ref.toggled.connect(self._value_ref.setEnabled)
-
         layout = QtWidgets.QGridLayout()
         layout.addWidget(QtWidgets.QLabel("Detectors"), 0, 0)
         layout.addWidget(self._detectorsBox, 0, 1, 1, 2)
         layout.addWidget(QtWidgets.QLabel("Exposure"), 1, 0)
         layout.addWidget(self._exposure, 1, 1, 1, 2)
-        layout.addWidget(self._check_ref, 2, 0)
-        layout.addWidget(self._combo_ref, 2, 1)
-        layout.addWidget(self._value_ref, 2, 2)
 
         processBox = QtWidgets.QGroupBox("Process")
         processBox.setLayout(layout)
         return processBox
         
     def _start(self):
-        process = _DetectorProcess(self._detectors[self._detectorsBox.currentText()], self._exposure.value(), **self.__getRefInfo())
-        for i, s in enumerate([s for s in self._list]):
-            process = _ScanProcess(s.scanName, self._scanners[s.scanName], s.scanRange, process, addFolder=(i != 0), addName=(i == 0))
-        process.statusUpdated.connect(lambda s: self._statusLabel.setText("[Scanning...] " + s))
+        process = _DetectorProcess(self._detectors[self._detectorsBox.currentText()], self._exposure.value())
+        for s in self._list:
+            process = _ScanProcess(s.scanName, self._scanners[s.scanName], s.scanRange, process)
+        process.beforeAcquisition.connect(self._updateName)
 
         self._statusLabel.setText("[Status] Starting...")
         self._storage.numbered = False
         self._storage.enabled = True
         self._storage.tagRequest.connect(self._setScanNames)
+        self._name = self._nameBox.text
 
         self._thread = _Executor(process, self._storage)
         self._thread.finished.connect(self._scanFinished)
 
         self._startBtn.setEnabled(False)
         self._stopBtn.setEnabled(True)
-        self._oldFolder = self._storage.folder
         self._oldName = self._storage.name
         self._thread.start()
-
-    def __getRefInfo(self):
-        if self._check_ref.isChecked():
-            ref = self._combo_ref.currentText()
-            value = self._value_ref.value()
-            controller = self._scanners[self._combo_ref.currentText()]
-            return {"ref": ref, "value": value, "controller": controller}
-        else:
-            return {}
-
-    def _stop(self):
-        self._thread.kill()
 
     def _scanFinished(self):
         self._startBtn.setEnabled(True)
         self._stopBtn.setEnabled(False)
-        self._storage.folder = self._oldFolder
         self._storage.name = self._oldName
         self._storage.numbered = True
         self._statusLabel.setText("[Status] Finished.")
 
+    def _updateName(self):
+        name = str(self._name)
+        for i, scan in enumerate(self._list):
+            scanner = self._scanners[scan.scanName]
+            value = scanner.get()[scan.scanName]
+            index = np.argmin(abs(np.array(scan.scanRange) - value))
+            name = name.replace("{"+str(i+1)+"}", f"{value:.5g}")
+            name = name.replace("["+str(i+1)+"]", str(index))
+        self._storage.name = name
+
+    def _stop(self):
+        self._thread.kill()
+
     def _setScanNames(self, scanNamesDict):
-        scanNamesDict["scanNames"] = [s.scanName for s in self._scanRangeRows if s.scanName != "None"]
+        scanNamesDict["scanNames"] = [s.scanName for s in self._list]
 
 
 class _Loop(QtCore.QObject):
@@ -365,34 +393,20 @@ class _Executor(QtCore.QThread):
 
 
 class _DetectorProcess(QtCore.QObject):
-    statusUpdated = QtCore.pyqtSignal(str)
     quitRequested = QtCore.pyqtSignal()
+    beforeAcquisition = QtCore.pyqtSignal()
 
-    def __init__(self, detector, exposure, ref=None, controller=None, value=None):
+    def __init__(self, detector, exposure):
         super().__init__()
         self._detector = detector
         self._exposure = exposure
-        self._ref = ref
-        self._controller = controller
-        self._value = value
 
-    def execute(self, storage):
-        oldFolder = storage.folder
-        storage.folder = oldFolder + "/pump"
-        
+    def execute(self, storage):        
         if self._detector.exposure is not None:
             self._detector.exposure = self._exposure
+        self.beforeAcquisition.emit()
         self._acquire()
-        if self._ref is not None:
-            oldValue = self._controller.get()[self._ref]
-            storage.folder = oldFolder + "/probe"
-            self._controller.set(**{self._ref: self._value}, wait=True)
-            self._acquire()
-            self._controller.set(**{self._ref: oldValue}, wait=True)
-        self.statusUpdated.emit(f"[Executing] Folder: {storage.folder} | Name: {storage.name}")
         
-        storage.folder = oldFolder
-
     def _acquire(self):
         loop = QtCore.QEventLoop()
         self.quitRequested.connect(loop.quit)
@@ -411,49 +425,26 @@ class _DetectorProcess(QtCore.QObject):
 
 
 class _ScanProcess(QtCore.QObject):
-    statusUpdated = QtCore.pyqtSignal(str)
+    beforeAcquisition = QtCore.pyqtSignal()
 
-    def __init__(self, name, obj, values, process, addFolder=False, addName=False):
+    def __init__(self, name, obj, values, process):
         super().__init__()
         self._name = name
         self._obj = obj
         self._values = values
-        self._addFolder = addFolder
-        self._addName = addName
         self._process = process
-        self._process.statusUpdated.connect(self._statusUpdated)
+        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
         self._shouldStop = False
         self._mutex = QtCore.QMutex()
 
     def execute(self, storage):
-        oldFolder = storage.folder
-        oldName = storage.name
-        currentFolder = oldFolder
-
-        for i, value in enumerate(self._values):
+        for value in self._values:
             if self._shouldStop:
                 return
             self._obj.set(**{self._name: value}, wait=True)
-            if self._addFolder:
-                currentFolder = f"{oldFolder}/{self._name}{str(i).zfill(len(str(len(self._values))))}"
-                storage.folder = currentFolder
-            else:
-                storage.folder = currentFolder
-            if self._addName:
-                storage.name = f"{oldName}_{self._name}{i}"
             self._process.execute(storage)
-
-        storage.folder = oldFolder
-        storage.name = oldName
 
     def stop(self):
         with QtCore.QMutexLocker(self._mutex):
             self._shouldStop = True
         self._process.stop()
-
-    def _statusUpdated(self, text):
-        values = self._obj.get()
-        value = values.get(self._name, None)
-        value = 0 if np.isclose(value, 0, atol=1e-15) else value
-        status = f"{self._name}: {value:.5g}, {text}"
-        self.statusUpdated.emit(status)
