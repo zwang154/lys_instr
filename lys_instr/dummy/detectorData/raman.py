@@ -7,7 +7,7 @@ class RamanData(DummyDataInterface):
     def __init__(self, scanLevel=0):
         sample = np.load(os.path.join('sampleRamanData.npy'))
         self._data = sample[:, :, :, 1, :]
-        self._axes = [sample[0, 0, 0, 0, :]]
+        self._axes = [np.linspace(0, 360, self._data.shape[-2], endpoint=False), sample[0, 0, 0, 0, :]][-1 - scanLevel:]
         if scanLevel == 1:
             self._indexShape = (self._data.shape[-2],)
         elif scanLevel == 0:

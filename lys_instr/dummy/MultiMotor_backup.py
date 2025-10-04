@@ -5,6 +5,46 @@ from lys_instr import MultiMotorInterface
 from lys.Qt import QtWidgets, QtCore
 
 
+class _ValueInfo(QtCore.QObject):
+    def __init__(self, speed, interval):
+        super().__init__()
+        self.position = 0
+        self._speed = speed
+        self._interval = interval
+        self._timerActive = False
+        self.error = False
+
+    def set(self, target):
+        self._before = self.position
+        self._target = target
+        self._timing = time.perf_counter()
+        if not self._timerActive:
+            self._timerActive = True
+            self._timerStart()
+
+    def _timerStart(self):
+        QtCore.QTimer.singleShot(int(self._interval * 1000), self._update)
+
+    def _update(self):
+        self._sign = np.sign(self._target - self._before)
+        now = time.perf_counter()
+        self.position = self._before + self._sign * self._speed * (now - self._timing)
+        if np.sign(self.position - self._target) == self._sign:
+            self.position = self._target
+            self._target = None
+            self._timerActive = False
+        else:
+            self._timerStart()
+
+    def stop(self):
+        self._timerActive = False
+        self._target = None
+
+    @property
+    def busy(self):
+        return self._timerActive
+
+
 class MultiMotorDummy(MultiMotorInterface):
     """
     Dummy implementation of ``MultiMotorInterface``.
@@ -12,7 +52,7 @@ class MultiMotorDummy(MultiMotorInterface):
     This class simulates a multi-axis motor controller, including axis positions, busy/alive state management, and per-axis error injection for testing purposes.
     """
 
-    def __init__(self, *axisNamesAll, **kwargs):
+    def __init__(self, *axisNamesAll, speed=0.2, interval=0.1, **kwargs):
         """
         Initializes the dummy multi-axis motor with the given axis names.
 
@@ -26,24 +66,8 @@ class MultiMotorDummy(MultiMotorInterface):
             **kwargs: Additional keyword arguments passed to the parent class.
         """
         super().__init__(*axisNamesAll, **kwargs)
-        n = len(self.nameList)
-        self.__position = np.zeros(n)
-        self.__timing = np.full(n, np.nan)
-        self.__target = np.full(n, np.nan)
-        self.__before = np.zeros(n)
-        self.__signs = np.zeros(n)
-        self._speed = 0.2
-        self._error = np.full(n, False)
+        self._data = {name: _ValueInfo(speed, interval) for name in self.nameList}
         self.start()
-
-    def _time(self):
-        """
-        Returns the current monotonic time in seconds with high precision.
-
-        Returns:
-            float: Monotonic time in seconds.
-        """
-        return time.perf_counter()
 
     def _set(self, **target):
         """
@@ -54,9 +78,9 @@ class MultiMotorDummy(MultiMotorInterface):
         Args:
             target (dict[str, float]): Mapping of axis names to their target positions.
         """
-        self.__before = self.get(type=np.ndarray)
-        self.__timing = np.full(len(self.nameList), self._time())
-        self.__target = np.array([target[name] if name in target else np.nan for name in self.nameList])
+        for name, d in self._data.items():
+            if name in target:
+                d.set(target[name])
 
     def _get(self):
         """
@@ -68,41 +92,16 @@ class MultiMotorDummy(MultiMotorInterface):
         Returns:
             dict[str, float]: Mapping of axis names to their current positions.
         """
-        val = {}
-
-        # When axes are dead
-        for i, name in enumerate(self.nameList):
-            if self._error[i]:
-                self._info[name].alive = False
-            else:
-                self._info[name].alive = True
-
-        # When axes are at rest
-        if np.all(np.isnan(self.__timing)):
-            for i, name in enumerate(self.nameList):
-                if name not in val:
-                    val[name] = self.__position[i]
-            return val
-
-        # When axes are moving
-        self.__signs = np.sign(self.__target - self.__before)
-        now = self._time()
-        movingIndices = np.where(~np.isnan(self.__target) & ~np.isnan(self.__timing))[0]
-        self.__position[movingIndices] = self.__before[movingIndices] + self.__signs[movingIndices] * self._speed * (now - self.__timing[movingIndices])
-        for i in movingIndices:
-            if np.sign(self.__position - self.__target)[i] == self.__signs[i]:
-                self.__position[i] = self.__target[i]
-                self.__timing[i] = np.nan
-        for i, name in enumerate(self.nameList):
-            if name not in val:
-                val[name] = float(self.__position[i])
-        return val
+        # print("_get() called", {name: d.position if not d.error else np.nan for name, d in self._data.items()})
+        return {name: d.position if not d.error else np.nan for name, d in self._data.items()}
+        # return {name: d.position for name, d in self._data.items()}
 
     def _stop(self):
         """
         Stops all axes in the dummy motor by clearing their timing information.
         """
-        self.__timing = np.full(len(self.nameList), np.nan)
+        for d in self._data.values():
+            d.stop()
 
     def _isBusy(self):
         """
@@ -111,8 +110,8 @@ class MultiMotorDummy(MultiMotorInterface):
         Returns:
             dict[str, bool]: Mapping of axis names to busy states.
         """
-        bs = (~np.isnan(self.__timing) & ~np.isnan(self.__target)).astype(bool)
-        return {name: bs[i] for i, name in enumerate(self.nameList)}
+        # print("Busy states:", {name: d.busy for name, d in self._data.items()})
+        return {name: d.busy for name, d in self._data.items()}
 
     def _isAlive(self):
         """
@@ -121,7 +120,7 @@ class MultiMotorDummy(MultiMotorInterface):
         Returns:
             dict[str, bool]: Mapping of axis names to alive states.
         """
-        return {name: not self._error[i] for i, name in enumerate(self.nameList)}
+        return {name: not d.error for name, d in self._data.items()}
 
     def settingsWidget(self):
         """

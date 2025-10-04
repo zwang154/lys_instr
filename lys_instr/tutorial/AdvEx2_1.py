@@ -56,16 +56,3 @@ class AppWindow(LysSubWindow):
         rect.setRegion([[0.4, 0.6], [0.4, 0.6]])
         canvas1.update()
 
-        # Set scan parameters
-        # Set scan axis 0 (first row) to 'A', free mode, value [True]
-        _scanGUI._scanRangeRows[0]._scanAxis.setCurrentText("A")
-        _scanGUI._scanRangeRows[0]._scanMode.setCurrentText("Free")
-        _scanGUI._scanRangeRows[0]._freeExpr.setText(str([True,]))
-        # Set scan axis 1 (second row) to 't', linear mode, from 0, step 0.1, 9 steps
-        _scanGUI._scanRangeRows[1]._scanAxis.setCurrentText("t")
-        _scanGUI._scanRangeRows[1]._step.setValue(0.1)
-        _scanGUI._scanRangeRows[1]._numSteps.setValue(9)
-        # Set reference axis to 'A', reference value to False (pump OFF)
-        _scanGUI._check_ref.setChecked(True)
-        _scanGUI._combo_ref.setCurrentText("A")
-        _scanGUI._value_ref.setValue(False)

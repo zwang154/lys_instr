@@ -15,7 +15,7 @@ class _LevelInfo(QtCore.QObject):
     def set(self, state):
         self._target = state
         self._timer = True
-        QtCore.QTimer.singleShot(int(self._interval*1000), self._update)
+        QtCore.QTimer.singleShot(int(self._interval * 1000), self._update)
 
     def _update(self):
         self.state = self._target
@@ -44,7 +44,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
         return {name: d.busy for name, d in self._data.items()}
 
     def _isAlive(self):
-        return {name: d.error is False for name, d in self._data.items()}
+        return {name: not d.error for name, d in self._data.items()}
 
     def settingsWidget(self):
         return _OptionalPanel(self)

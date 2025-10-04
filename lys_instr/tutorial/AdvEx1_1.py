@@ -37,22 +37,3 @@ class AppWindow(LysSubWindow):
         w = QtWidgets.QWidget()
         w.setLayout(HBox)
         self.setWidget(w)
-
-        # Set scan parameters
-        # Set scan axis 0 (first row) to 'phi', linear mode, from 0, step 10, 36 steps
-        _scanGUI._scanRangeRows[0]._scanAxis.setCurrentText("phi")
-        _scanGUI._scanRangeRows[0]._step.setValue(0.1)
-        _scanGUI._scanRangeRows[0]._numSteps.setValue(9)
-        # Set scan axis 1 (second row) to 'y', linear mode, from 0, step 0.1, 9 steps
-        _scanGUI._scanRangeRows[0]._scanAxis.setCurrentText("y")
-        _scanGUI._scanRangeRows[0]._step.setValue(0.1)
-        _scanGUI._scanRangeRows[0]._numSteps.setValue(9)
-        # Set scan axis 2 (third row) to 'x', linear mode, from 0, step 0.1, 8 steps
-        _scanGUI._scanRangeRows[1]._scanAxis.setCurrentText("x")
-        _scanGUI._scanRangeRows[1]._step.setValue(0.1)
-        _scanGUI._scanRangeRows[1]._numSteps.setValue(8)
-
-        # Enable exposure time setting in scan GUI and disable it in detector GUI
-        _scanGUI._exposure.setValue(0.1)
-        # _detectorGUI._expTime.setValue(0)
-        # _detectorGUI._expTime.setEnabled(False)

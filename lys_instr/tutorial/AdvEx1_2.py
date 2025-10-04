@@ -7,11 +7,12 @@ from lys_instr.dummy.detectorData import RamanData
 
 class DetectorAdvEx1GUI(gui.MultiDetectorGUI):
     def _update(self):
-        i, j = divmod(self._frameCount - 1, self._obj.indexShape[0])
-        self._data.axes = self._obj.axes
-        self._mcut.cui.setRawWave(self._data)
-        self._frameView.clear()
-        self._frameView.plot(self._obj.axes[-1], self._data[j].data)
+        if self._frameCount is not None:
+            self._mcut.cui.updateRawWave(axes=self._obj.axes)
+            i, j = divmod(self._frameCount - 1, self._obj.indexShape[0])
+            data = self._mcut.cui.getRawWave()
+            self._frameView.clear()
+            self._frameView.plot(data.axes[-1], data.data[j])
 
 
 class AppWindow(LysSubWindow):
@@ -28,9 +29,9 @@ class AppWindow(LysSubWindow):
 
     def _initLayout(self):
         _storageGUI = gui.DataStorageGUI(self._storage)
-        _detectorGUI = gui.MultiDetectorGUI(self._detector)
+        _detectorGUI = DetectorAdvEx1GUI(self._detector)
         _motorGUI = gui.MultiMotorGUI(self._motor)
-        _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], {"DetectorAdvEx1Dummy": self._detector}, numScans=2)
+        _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], {"MultiDetectorDummy": self._detector}, numScans=2)
 
         self._tab = QtWidgets.QTabWidget()
         self._tab.addTab(_motorGUI, "Motor")
@@ -50,25 +51,12 @@ class AppWindow(LysSubWindow):
 
         # Set multicut display style
         mcut = _detectorGUI._mcut
+        mcut.cui._children.clear()
         graph1 = mcut.cui._children.addWave([1, 0])
-        mcut.display(graph1, type="grid", pos=(0, 0), wid=(3, 4))
+        mcut.display(graph1, type="grid", pos=(0, 0), wid=(4, 4))
 
-        # # Add live frame display
-        # self._frameView = pg.PlotWidget()
-        # mcut._grid.layout.addWidget(self._frameView, 4, 0, 1, 4)
-        # _detectorGUI._frameView = self._frameView
+        # Add live frame display
+        self._frameView = pg.PlotWidget()
+        mcut._grid.layout.addWidget(self._frameView, 4, 0, 1, 4)
+        _detectorGUI._frameView = self._frameView
 
-        # Set scan parameters
-        # Set scan axis 0 (second row) to 'y', linear mode, from 0, step 0.1, 9 steps
-        _scanGUI._scanRangeRows[0]._scanAxis.setCurrentText("y")
-        _scanGUI._scanRangeRows[0]._step.setValue(0.1)
-        _scanGUI._scanRangeRows[0]._numSteps.setValue(9)
-        # Set scan axis 1 (third row) to 'x', linear mode, from 0, step 0.1, 8 steps
-        _scanGUI._scanRangeRows[1]._scanAxis.setCurrentText("x")
-        _scanGUI._scanRangeRows[1]._step.setValue(0.1)
-        _scanGUI._scanRangeRows[1]._numSteps.setValue(8)
-        
-        # Enable exposure time setting in scan GUI and disable it in detector GUI
-        _scanGUI._exposure.setValue(1)
-        # _detectorGUI._expTime.setValue(0)
-        # _detectorGUI._expTime.setEnabled(False)
