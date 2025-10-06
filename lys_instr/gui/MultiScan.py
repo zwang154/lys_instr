@@ -222,7 +222,7 @@ class _ScanList(QtWidgets.QListWidget):
         if index == None:
             index = len(self._scans)
         if type == "scan":
-            scan=_ScanRangeRow("Scan" + str(len(self._scans)+1), self._scanner.keys())
+            scan=_ScanRangeRow("Scan" + str(len(self._scans)+1), self._scanner)
         else:
             scan=_ScanSwitchRow("Scan" + str(len(self._scans)+1), self._switches)
         if data is not None:
@@ -409,7 +409,7 @@ class ScanWidget(QtWidgets.QWidget):
         self._storage.tagRequest.connect(self._setScanNames)
         self._name = self._nameBox.text
 
-        self._thread = _Executor(process, self._storage)
+        self._thread = _Executor(process)
         self._thread.finished.connect(self._scanFinished)
 
         self._startBtn.setEnabled(False)
@@ -459,20 +459,18 @@ class _Loop(QtCore.QObject):
 
 
 class _Executor(QtCore.QThread):
-    def __init__(self, process, storage):
+    def __init__(self, process):
         super().__init__()
         self.process = process
-        self.storage = storage
 
     def run(self):
-        self.process.execute(self.storage)
+        self.process.execute()
 
     def kill(self):
         self.process.stop()
 
 
 class _DetectorProcess(QtCore.QObject):
-    quitRequested = QtCore.pyqtSignal()
     beforeAcquisition = QtCore.pyqtSignal()
 
     def __init__(self, detector, exposure):
@@ -480,27 +478,14 @@ class _DetectorProcess(QtCore.QObject):
         self._detector = detector
         self._exposure = exposure
 
-    def execute(self, storage):        
+    def execute(self):        
         if self._detector.exposure is not None:
             self._detector.exposure = self._exposure
         self.beforeAcquisition.emit()
-        self._acquire()
+        self._detector.startAcq(wait=True)
         
-    def _acquire(self):
-        loop = QtCore.QEventLoop()
-        self.quitRequested.connect(loop.quit)
-        self._detector.busyStateChanged.connect(self._onFinished)
-        self._detector.startAcq()
-        loop.exec_()
-        self._detector.busyStateChanged.disconnect(self._onFinished)
-        self.quitRequested.disconnect(loop.quit)
-
-    def _onFinished(self, busy):
-        if not busy:
-            self.quitRequested.emit()
-
     def stop(self):
-        pass
+        self._detector.stop()
 
 
 class _ScanProcess(QtCore.QObject):
@@ -516,12 +501,12 @@ class _ScanProcess(QtCore.QObject):
         self._shouldStop = False
         self._mutex = QtCore.QMutex()
 
-    def execute(self, storage):
+    def execute(self):
         for value in self._values:
             if self._shouldStop:
                 return
             self._obj.set(**{self._name: value}, wait=True)
-            self._process.execute(storage)
+            self._process.execute()
 
     def stop(self):
         with QtCore.QMutexLocker(self._mutex):

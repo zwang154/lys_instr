@@ -1,5 +1,4 @@
 import logging
-import time
 
 from lys.Qt import QtCore
 from .Interfaces import HardwareInterface
@@ -75,6 +74,7 @@ class DetectorInterface(HardwareInterface):
     def __init__(self, exposure=1, **kwargs):
         super().__init__(**kwargs)
         self._exposure = exposure
+        self._mutex = QtCore.QMutex()
         self._busy = False
 
     def _loadState(self):
@@ -133,11 +133,12 @@ class DetectorInterface(HardwareInterface):
 
         Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.
         """
-        self._busy = False
-        self.busyStateChanged.emit(False)
-        self._thread = None
+        with QtCore.QMutexLocker(self._mutex):
+            self._busy = False
+            self.busyStateChanged.emit(False)
+            self._thread = None
 
-    def waitForReady(self, interval=0.1):
+    def waitForReady(self):
         """
         Blocks further interaction until the device is no longer busy.
 
@@ -147,11 +148,17 @@ class DetectorInterface(HardwareInterface):
         Returns:
             bool: True once all axes become idle.
         """
-        while True:
-            if self.isBusy:
-                time.sleep(interval)
-            else:
-                return True
+        loop = QtCore.QEventLoop()
+
+        def on_busy_changed(b):
+            if not b and loop.isRunning():
+                loop.quit()
+
+        with QtCore.QMutexLocker(self._mutex):
+            if self._busy is False:
+                return
+            self.busyStateChanged.connect(on_busy_changed, QtCore.Qt.QueuedConnection)
+        loop.exec_()
 
     def stop(self):
         """
