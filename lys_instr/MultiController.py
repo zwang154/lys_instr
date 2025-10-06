@@ -1,4 +1,3 @@
-import time
 import logging
 import os
 import weakref
@@ -102,7 +101,7 @@ class MultiControllerInterface(HardwareInterface):
                     self._info[name].alive = a
                 self.aliveStateChanged.emit(al)
 
-    def set(self, wait=False, waitInterval=0.1, lock=True, **kwargs):
+    def set(self, wait=False, lock=True, **kwargs):
         """
         Sets target values for one or more axes.
 
@@ -112,7 +111,6 @@ class MultiControllerInterface(HardwareInterface):
 
         Args:
             wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.
-            waitInterval (float, optional): Polling interval in seconds while waiting. Defaults to 0.1.
             **kwargs: Axis-value pairs to set, e.g., x=1.0, y=2.0.
 
         Raises:
@@ -125,7 +123,7 @@ class MultiControllerInterface(HardwareInterface):
             self._set_impl(**kwargs)
 
         if wait:
-            self.waitForReady(waitInterval)
+            self.waitForReady()
 
     def _set_impl(self, **kwargs):
         # Validate axis names
@@ -175,22 +173,25 @@ class MultiControllerInterface(HardwareInterface):
         """
         self._stop()
 
-    def waitForReady(self, interval=0.1):
+    def waitForReady(self):
         """
         Blocks further interaction until the device is no longer busy.
-
-        Args:
-            interval (float, optional): Polling interval in seconds. Defaults to 0.1.
 
         Returns:
             bool: True once all axes become idle.
         """
-        while True:
-            if any(self.isBusy.values()):
-                time.sleep(interval)
-            else:
-                return True
+        loop = QtCore.QEventLoop()
 
+        def on_busy_changed(b):
+            if not any(b.values()) and loop.isRunning():
+                loop.quit()
+
+        with QtCore.QMutexLocker(self._mutex):
+            if any(self._isBusy().values()) is False:
+                return
+            self.busyStateChanged.connect(on_busy_changed, QtCore.Qt.QueuedConnection)
+        loop.exec_()
+        
     @property
     def isBusy(self):
         """

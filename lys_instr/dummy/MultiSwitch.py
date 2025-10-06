@@ -1,3 +1,4 @@
+import time
 
 from lys.Qt import QtCore
 from lys_instr import MultiSwitchInterface
@@ -6,26 +7,33 @@ from lys_instr.dummy.MultiMotor import _OptionalPanel
 class _LevelInfo(QtCore.QObject):
     def __init__(self, state, interval):
         super().__init__()
-        self.state = state
+        self._state = state
         self._target = None
-        self._timer = None
         self._interval = interval
         self.error = False
 
     def set(self, state):
         self._target = state
-        self._timer = True
-        QtCore.QTimer.singleShot(int(self._interval * 1000), self._update)
+        self._timing = time.perf_counter()
 
     def _update(self):
-        self.state = self._target
-        self._target = None
-        self._timer = None
+        if self._target is None:
+            return
+        if time.perf_counter() - self._timing >= self._interval:
+            self._state = self._target
+            self._target = None
+
+    @property
+    def state(self):
+        self._update()
+        return self._state
 
     @property
     def busy(self):
-        return self._timer is not None
+        self._update()
+        return self._target is not None
     
+
 class MultiSwitchDummy(MultiSwitchInterface):
     def __init__(self, *axisNamesAll, levelNames=['OFF', 'LOW', 'MEDIUM', 'HIGH'], interval=0.1, **kwargs):
         super().__init__(levelNames, *axisNamesAll, **kwargs)
