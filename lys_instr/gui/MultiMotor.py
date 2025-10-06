@@ -318,6 +318,6 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     motor = MultiMotorDummy("x", "y", "z")
-    motorGUI = MultiMotorGUI(motor, axisNamesJoggable=())
+    motorGUI = MultiMotorGUI(motor, axisNamesJoggable=("x"))
     motorGUI.show()
     sys.exit(app.exec_())
