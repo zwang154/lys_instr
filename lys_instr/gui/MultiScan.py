@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from lys.Qt import QtWidgets, QtCore, QtGui
 
@@ -101,6 +102,11 @@ class _ScanRangeRow(QtWidgets.QWidget):
             values = eval(self._freeExpr.text())
         return values
     
+    @property
+    def scanIndex(self):
+        value = self.scanObj.get()[self.scanName]
+        return np.argmin(abs(np.array(self.scanRange) - value))
+
     def setIndex(self, index):
         self._title.setText("Scan " + str(index))
     
@@ -171,7 +177,12 @@ class _ScanSwitchRow(QtWidgets.QWidget):
         elif self._scanMode.currentText() == "Free":
             values = self._freeExpr.text().replace(" ", "").split(",")
         return values
-    
+
+    @property
+    def scanIndex(self):
+        value = self.scanObj.get()[self.scanName]
+        return self.scanRange.index(value)
+
     def setIndex(self, index):
         self._title.setText("Scan " + str(index))
     
@@ -186,6 +197,8 @@ class _ScanSwitchRow(QtWidgets.QWidget):
 
 class _ScanList(QtWidgets.QListWidget):
     _path = ".lys/instr/scanlist.dic"
+    _savePath = ".lys/instr/scanSaveList.dic"
+
     def __init__(self, scanner, switches):
         super().__init__()
         self._scanner = scanner
@@ -193,6 +206,10 @@ class _ScanList(QtWidgets.QListWidget):
         self._scans = []
         self.customContextMenuRequested.connect(self._buildMenu)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        if os.path.exists(self._savePath):
+            with open(self._savePath, "r") as f:
+                d = eval(f.read())
+            self.load(d)
 
     def _buildMenu(self):
         menu = QtWidgets.QMenu()
@@ -205,6 +222,7 @@ class _ScanList(QtWidgets.QListWidget):
             up = QtWidgets.QAction('Move up', triggered=lambda: self._move(-1))
             down = QtWidgets.QAction('Move down', triggered=lambda: self._move(1))
             del_ = QtWidgets.QAction('Remove', triggered=lambda: self._del())
+            menu.addSeparator()
             menu.addAction(up)
             menu.addAction(down)
             menu.addAction(del_)
@@ -258,6 +276,7 @@ class _ScanList(QtWidgets.QListWidget):
     def _clear(self):
         while len(self._scans) > 0:
             self._del(0)
+        self._refresh()
 
     def _copy(self):
         d = self.save()
@@ -272,6 +291,9 @@ class _ScanList(QtWidgets.QListWidget):
     def _refresh(self):
         for i, scan in enumerate(self._scans):
             scan.setIndex(i+1)
+        os.makedirs(os.path.dirname(self._savePath),exist_ok=True)
+        with open(self._savePath, "w") as f:
+            f.write(str(self.save()))
 
     def __iter__(self):
         return self._scans.__iter__()
@@ -354,7 +376,7 @@ class ScanWidget(QtWidgets.QWidget):
         return scanners
 
     def _initLayout(self, scanners, switches, process):
-        self._statusLabel = QtWidgets.QLabel("[Status] Idle.")
+        label = QtWidgets.QLabel("List of parameters (right click to edit)")
 
         self._list = _ScanList(scanners, switches)
         self._nameBox = _FileNameBox(self._list)
@@ -370,7 +392,7 @@ class ScanWidget(QtWidgets.QWidget):
         btnsLayout.addWidget(self._stopBtn)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self._statusLabel)
+        layout.addWidget(label)
         layout.addWidget(self._list)
         layout.addWidget(processBox)
         layout.addWidget(self._nameBox)
@@ -403,7 +425,6 @@ class ScanWidget(QtWidgets.QWidget):
             process = _ScanProcess(s.scanName, s.scanObj, s.scanRange, process)
         process.beforeAcquisition.connect(self._updateName)
 
-        self._statusLabel.setText("[Status] Starting...")
         self._storage.numbered = False
         self._storage.enabled = True
         self._storage.tagRequest.connect(self._setScanNames)
@@ -422,14 +443,16 @@ class ScanWidget(QtWidgets.QWidget):
         self._stopBtn.setEnabled(False)
         self._storage.name = self._oldName
         self._storage.numbered = True
-        self._statusLabel.setText("[Status] Finished.")
 
     def _updateName(self):
         name = str(self._name)
         for i, scan in enumerate(self._list):
             value = scan.scanObj.get()[scan.scanName]
-            index = np.argmin(abs(np.array(scan.scanRange) - value))
-            name = name.replace("{"+str(i+1)+"}", f"{value:.5g}")
+            index = scan.scanIndex
+            if type(value) == str:
+                name = name.replace("{"+str(i+1)+"}", value)
+            else:
+                name = name.replace("{"+str(i+1)+"}", f"{value:.5g}")
             name = name.replace("["+str(i+1)+"]", str(index))
         self._storage.name = name
 
