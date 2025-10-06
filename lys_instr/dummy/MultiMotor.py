@@ -1,53 +1,47 @@
-import numpy as np
+import sys
 import time
-import threading
 
 from lys_instr import MultiMotorInterface
 from lys.Qt import QtWidgets, QtCore
 
 
 class _ValueInfo(QtCore.QObject):
-    def __init__(self, speed, interval):
+    def __init__(self, speed):
         super().__init__()
-        self.position = 0
+        self._position = 0
         self._speed = speed
-        self._interval = interval
-        self._timerActive = False
+        self._target = None
         self.error = False
 
     def set(self, target):
-        self._before = self.position
+        self._before = self._position
         self._target = target
         self._timing = time.perf_counter()
-        if not self._timerActive:
-            self._timerActive = True
-            self._timerStart()
-
-    def _timerStart(self):
-        self._timer = threading.Timer(self._interval, self._update)
-        self._timer.daemon = True
-        self._timer.start()
 
     def _update(self):
-        self._sign = np.sign(self._target - self._before)
-        now = time.perf_counter()
-        self.position = self._before + self._sign * self._speed * (now - self._timing)
-        if np.sign(self.position - self._target) == self._sign:
-            self.position = self._target
+        if self._target is None:
+            return
+        d = self._target - self._before
+        t = (time.perf_counter() - self._timing)/abs(d/self._speed+sys.float_info.epsilon)
+        if t >= 1:
+            self._position = self._target
             self._target = None
-            self._timerActive = False
         else:
-            self._timerStart()
+            self._position = self._before + d * t
 
     def stop(self):
-        self._timer.cancel()
-        self._timer = None
-        self._timerActive = False
+        self._update()
         self._target = None
 
     @property
     def busy(self):
-        return self._timerActive
+        self._update()
+        return self._target is not None
+    
+    @property
+    def position(self):
+        self._update()
+        return self._position
 
 
 class MultiMotorDummy(MultiMotorInterface):
@@ -57,7 +51,7 @@ class MultiMotorDummy(MultiMotorInterface):
     This class simulates a multi-axis motor controller, including axis positions, busy/alive state management, and per-axis error injection for testing purposes.
     """
 
-    def __init__(self, *axisNamesAll, speed=0.2, interval=0.1, **kwargs):
+    def __init__(self, *axisNamesAll, speed=0.2, **kwargs):
         """
         Initializes the dummy multi-axis motor with the given axis names.
 
@@ -71,7 +65,7 @@ class MultiMotorDummy(MultiMotorInterface):
             **kwargs: Additional keyword arguments passed to the parent class.
         """
         super().__init__(*axisNamesAll, **kwargs)
-        self._data = {name: _ValueInfo(speed, interval) for name in self.nameList}
+        self._data = {name: _ValueInfo(speed) for name in self.nameList}
         self.start()
 
     def _set(self, **target):
@@ -97,9 +91,7 @@ class MultiMotorDummy(MultiMotorInterface):
         Returns:
             dict[str, float]: Mapping of axis names to their current positions.
         """
-        # print("_get() called", {name: d.position if not d.error else np.nan for name, d in self._data.items()})
-        return {name: d.position if not d.error else np.nan for name, d in self._data.items()}
-        # return {name: d.position for name, d in self._data.items()}
+        return {name: d.position for name, d in self._data.items()}
 
     def _stop(self):
         """
@@ -115,7 +107,6 @@ class MultiMotorDummy(MultiMotorInterface):
         Returns:
             dict[str, bool]: Mapping of axis names to busy states.
         """
-        # print("Busy states:", {name: d.busy for name, d in self._data.items()})
         return {name: d.busy for name, d in self._data.items()}
 
     def _isAlive(self):

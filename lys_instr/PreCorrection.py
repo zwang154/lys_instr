@@ -35,7 +35,8 @@ class PreCorrector(QtCore.QObject):
             for arg, b in busy.items():
                 if arg in f.argNames(excludeFixed=True):  # e.g. arg is t
                     self._replaceBusyMethod(arg, y, not b)
-                    flg = True
+                    if b:
+                        flg = True
 
             # set y if any arg is busy
             if flg:

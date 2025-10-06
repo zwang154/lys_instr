@@ -1,11 +1,13 @@
+import os
 import numpy as np
 from lys.Qt import QtWidgets, QtCore, QtGui
 
 
 class _ScanRangeRow(QtWidgets.QWidget):
-    def __init__(self, title, scannerNames):
+    def __init__(self, title, scanners):
         super().__init__()
-        self._initLayout(title, scannerNames)
+        self._scanners = scanners
+        self._initLayout(title, scanners.keys())
         self._scanMode.currentTextChanged.connect(self._scanModeChanged)
 
     def _initLayout(self, title, scannerNames):
@@ -85,6 +87,10 @@ class _ScanRangeRow(QtWidgets.QWidget):
             self._numStepsLabel.hide()
 
     @property
+    def scanObj(self):
+        return self._scanners[self.scanName]
+
+    @property
     def scanName(self):
         return self._scanAxis.currentText()
 
@@ -96,6 +102,11 @@ class _ScanRangeRow(QtWidgets.QWidget):
             values = eval(self._freeExpr.text())
         return values
     
+    @property
+    def scanIndex(self):
+        value = self.scanObj.get()[self.scanName]
+        return np.argmin(abs(np.array(self.scanRange) - value))
+
     def setIndex(self, index):
         self._title.setText("Scan " + str(index))
     
@@ -105,7 +116,7 @@ class _ScanRangeRow(QtWidgets.QWidget):
             r = (self._from.value(), self._step.value(), self._numSteps.value())
         else:
             r = self._freeExpr.text()
-        return {"name": self._scanAxis.currentText(), "mode": mode, "range": r}
+        return {"type": "scan", "name": self._scanAxis.currentText(), "mode": mode, "range": r}
     
     def load(self, d):
         self._scanAxis.setCurrentText(d["name"])
@@ -118,24 +129,100 @@ class _ScanRangeRow(QtWidgets.QWidget):
             self._numSteps.setValue(values[2])
 
 
+class _ScanSwitchRow(QtWidgets.QWidget):
+    def __init__(self, title, switches):
+        super().__init__()
+        self._switches = switches
+        self._initLayout(title, switches.keys())
+
+    def _initLayout(self, title, scannerNames):
+        self._title = QtWidgets.QLabel(title)
+        self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
+        self._scanAxis.addItems(scannerNames)
+        self._scanMode = QtWidgets.QComboBox(objectName="ScanRange_scanMode_" + title)
+        self._scanMode.addItems(["Iteration", "Free"])
+        self._scanMode.currentTextChanged.connect(self._scanModeChanged)
+        self._freeExpr = QtWidgets.QLineEdit(objectName="ScanRange_freeExpr_" + title)
+        self._freeExprLabel = QtWidgets.QLabel("Expression")
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self._title, 0, 0)
+        layout.addWidget(QtWidgets.QLabel("Mode"), 0, 1)
+        layout.addWidget(self._freeExprLabel, 0, 2)
+        layout.addWidget(self._scanAxis, 1, 0)
+        layout.addWidget(self._scanMode, 1, 1)
+        layout.addWidget(self._freeExpr, 1, 2)
+        self.setLayout(layout)
+        self._scanModeChanged("Iteration")
+
+    def _scanModeChanged(self, text):
+        self._freeExpr.setEnabled(text!="Iteration")
+        if text == "Iteration" and len(self._freeExpr.text()) == 0:
+            sw = self._switches[self._scanAxis.currentText()]
+            self._freeExpr.setText(", ".join(sw.labelNames))
+
+    @property
+    def scanName(self):
+        return self._scanAxis.currentText()
+
+    @property
+    def scanObj(self):
+        return self._switches[self.scanName]
+
+    @property
+    def scanRange(self):
+        if self._scanMode.currentText() == "Iteration":
+            sw = self._switches[self._scanAxis.currentText()]
+            values = sw.labelNames
+        elif self._scanMode.currentText() == "Free":
+            values = self._freeExpr.text().replace(" ", "").split(",")
+        return values
+
+    @property
+    def scanIndex(self):
+        value = self.scanObj.get()[self.scanName]
+        return self.scanRange.index(value)
+
+    def setIndex(self, index):
+        self._title.setText("Scan " + str(index))
+    
+    def save(self):
+        return {"type": "switch", "name": self._scanAxis.currentText(), "mode": self._scanMode.currentText(), "range": self._freeExpr.text()}
+    
+    def load(self, d):
+        self._scanAxis.setCurrentText(d["name"])
+        self._scanMode.setCurrentText(d["mode"])
+        self._freeExpr.setText(d["range"])
+
+
 class _ScanList(QtWidgets.QListWidget):
     _path = ".lys/instr/scanlist.dic"
-    def __init__(self, scanner):
+    _savePath = ".lys/instr/scanSaveList.dic"
+
+    def __init__(self, scanner, switches):
         super().__init__()
         self._scanner = scanner
+        self._switches = switches
         self._scans = []
         self.customContextMenuRequested.connect(self._buildMenu)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        if os.path.exists(self._savePath):
+            with open(self._savePath, "r") as f:
+                d = eval(f.read())
+            self.load(d)
 
     def _buildMenu(self):
         menu = QtWidgets.QMenu()
 
-        add = QtWidgets.QAction('Add new scan', triggered=lambda: self._add())
+        add = QtWidgets.QAction('Add new scan', triggered=lambda: self._add(type="scan"))
+        switch = QtWidgets.QAction('Add new switch', triggered=lambda: self._add(type="switch"))
         menu.addAction(add)
+        menu.addAction(switch)
         if len(self.selectedItems()) > 0:
             up = QtWidgets.QAction('Move up', triggered=lambda: self._move(-1))
             down = QtWidgets.QAction('Move down', triggered=lambda: self._move(1))
             del_ = QtWidgets.QAction('Remove', triggered=lambda: self._del())
+            menu.addSeparator()
             menu.addAction(up)
             menu.addAction(down)
             menu.addAction(del_)
@@ -149,10 +236,13 @@ class _ScanList(QtWidgets.QListWidget):
         menu.addAction(cls)
         menu.exec_(QtGui.QCursor.pos())
 
-    def _add(self, index=None, data=None):
+    def _add(self, index=None, data=None, type="scan"):
         if index == None:
             index = len(self._scans)
-        scan=_ScanRangeRow("Scan" + str(len(self._scans)+1), self._scanner.keys())
+        if type == "scan":
+            scan=_ScanRangeRow("Scan" + str(len(self._scans)+1), self._scanner)
+        else:
+            scan=_ScanSwitchRow("Scan" + str(len(self._scans)+1), self._switches)
         if data is not None:
             scan.load(data)
         self._scans.insert(index, scan)
@@ -179,12 +269,14 @@ class _ScanList(QtWidgets.QListWidget):
         index = self.row(self.selectedItems()[0])
         item = self._scans[index]
         self._del(index)
-        self._add(index+direction, item.save())
+        saved = item.save()
+        self._add(index+direction, saved, type=saved["type"])
         self._refresh()
 
     def _clear(self):
         while len(self._scans) > 0:
             self._del(0)
+        self._refresh()
 
     def _copy(self):
         d = self.save()
@@ -198,7 +290,10 @@ class _ScanList(QtWidgets.QListWidget):
 
     def _refresh(self):
         for i, scan in enumerate(self._scans):
-            scan.setIndex(i)
+            scan.setIndex(i+1)
+        os.makedirs(os.path.dirname(self._savePath),exist_ok=True)
+        with open(self._savePath, "w") as f:
+            f.write(str(self.save()))
 
     def __iter__(self):
         return self._scans.__iter__()
@@ -216,7 +311,7 @@ class _ScanList(QtWidgets.QListWidget):
         self._clear()
         i = 0
         while "Scan" + str(i+1) in d:
-            self._add(i, d["Scan" + str(i+1)])
+            self._add(i, d["Scan" + str(i+1)], type=d["Scan" + str(i+1)]["type"])
             i += 1
 
 
@@ -252,7 +347,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
 
 
 class ScanWidget(QtWidgets.QWidget):
-    def __init__(self, storage, motors, detectors, numScans=1):
+    def __init__(self, storage, motors, switches, detectors, numScans=1):
         """
         Initializes the ScanTab with storage, motors, and detectors.
         Args:
@@ -263,20 +358,27 @@ class ScanWidget(QtWidgets.QWidget):
         super().__init__()
         self._storage = storage
         self._scanners = self._initScanners(motors)
+        self._switches = self._initSwitches(switches)
         self._detectors = detectors
         self._numScans = numScans
-        self._initLayout(self._scanners, self._detectors)
+        self._initLayout(self._scanners, self._switches, self._detectors)
 
     def _initScanners(self, motors):
         scanners = {"loop": _Loop()}        # Dummy loop as the first scanner
         for motor in motors:
             scanners.update({axis: motor for axis in motor.nameList})
         return scanners
-    
-    def _initLayout(self, scanners, process):
-        self._statusLabel = QtWidgets.QLabel("[Status] Idle.")
 
-        self._list = _ScanList(scanners)
+    def _initSwitches(self, switches):
+        scanners = {}        
+        for sw in switches:
+            scanners.update({axis: sw for axis in sw.nameList})
+        return scanners
+
+    def _initLayout(self, scanners, switches, process):
+        label = QtWidgets.QLabel("List of parameters (right click to edit)")
+
+        self._list = _ScanList(scanners, switches)
         self._nameBox = _FileNameBox(self._list)
 
         processBox = self.__detectorBox(process)
@@ -290,7 +392,7 @@ class ScanWidget(QtWidgets.QWidget):
         btnsLayout.addWidget(self._stopBtn)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self._statusLabel)
+        layout.addWidget(label)
         layout.addWidget(self._list)
         layout.addWidget(processBox)
         layout.addWidget(self._nameBox)
@@ -320,16 +422,15 @@ class ScanWidget(QtWidgets.QWidget):
     def _start(self):
         process = _DetectorProcess(self._detectors[self._detectorsBox.currentText()], self._exposure.value())
         for s in self._list:
-            process = _ScanProcess(s.scanName, self._scanners[s.scanName], s.scanRange, process)
+            process = _ScanProcess(s.scanName, s.scanObj, s.scanRange, process)
         process.beforeAcquisition.connect(self._updateName)
 
-        self._statusLabel.setText("[Status] Starting...")
         self._storage.numbered = False
         self._storage.enabled = True
         self._storage.tagRequest.connect(self._setScanNames)
         self._name = self._nameBox.text
 
-        self._thread = _Executor(process, self._storage)
+        self._thread = _Executor(process)
         self._thread.finished.connect(self._scanFinished)
 
         self._startBtn.setEnabled(False)
@@ -342,15 +443,16 @@ class ScanWidget(QtWidgets.QWidget):
         self._stopBtn.setEnabled(False)
         self._storage.name = self._oldName
         self._storage.numbered = True
-        self._statusLabel.setText("[Status] Finished.")
 
     def _updateName(self):
         name = str(self._name)
         for i, scan in enumerate(self._list):
-            scanner = self._scanners[scan.scanName]
-            value = scanner.get()[scan.scanName]
-            index = np.argmin(abs(np.array(scan.scanRange) - value))
-            name = name.replace("{"+str(i+1)+"}", f"{value:.5g}")
+            value = scan.scanObj.get()[scan.scanName]
+            index = scan.scanIndex
+            if type(value) == str:
+                name = name.replace("{"+str(i+1)+"}", value)
+            else:
+                name = name.replace("{"+str(i+1)+"}", f"{value:.5g}")
             name = name.replace("["+str(i+1)+"]", str(index))
         self._storage.name = name
 
@@ -380,20 +482,18 @@ class _Loop(QtCore.QObject):
 
 
 class _Executor(QtCore.QThread):
-    def __init__(self, process, storage):
+    def __init__(self, process):
         super().__init__()
         self.process = process
-        self.storage = storage
 
     def run(self):
-        self.process.execute(self.storage)
+        self.process.execute()
 
     def kill(self):
         self.process.stop()
 
 
 class _DetectorProcess(QtCore.QObject):
-    quitRequested = QtCore.pyqtSignal()
     beforeAcquisition = QtCore.pyqtSignal()
 
     def __init__(self, detector, exposure):
@@ -401,27 +501,14 @@ class _DetectorProcess(QtCore.QObject):
         self._detector = detector
         self._exposure = exposure
 
-    def execute(self, storage):        
+    def execute(self):        
         if self._detector.exposure is not None:
             self._detector.exposure = self._exposure
         self.beforeAcquisition.emit()
-        self._acquire()
+        self._detector.startAcq(wait=True)
         
-    def _acquire(self):
-        loop = QtCore.QEventLoop()
-        self.quitRequested.connect(loop.quit)
-        self._detector.busyStateChanged.connect(self._onFinished)
-        self._detector.startAcq()
-        loop.exec_()
-        self._detector.busyStateChanged.disconnect(self._onFinished)
-        self.quitRequested.disconnect(loop.quit)
-
-    def _onFinished(self, busy):
-        if not busy:
-            self.quitRequested.emit()
-
     def stop(self):
-        pass
+        self._detector.stop()
 
 
 class _ScanProcess(QtCore.QObject):
@@ -437,12 +524,12 @@ class _ScanProcess(QtCore.QObject):
         self._shouldStop = False
         self._mutex = QtCore.QMutex()
 
-    def execute(self, storage):
+    def execute(self):
         for value in self._values:
             if self._shouldStop:
                 return
             self._obj.set(**{self._name: value}, wait=True)
-            self._process.execute(storage)
+            self._process.execute()
 
     def stop(self):
         with QtCore.QMutexLocker(self._mutex):
