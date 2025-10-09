@@ -1,14 +1,11 @@
 
-Data Storage
-============
+Storage
+=======
 
-Creating a Data Storage Instance
---------------------------------
+Creating a Storage Instance
+---------------------------
 
-A data storage instance can be created by inheriting from the ``DataStorage`` class, 
-which provides essential functions for storing acquired data (see :class:`.DataStorage.DataStorage`).
-
-A data storage instance can be created as follows:
+A storage instance can be created by subclassing ``DataStorage``, which provides essential functions for dynamically saving acquired data to disk.
 
 .. code-block:: python
 
@@ -17,47 +14,21 @@ A data storage instance can be created as follows:
     storage = DataStorage()
 
 
-Creating the Data Storage GUI
------------------------------
+Creating the Storage GUI
+------------------------
 
-A GUI for the data storage can be created by passing the data storage instance to the ``DataStorageGUI`` class. 
-Continuing from the previous example:
+To create the storage GUI subwindow:
 
-.. code-block:: python
+1. Launch *lys* and open the ``proc.py`` file (press Ctrl+P).
 
-    import sys
-    from lys.Qt import QtWidgets
-    from lys_instr import gui
-
-    app = QtWidgets.QApplication(sys.argv)
-    storageGUI = gui.DataStorageGUI(storage)
-    storageGUI.show()
-    sys.exit(app.exec_())
-
-A GUI window like the one below will appear:
-
-.. image:: /lys_instr_/tutorial_/storage_1.png
-    :scale: 80%
-
-Clicking the "File" button allows to choose the data-saving directory ("Base Folder"), 
-under which a "Folder Name" and "File Name" can be specified by direct input.
-The "Numbered" checkbox enables automatic numbering in file names.
-The "Enabled" checkbox toggles data saving on and off.
-Data will be saved in NumPy ndarray format.
-
-
-Starting the GUI in *lys*
--------------------------
-
-The data storage GUI can be launched from within the *lys* application, 
-by adding the code below to the ``proc.py`` file and execute `AppWindow()` in the *lys* command line:
+2. Add the following code to define a class for the storage GUI subwindow and save it (press Ctrl+S).
 
 .. code-block:: python
 
     from lys.widgets import LysSubWindow
     from lys_instr import DataStorage, gui
 
-    class AppWindow(LysSubWindow):
+    class Window(LysSubWindow):
         def __init__(self):
             super().__init__()
             storage = DataStorage()
@@ -65,23 +36,28 @@ by adding the code below to the ``proc.py`` file and execute `AppWindow()` in th
             self.setWidget(storageGUI)
             self.adjustSize()
 
+Calling ``Window()`` in the *lys* command line launches the GUI subwindow like the one below:
 
-Connecting Data Storage to Detector
------------------------------------
+.. image:: /lys_instr_/tutorial_/storage_1.png
 
-In practice, the data storage instance is used to store data acquired by a detector and should be connected to a detector instance.
-This can be done using the ``connect()`` method of the ``DataStorage`` class.
-For example, using the same detector instance as on the previous page:
 
-.. code-block:: python
+Click the "File" button to select the data-saving directory ("Base Folder"). 
+By default, this is the directory from which you launched *lys*.
+You can enter a "Folder Name" and "File Name" (without extension) directly.
 
-    from lys_instr import DataStorage, dummy
+The "Enabled" checkbox toggles data saving on or off.
+The "Numbered" checkbox enables automatic numbering in file names:
+the number specified in the spin box is appended to the file name (e.g., "DataFolder/FileName_0.npz", "DataFolder/FileName_1.npz").
+Data is saved in NumPy ndarray format (.npz).
 
-    detector = dummy.MultiDetectorDummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
-    storage = DataStorage()
-    storage.connect(detector)
 
-To create a combined detector and data storage GUI in *lys*, add the code below to the ``proc.py`` file:
+Connecting Storage to Detector
+------------------------------
+
+In practice, a storage is used to save data acquired by a detector.
+Simply connecting a storage instance to a detector instance enables automated data flow management.
+
+Using the same detector instance as on the previous page, you can create a GUI for connected storage and detector:
 
 .. code-block:: python
 
@@ -89,12 +65,12 @@ To create a combined detector and data storage GUI in *lys*, add the code below 
     from lys.Qt import QtWidgets
     from lys_instr import DataStorage, dummy, gui
 
-    class AppWindow(LysSubWindow):
+    class Window(LysSubWindow):
         def __init__(self):
             super().__init__()
-            self._detector = dummy.MultiDetectorDummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
+            self._detector = dummy.MultiDetectorDummy(frameShape=(256, 256))
             self._storage = DataStorage()
-            self._storage.connect(self._detector)
+            self._storage.connect(self._detector)       # Connect storage to detector
             self._initLayout()
             self.adjustSize()
 
@@ -102,22 +78,18 @@ To create a combined detector and data storage GUI in *lys*, add the code below 
             detectorGUI = gui.MultiDetectorGUI(self._detector)
             storageGUI = gui.DataStorageGUI(self._storage)
 
-            VBox = QtWidgets.QVBoxLayout()
-            VBox.addWidget(storageGUI)
-            VBox.addWidget(detectorGUI)
-            
+            VBox = QtWidgets.QVBoxLayout()      # Create a vertical box layout
+            VBox.addWidget(storageGUI)          # Add storage GUI to the box (upper)
+            VBox.addWidget(detectorGUI)         # Add detector GUI to the box (lower)
+
             w = QtWidgets.QWidget()
             w.setLayout(VBox)
             self.setWidget(w)
 
-            mcut = detectorGUI._mcut
-            wave = mcut.cui._children.addWave([1, 2])
-            mcut.display(wave, type="grid", pos=(0, 0), wid=(4, 4))
-
-Entering ``AppWindow()`` in the *lys* command line launches the combined GUI subwindow as shown below:
+Calling ``Window()`` in the *lys* command line launches the combined GUI subwindow like the one below:
 
 .. image:: /lys_instr_/tutorial_/storage_2.png
 
-With this GUI, users can save detector-acquired data to files. 
-Recall that for real applications the user needs to connect the data storage instance to a device-specific detector instance.
+On each acquisition event, the storage instance automatically saves the acquired data to the specified path.
 
+For real applications, you need to connect the data storage instance to a device-specific detector instance.

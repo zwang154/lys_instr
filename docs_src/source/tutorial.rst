@@ -6,6 +6,7 @@ Essential
 .. toctree::
    :maxdepth: 2
 
+   lys_instr_/tutorial_/handsOn
    lys_instr_/tutorial_/motor
    lys_instr_/tutorial_/detector
    lys_instr_/tutorial_/storage
@@ -21,4 +22,5 @@ Advanced
    lys_instr_/tutorial_/motorGeneralization
    lys_instr_/tutorial_/detectorOptions
    lys_instr_/tutorial_/advExamples
+   lys_instr_/tutorial_/scanTab
 

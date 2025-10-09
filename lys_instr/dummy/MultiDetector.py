@@ -13,7 +13,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
     This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
     """
 
-    def __init__(self, data=None, indexShape=(), frameShape=(100, 100), exposure=None, **kwargs):
+    def __init__(self, data=None, indexShape=(), frameShape=(100, 100), exposure=0.1, **kwargs):
         """
         Initializes the dummy multi-detector with the given parameters.
 
