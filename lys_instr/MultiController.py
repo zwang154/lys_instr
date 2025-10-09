@@ -248,7 +248,7 @@ class MultiControllerInterface(HardwareInterface):
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
-        raise NotImplementedError("Subclasses must implement this method.")
+        return None
 
     def _isBusy(self):
         """

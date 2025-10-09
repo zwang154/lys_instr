@@ -118,6 +118,28 @@ class MultiMotorDummy(MultiMotorInterface):
         """
         return {name: not d.error for name, d in self._data.items()}
 
+    @property
+    def error(self):
+        """
+        Gets the error state of all axes in the simulated multi-axis motor.
+
+        Returns:
+            dict[str, bool]: Mapping of axis names to error states.
+        """
+        return {name: d.error for name, d in self._data.items()}
+    
+    @error.setter
+    def error(self, value):
+        """
+        Sets the error state of all axes in the simulated multi-axis motor.
+
+        Args:
+            value (dict[str, bool]): Mapping of axis names to error states.
+        """
+        for name, err in value.items():
+            if name in self._data:
+                self._data[name].error = err
+
     def settingsWidget(self):
         """
         Returns a QWidget for optional settings.
@@ -178,6 +200,6 @@ class _OptionalPanel(QtWidgets.QWidget):
             name (str): The axis name.
         """
         backend = self._obj
-        backend._error[backend.nameList.index(name)] = not backend._error[backend.nameList.index(name)]
+        backend.error = {**backend.error, name: not backend.error[name]}
         backend.valueChanged.emit(backend.get())
-        backend.aliveStateChanged.emit({name: backend._info[name].alive})
+        backend.aliveStateChanged.emit({name: backend.isAlive[name]})

@@ -1,5 +1,6 @@
 import numpy as np
 import qtawesome as qta
+import logging
 
 from lys.Qt import QtWidgets, QtCore
 from lys_instr import MultiMotorInterface
@@ -130,7 +131,7 @@ class MultiMotorGUI(QtWidgets.QWidget):
             obj.stop()
 
     def _showSettings(self):
-        settingsWindow = _SettingsDialog(self, self._offsettable)
+        settingsWindow = _SettingsDialog(self, self._objs, self._offsettable)
         settingsWindow.exec_()
 
 
@@ -142,10 +143,14 @@ class _MotorRowLayout(QtCore.QObject):
         self.busy = False
         self.alive = True
         self.__initLayout(obj, label)
+        self.__initValues(obj)
 
         self._obj.valueChanged.connect(self._valueChanged)
         self._obj.busyStateChanged.connect(self._busyChanged)
         self._obj.aliveStateChanged.connect(self._aliveChanged)
+
+        if self._name in getattr(self._obj, 'offset', {}):
+            self._obj.offsetChanged.connect(self._updateMoveTo)
 
     def __initLayout(self, obj, label):
         self._label = QtWidgets.QLabel(label)
@@ -157,7 +162,6 @@ class _MotorRowLayout(QtCore.QObject):
         self._now.setButtonSymbols(QtWidgets.QDoubleSpinBox.NoButtons)
         self._now.setDecimals(5)
         self._now.setStyleSheet("background-color: #f0f0f0;")
-        self._now.setValue(obj.get()[self._name])
 
         self._moveTo = QtWidgets.QLineEdit()
         self._jogNega = QtWidgets.QPushButton(qta.icon("ri.arrow-left-fill"), "", clicked=self._nega)
@@ -167,6 +171,14 @@ class _MotorRowLayout(QtCore.QObject):
         self._jogStep.setDecimals(2)
 
         self._alive = AliveIndicator(obj, axis=label)
+
+    def __initValues(self, obj):
+        if self.alive:
+            self._now.setValue(obj.get()[self._name])
+        else:
+            self.alive = False
+            self._updateState()
+            logging.warning(f"Axis {self._name} is not alive during initialization of MultiMotorGUI.")
 
     def addTo(self, grid, i, settable=True, joggable=True):
         grid.addWidget(self._alive, 1 + i, 0, alignment=QtCore.Qt.AlignCenter)
@@ -205,8 +217,13 @@ class _MotorRowLayout(QtCore.QObject):
         except ValueError:
             return None
 
-    def clear(self):
-        self._moveTo.setText("")
+    def _updateMoveTo(self):
+        tar = self._obj.target.get(self._name)
+        if tar is not None:
+            s = str(tar - self._obj.offset[self._name])
+        else:
+            s = ""
+        self._moveTo.setText(s)
 
     def _nega(self):
         """
@@ -226,13 +243,14 @@ class _MotorRowLayout(QtCore.QObject):
 
 
 class _SettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent, offsettable):
+    def __init__(self, parent, objs, offsettable):
         super().__init__(parent)
         self.setWindowTitle("Motor Settings")
 
         tabWidget = QtWidgets.QTabWidget()
         tabWidget.addTab(_GeneralPanel(parent.controllers, offsettable), "General")
-        #tabWidget.addTab(obj.settingsWidget(), "Optional")
+        for i, c in enumerate(objs, 1):
+            tabWidget.addTab(c.settingsWidget(), f"Optional {i}")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(tabWidget)
