@@ -2,7 +2,7 @@ A Simple Hands-On Example
 -------------------------
 
 Suppose we want to automate taking a series of photos of a sample while sweeping the applied electric field.
-We need to control a camera to capture images after setting the electric field to a sequence of specific values.
+We need to control a camera to capture images after setting the electric field to a sequence of values.
 
 With *lys_instr*, we can easily build a GUI to manage this measurement workflow. 
 Let's first take a quick look at a minimal template.

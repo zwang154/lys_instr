@@ -36,7 +36,7 @@ To create the storage GUI subwindow:
             self.setWidget(storageGUI)
             self.adjustSize()
 
-Calling ``Window()`` in the *lys* command line launches the GUI subwindow like the one below:
+Calling ``Window()`` in the *lys* command line launches the GUI subwindow as shown below:
 
 .. image:: /lys_instr_/tutorial_/storage_1.png
 
@@ -47,7 +47,7 @@ You can enter a "Folder Name" and "File Name" (without extension) directly.
 
 The "Enabled" checkbox toggles data saving on or off.
 The "Numbered" checkbox enables automatic numbering in file names:
-the number specified in the spin box is appended to the file name (e.g., "DataFolder/FileName_0.npz", "DataFolder/FileName_1.npz").
+the number specified in the spin box is appended to the file name (e.g., "yourDataFolder/yourFileName_0.npz", "yourDataFolder/yourFileName_1.npz").
 Data is saved in NumPy ndarray format (.npz).
 
 
@@ -55,7 +55,7 @@ Connecting Storage to Detector
 ------------------------------
 
 In practice, a storage is used to save data acquired by a detector.
-Simply connecting a storage instance to a detector instance enables automated data flow management.
+Simply connecting a storage instance to a detector instance using the storage's ``connect()`` method enables automated data saving.
 
 Using the same detector instance as on the previous page, you can create a GUI for connected storage and detector:
 
@@ -68,25 +68,27 @@ Using the same detector instance as on the previous page, you can create a GUI f
     class Window(LysSubWindow):
         def __init__(self):
             super().__init__()
-            self._detector = dummy.MultiDetectorDummy(frameShape=(256, 256))
-            self._storage = DataStorage()
-            self._storage.connect(self._detector)       # Connect storage to detector
-            self._initLayout()
-            self.adjustSize()
+            detector = dummy.MultiDetectorDummy(frameShape=(256, 256))
+            storage = DataStorage()
+            storage.connect(detector)               # Connect storage to detector
 
-        def _initLayout(self):
-            detectorGUI = gui.MultiDetectorGUI(self._detector)
-            storageGUI = gui.DataStorageGUI(self._storage)
+            detectorGUI = gui.MultiDetectorGUI(detector)
+            storageGUI = gui.DataStorageGUI(storage)
 
-            VBox = QtWidgets.QVBoxLayout()      # Create a vertical box layout
-            VBox.addWidget(storageGUI)          # Add storage GUI to the box (upper)
-            VBox.addWidget(detectorGUI)         # Add detector GUI to the box (lower)
+            VBox = QtWidgets.QVBoxLayout()          # Create a vertical box to hold the two GUIs
+            VBox.addWidget(storageGUI)              # Add storage GUI to the box (upper)
+            VBox.addWidget(detectorGUI)             # Add detector GUI to the box (lower)
 
             w = QtWidgets.QWidget()
             w.setLayout(VBox)
             self.setWidget(w)
 
-Calling ``Window()`` in the *lys* command line launches the combined GUI subwindow like the one below:
+            self.adjustSize()
+
+The GUI layout is constructed using standard *QtWidgets* conventions (in the last 2-7 lines of the code above); 
+you can ignore these details for now in this tutorial.
+
+Calling ``Window()`` in the *lys* command line launches the combined GUI subwindow as shown below:
 
 .. image:: /lys_instr_/tutorial_/storage_2.png
 

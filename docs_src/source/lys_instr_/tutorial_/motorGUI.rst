@@ -1,23 +1,4 @@
 
-Motor
-=====
-
-Creating a Motor Instance
--------------------------
-
-A motor instance is created by subclassing ``MultiMotorInterface``, which provides essential features for a generic multi-axis motor.
-For real hardware, you should implement device-specific communication methods in your subclass (see ... for details).
-
-For demonstration, we use the dummy motor ``MultiMotorDummy`` (a subclass of ``MultiMotorInterface``) to simulate motor behavior without connecting to real hardware.
-A dummy motor instance with two user-defined axes, here named "x" and "y" as an example, can be created as follows:
-
-.. code-block:: python
-
-    from lys_instr import dummy
-
-    motor = dummy.MultiMotorDummy("x", "y")
-
-
 Creating the Motor GUI
 ----------------------
 
