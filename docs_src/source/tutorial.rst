@@ -1,5 +1,5 @@
-Getting Started
-===============
+Tutorial
+========
 
 Essential
 ---------
@@ -9,14 +9,17 @@ Essential
    lys_instr_/tutorial_/handsOn
    lys_instr_/tutorial_/motor
    lys_instr_/tutorial_/detector
-   lys_instr_/tutorial_/storage
-   lys_instr_/tutorial_/scan
+   lys_instr_/tutorial_/templates
 
 Advanced
 --------
 .. toctree::
    :maxdepth: 2
 
+   lys_instr_/tutorial_/motorGUI
+   lys_instr_/tutorial_/detectorGUI
+   lys_instr_/tutorial_/storageGUI
+   lys_instr_/tutorial_/scanGUI
    lys_instr_/tutorial_/motorOptions
    lys_instr_/tutorial_/preCorrection
    lys_instr_/tutorial_/motorGeneralization

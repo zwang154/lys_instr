@@ -1,6 +1,6 @@
 
-Scan
-====
+Scan GUI
+========
 
 Creating a Scan GUI
 -------------------

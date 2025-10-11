@@ -6,10 +6,43 @@ Creating a Motor Instance
 -------------------------
 
 A motor instance is created by subclassing ``MultiMotorInterface``, which provides essential features for a generic multi-axis motor.
-For real hardware, you should implement device-specific communication methods in your subclass (see ... for details).
 
-For demonstration, we use the dummy motor ``MultiMotorDummy`` (a subclass of ``MultiMotorInterface``) to simulate motor behavior without connecting to real hardware.
-A dummy motor instance with two user-defined axes, here named "x" and "y" as an example, can be created as follows:
+For real hardware, you should implement device-specific communication methods in your subclass as follows.
+
+.. code-block:: python
+
+    class YourMotor(MultiMotorInterface):       # Give a name to your subclass, e.g., ``YourMotor``
+
+        def __init__(self, *axisNamesAll, **kwargs):
+            super().__init__(*axisNamesAll, **kwargs)
+            self.start()
+
+        def _set(self, **target):
+            # target (dict): Axis names as keys and target positions as values.
+            ... your code to tell the instruments to move to the target positions ...
+
+        def _get(self):
+            ... your code to read the current positions of all axes from the instruments ...
+            return ... a dictionary with axis names as keys and current positions (float) as values ...
+
+        def _stop(self):
+            ... your code to tell the instruments to stop all axes ...
+
+        def _isBusy(self):
+            ... your code to check if each axis is moving ...
+            return ... a dictionary with axis names as keys and busy states (bool) as values (True if busy, False if not) ...
+
+        def _isAlive(self):
+            ... your code to check if each axis is connected and functioning ...
+            return ... a dictionary with axis names as keys and alive states (bool) as values (True if alive, False if not) ...
+
+
+Function Check
+--------------
+
+To verify functionality, you should use your own motor class (e.g., ``YourMotor``).
+
+For demonstration, we use the dummy motor ``MultiMotorDummy`` with two axes, "x" and "y", to simulate motor behavior without real hardware.
 
 .. code-block:: python
 
@@ -17,45 +50,10 @@ A dummy motor instance with two user-defined axes, here named "x" and "y" as an 
 
     motor = dummy.MultiMotorDummy("x", "y")
 
-
-Creating the Motor GUI
-----------------------
-
-To create the motor GUI subwindow:
-
-1. Launch *lys* and open the ``proc.py`` file (press Ctrl+P).
-
-2. Add the following code to define a class for the motor GUI subwindow and save it (press Ctrl+S).
+You can use the ``set()``, ``get()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiMotorInterface`` to verify that the motor operates correctly.
+For example:
 
 .. code-block:: python
 
-    from lys.widgets import LysSubWindow
-    from lys_instr import gui, dummy
-
-    class Window(LysSubWindow):
-        def __init__(self):
-            super().__init__()
-            motor = dummy.MultiMotorDummy("x", "y")  # Create the motor instance
-            motorGUI = gui.MultiMotorGUI(motor)      # Create the motor GUI
-            self.setWidget(motorGUI)                 # Embed the motor GUI in the lys subwindow
-            self.adjustSize()
-
-Calling ``Window()`` in the *lys* command line launches the GUI subwindow as shown below:
-
-.. image:: /lys_instr_/tutorial_/motor_1.png
-
-You can input target positions for each axis and click the 'Go' button to start motion, the 'Stop' button to halt motion, or set the step size and use the arrow buttons to jog each axis.
-
-The indicator next to each axis shows its connection status—green for a successful connection, and red for a disconnected or error state.
-
-Clicking the "Settings" button opens a dialog.
-
-.. image:: /lys_instr_/tutorial_/motor_2.png
-    :scale: 80%
-
-Within the dialog, you can offset each axis.
-Clicking the "Offset" button defines the current value of the axis as zero and records the offset value in the box to the left.
-Clicking the "Unset" button removes the offset and restores the true values.
-The "Now At" and "Move To" fields in the main window are automatically updated to reflect the current offset.
-
-See also :doc:`Motor Options </lys_instr_/tutorial_/motorOptions>` for details on customizing the motor GUI.
+    motor.set(x=1.0, y=2.0)    # You can also set a single axis: motor.set(x=1.0)
+    print(motor.get())         # Returns current positions, e.g. {'x': 0.18, 'y': 0.18}

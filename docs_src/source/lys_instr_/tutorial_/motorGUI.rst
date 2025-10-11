@@ -1,6 +1,6 @@
 
-Creating the Motor GUI
-----------------------
+Motor GUI
+=========
 
 To create the motor GUI subwindow:
 

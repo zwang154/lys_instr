@@ -1,21 +1,6 @@
 
-Storage
-=======
-
-Creating a Storage Instance
----------------------------
-
-A storage instance can be created by subclassing ``DataStorage``, which provides essential functions for dynamically saving acquired data to disk.
-
-.. code-block:: python
-
-    from lys_instr import DataStorage
-
-    storage = DataStorage()
-
-
-Creating the Storage GUI
-------------------------
+Storage GUI
+===========
 
 To create the storage GUI subwindow:
 
