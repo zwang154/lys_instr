@@ -119,12 +119,13 @@ class DetectorInterface(HardwareInterface):
             buffer = {}
             self._thread.dataAcquired.connect(buffer.update, type=QtCore.Qt.DirectConnection)
 
+        thread = self._thread
         self._thread.start()
 
         if wait:
             self.waitForReady()
             if output:
-                self._thread.dataAcquired.disconnect(buffer.update)
+                thread.dataAcquired.disconnect(buffer.update)
                 return buffer
 
     def _onAcqFinished(self):
