@@ -30,10 +30,10 @@ class TestMultiDetectorDummy(unittest.TestCase):
 
     def test_startAcq_over(self):
         detector = MultiDetectorDummy(indexShape=(2, 2), frameShape=(3, 3), exposure=0.1)
-        detector._numFrames = np.prod(detector._indexShape)
+        detector._numFrames = np.prod(detector.indexShape)
         detector.startAcq()
 
-        timeout = detector._exposure * np.prod(detector._indexShape) + 5  # seconds
+        timeout = detector._exposure * np.prod(detector.indexShape) + 5  # seconds
         start = time.time()
         while len(detector._data) < detector._numFrames and (time.time() - start < timeout):
             QtTest.QTest.qWait(10)
@@ -41,14 +41,14 @@ class TestMultiDetectorDummy(unittest.TestCase):
 
     def test_startAcq_wait(self):
         detector = MultiDetectorDummy(indexShape=(2, 2), frameShape=(3, 3), exposure=0.1)
-        detector._numFrames = np.prod(detector._indexShape)
+        detector._numFrames = np.prod(detector.indexShape)
         detector.startAcq(wait=True)
         self.assertFalse(detector.isBusy, "Detector should not be busy after waiting for acquisition to finish.")
         self.assertEqual(len(detector._data), 0, "Acquired data should have been cleared after waiting for acquisition to finish.")
 
     def test_startAcq_wait_output(self):
         detector = MultiDetectorDummy(indexShape=(2, 2), frameShape=(3, 3), exposure=0.1)
-        detector._numFrames = int(np.prod(detector._indexShape))
+        detector._numFrames = int(np.prod(detector.indexShape))
         data = detector.startAcq(wait=True, output=True)
         self.assertEqual(len(data), detector._numFrames, "Length of acquired data should match number of frames.")
         self.assertTrue(all(value.shape == detector._frameShape for value in data.values()), "All acquired data frames should have the correct shape.")
@@ -69,7 +69,7 @@ class TestMultiDetectorDummy(unittest.TestCase):
     def test_isAlive(self):
         detector = MultiDetectorDummy(indexShape=(2, 2), frameShape=(3, 3), exposure=0.1)
         self.assertTrue(detector.isAlive)
-        detector._error = True
+        detector.error = True
         self.assertFalse(detector.isAlive, "Detector should not be alive after error injection.")
 
     def test_dataShape(self):
