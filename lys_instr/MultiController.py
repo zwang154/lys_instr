@@ -182,8 +182,8 @@ class MultiControllerInterface(HardwareInterface):
         """
         loop = QtCore.QEventLoop()
 
-        def on_busy_changed(b):
-            if not any(b.values()) and loop.isRunning():
+        def on_busy_changed():
+            if not any(self._isBusy().values()) and loop.isRunning():
                 loop.quit()
 
         with QtCore.QMutexLocker(self._mutex):
