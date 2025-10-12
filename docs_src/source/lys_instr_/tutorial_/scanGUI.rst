@@ -55,7 +55,7 @@ GUI Overview
 ------------
 
 Let's first look at the GUI before diving into the code.
-Add the above code to ``proc.py`` in *lys* and then call this ``Window()`` from the *lys* command line to launch the GUI subwindow as shown below:
+Add the above code to ``proc.py`` in *lys* and then call this ``Window()`` from the *lys* command line to launch the GUI subwindow as follows:
 
 .. image:: /lys_instr_/tutorial_/scan_1.png
 
@@ -153,10 +153,53 @@ Finally, assembling the storage GUI, tab widget, and detector GUI using vertical
     self.setWidget(w)
 
 
-The example above shows the minimal setup required to perform a scan with *lys_instr*.
+The example above shows the minimal setup required to perform a scan.
 
-We provide several templates on the next page.
-Users can use them directly or make simple modifications to fit their needs.
 
-For more advanced customization, please refer to the Advanced section and the examples provided there.
 
+
+Incorporating Switches into Scan
+--------------------------------
+
+In some cases, you may want to include switches in a scan, for example, in pump-probe experiments.
+
+Since a switch instance serves a similar role to a motor instance in a scan, 
+you can simply add it by following the motor's pattern:
+
+For example, in the ``__init__``:
+
+.. code-block:: python
+
+    self._switch = dummy.MultiSwitchDummy("A", levelNames=["OFF", "ON"])
+
+Next, include the switch GUI in ``_initLayout`` before creating ``_scanGUI``:
+
+.. code-block:: python
+
+    _switchGUI = gui.MultiSwitchGUI(self._switch)
+
+Then, modify the ``_scanGUI`` creation line to include the switch instance:
+
+.. code-block:: python
+
+    _scanGUI = gui.ScanWidget(self._storage, [self._motor], [self._switch], {"MultiDetectorDummy": self._detector})
+
+Finally, add the switch GUI as another tab in the tab widget, similar to the motor GUI:
+
+.. code-block:: python
+
+    self._tab.addTab(_switchGUI, "Switch")
+
+
+The resultant GUI appears as follows:
+
+.. image:: /lys_instr_/tutorial_/scan_7.png
+
+
+To add a scan task for the switch, right-click the blank area in the **Scan** tab and select "Add new switch".
+For example:
+
+.. image:: /lys_instr_/tutorial_/scan_8.png
+
+
+You can freely combine motor and switch scans in any configuration to suit your experiment.

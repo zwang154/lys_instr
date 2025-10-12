@@ -7,7 +7,7 @@ Creating a Motor Instance
 
 A motor instance is created by subclassing ``MultiMotorInterface``, which provides essential features for a generic multi-axis motor.
 
-For real hardware, you should implement device-specific communication methods in your subclass as follows.
+For real hardware, you should implement device-specific communication methods in your subclass as follows:
 
 .. code-block:: python
 
@@ -37,10 +37,14 @@ For real hardware, you should implement device-specific communication methods in
             return ... a dictionary with axis names as keys and alive states (bool) as values (True if alive, False if not) ...
 
 
-Function Check
---------------
+Checking Operations
+-------------------
 
-To verify functionality, you should use your own motor class (e.g., ``YourMotor``).
+To verify functionality, use your own motor class (for example, ``YourMotor``).
+
+.. code-block:: python
+
+    motor = YourMotor(... your parameters ...)
 
 For demonstration, we use the dummy motor ``MultiMotorDummy`` with two axes, "x" and "y", to simulate motor behavior without real hardware.
 
@@ -50,7 +54,7 @@ For demonstration, we use the dummy motor ``MultiMotorDummy`` with two axes, "x"
 
     motor = dummy.MultiMotorDummy("x", "y")
 
-You can use the ``set()``, ``get()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiMotorInterface`` to verify that the motor operates correctly.
+You can use the ``set()``, ``get()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiMotorInterface`` to confirm that the motor is functioning correctly.
 For example:
 
 .. code-block:: python

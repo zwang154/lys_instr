@@ -2,7 +2,11 @@
 Storage GUI
 ===========
 
-To create the storage GUI subwindow:
+
+Creating a Storage GUI
+----------------------
+
+To create a storage GUI subwindow:
 
 1. Launch *lys* and open the ``proc.py`` file (press Ctrl+P).
 
@@ -21,12 +25,12 @@ To create the storage GUI subwindow:
             self.setWidget(storageGUI)
             self.adjustSize()
 
-Calling ``Window()`` in the *lys* command line launches the GUI subwindow as shown below:
+Calling ``Window()`` in the *lys* command line launches the GUI subwindow as follows:
 
 .. image:: /lys_instr_/tutorial_/storage_1.png
 
 
-Click the "File" button to select the data-saving directory ("Base Folder"). 
+Click **File** (icon) to select the data-saving directory ("Base Folder"). 
 By default, this is the directory from which you launched *lys*.
 You can enter a "Folder Name" and "File Name" (without extension) directly.
 
@@ -73,7 +77,7 @@ Using the same detector instance as on the previous page, you can create a GUI f
 The GUI layout is constructed using standard *QtWidgets* conventions (in the last 2-7 lines of the code above); 
 you can ignore these details for now in this tutorial.
 
-Calling ``Window()`` in the *lys* command line launches the combined GUI subwindow as shown below:
+Calling ``Window()`` in the *lys* command line launches the combined GUI subwindow as follows:
 
 .. image:: /lys_instr_/tutorial_/storage_2.png
 

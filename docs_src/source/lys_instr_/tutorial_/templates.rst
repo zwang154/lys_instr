@@ -2,8 +2,9 @@
 Templates
 =========
 
-The following templates are available for quickly setting up common instrument components.
-For more information on creating and using GUIs, refer to the Advanced section.
+The following templates provide quick setup of GUIs for common instrument components.
+These GUIs are designed to be intuitive and self-explanatory.
+See the Advanced section for detailed user guides on each GUI component, if needed.
 
 
 1D Frame, Single Frame per Run
@@ -25,7 +26,7 @@ To use this template, provide your own motor and detector instances:
 
 
 For demonstration, here is a realistic example.
-Suppose we have a detector that acquires optical spectra, i.e., pairs of wavelength and intensity values.
+Suppose we have a detector that acquires optical spectra, that is, pairs of wavelength and intensity values.
 We rotate a polarizer (motor axis "phi") in the optical path and acquire a spectrum at each angle.
 The detector collects a single spectrum (1D frame) per run.
 
@@ -50,7 +51,7 @@ Add the above code to ``proc.py`` in *lys*, and call this ``Window()`` from the 
 
 .. image:: /lys_instr_/tutorial_/template1_1.png
 
-In the **Scan** tab, configure the scan by selecting the motor axis "phi", setting the scan range (e.g., start at 0, step by 10, for 36 steps), and specifying the exposure time (e.g., 0.1 seconds).
+In the **Scan** tab, configure the scan by selecting the motor axis "phi", setting the scan range (for example, start at 0, step by 10, for 36 steps), and specifying the exposure time (for example, 0.1 seconds).
 
 .. image:: /lys_instr_/tutorial_/template1_2.png
 
@@ -201,7 +202,7 @@ During acquisition, each image is sent to the GUI as a 2D frame, labeled by its 
 This configuration exemplifies a 4D-STEM measurement, where the electron beam raster scans a 2D grid across the sample and records a 2D diffraction pattern at each grid position.
 
 As in previous examples, use a dummy motor and dummy detector.
-Set ``indexShape=(8, 8)`` to define the 2D array size, and ``frameShape=(256, 256)`` to specify the image size.
+Set ``indexShape=(9, 9)`` to define the 2D array size, and ``frameShape=(256, 256)`` to specify the image size.
 
 .. code-block:: python
 
@@ -209,7 +210,7 @@ Set ``indexShape=(8, 8)`` to define the 2D array size, and ``frameShape=(256, 25
     from lys_instr.dummy.detectorData import RamanData
 
     motor = dummy.MultiMotorDummy("E")     # For later use
-    detector = dummy.MultiDetectorDummy(indexShape=(8, 8), frameShape=(256, 256))
+    detector = dummy.MultiDetectorDummy(indexShape=(9, 9), frameShape=(256, 256))
     detectorName = "MultiDetectorDummy"
 
     def Window():

@@ -2,7 +2,7 @@
 Motor
 =====
 
-.. automodule:: lys_instr.MultiMotor
+.. automodule:: lys_instr.MultiController
    :members:
    :undoc-members:
    :show-inheritance:

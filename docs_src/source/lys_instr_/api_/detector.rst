@@ -11,8 +11,3 @@ Detector
    :members:
    :undoc-members:
    :show-inheritance:
-
-.. automodule:: lys_instr.gui.MultiDetectorOpt
-   :members:
-   :undoc-members:
-   :show-inheritance:
