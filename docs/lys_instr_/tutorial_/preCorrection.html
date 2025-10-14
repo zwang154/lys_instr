@@ -1,0 +1,183 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Axis Calibration and Dependency &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Python API" href="../../api.html" />
+    <link rel="prev" title="Scan GUI" href="scanGUI.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#essential">Essential</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#advanced">Advanced</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="motorGUI.html">Motor GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="switchGUI.html">Switch GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detectorGUI.html">Detector GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="storageGUI.html">Storage GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scanGUI.html">Scan GUI</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Axis Calibration and Dependency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#axis-calibration">Axis Calibration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#axis-dependency">Axis Dependency</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
+      <li class="breadcrumb-item active">Axis Calibration and Dependency</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lys_instr_/tutorial_/preCorrection.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="axis-calibration-and-dependency">
+<h1>Axis Calibration and Dependency<a class="headerlink" href="#axis-calibration-and-dependency" title="Link to this heading"></a></h1>
+<section id="axis-calibration">
+<h2>Axis Calibration<a class="headerlink" href="#axis-calibration" title="Link to this heading"></a></h2>
+<p>In some cases, motor axis values require calibration.
+The <code class="docutils literal notranslate"><span class="pre">PreCorrection</span></code> utility enables axis calibration using user-defined correction functions or data.</p>
+<p>Suppose the motor axis “x” requires calibration, and the relationship between the raw position and the corrected position is given by a set of data points.
+These data can be stored in a NumPy <code class="docutils literal notranslate"><span class="pre">.npz</span></code> file with the following structure:</p>
+</section>
+<section id="axis-dependency">
+<h2>Axis Dependency<a class="headerlink" href="#axis-dependency" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">PreCorrection</span></code> also supports defining dependencies among axes.
+Suppose the position of “y” must always follow a fixed function of “x”, for example, <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">x/2</span></code> while only “x” is directly controlled.</p>
+<p>A simple GUI combining a motor and a corrector can be constructed as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">LysSubWindow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreCorrector</span><span class="p">,</span> <span class="n">gui</span><span class="p">,</span> <span class="n">dummy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.PreCorrection</span><span class="w"> </span><span class="kn">import</span> <span class="n">_FunctionCombination</span><span class="p">,</span> <span class="n">_InterpolatedFunction</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Window</span><span class="p">(</span><span class="n">LysSubWindow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motor</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">MultiMotorDummy</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span> <span class="o">=</span> <span class="n">PreCorrector</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjustSize</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_motorGUI</span> <span class="o">=</span> <span class="n">gui</span><span class="o">.</span><span class="n">MultiMotorGUI</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_motor</span><span class="p">,</span> <span class="n">axisNamesSettable</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,),</span> <span class="n">axisNamesJoggable</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,))</span> <span class="c1"># only enable &quot;x&quot; axis control</span>
+        <span class="n">_correctorGUI</span> <span class="o">=</span> <span class="n">gui</span><span class="o">.</span><span class="n">PreCorrectorGUI</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tab</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTabWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tab</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="n">_motorGUI</span><span class="p">,</span> <span class="s2">&quot;Motor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tab</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="n">_correctorGUI</span><span class="p">,</span> <span class="s2">&quot;PreCorr&quot;</span><span class="p">)</span>
+
+        <span class="n">VBox</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">VBox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_tab</span><span class="p">)</span>
+
+        <span class="n">HBox</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">HBox</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">VBox</span><span class="p">)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">HBox</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The resulting GUI appears as follows. Only the “x” axis is enabled for control:</p>
+<img alt="../../_images/preCorrection_1.png" src="../../_images/preCorrection_1.png" />
+<img alt="../../_images/preCorrection_2.png" src="../../_images/preCorrection_2.png" />
+<p>In the <strong>PreCorr</strong> tab, right-click on the tree space and select “Add Target” to add a target axis, i.e., “y”.
+Then, right-click on the target “y” and select “Add Variable”, choosing “x” as the dependency axis.
+Next, double-click on the expression space of target “y” to enter <code class="docutils literal notranslate"><span class="pre">x/2</span></code>.</p>
+<img alt="../../_images/preCorrection_3.png" src="../../_images/preCorrection_3.png" />
+<p>Now, when you enter a target position for “x” in the <strong>Motor</strong> tab and click <strong>Go</strong>, the motor will move “x” to the specified position and “y” will automatically be set to half of “x”.</p>
+<img alt="../../_images/preCorrection_4.png" src="../../_images/preCorrection_4.png" />
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="scanGUI.html" class="btn btn-neutral float-left" title="Scan GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../api.html" class="btn btn-neutral float-right" title="Python API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -6,20 +6,20 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>lys_instr documentation &mdash; lys_instr 0.1 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+  <title>lys_instr documentation &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=2709fde1"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
       <script src="_static/doctools.js?v=9bcbadda"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Common methods" href="test.html" /> 
+    <link rel="next" title="Installation" href="install.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -43,10 +43,10 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Common methods</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html#device-interfaces">Device interfaces</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html#module-lys_instr.dummy.MultiMotor">Dummy devices</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test.html#graphical-user-interfaces">Graphical user interfaces</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
 </ul>
 
         </div>
@@ -75,45 +75,45 @@
              
   <section id="lys-instr-documentation">
 <h1>lys_instr documentation<a class="headerlink" href="#lys-instr-documentation" title="Link to this heading"></a></h1>
-<p>Add your content using <code class="docutils literal notranslate"><span class="pre">reStructuredText</span></code> syntax. See the
-<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html">reStructuredText</a>
-documentation for details.</p>
+<p><em>lys_instr</em> is a Python package for building flexible GUIs to automate scientific measurements.</p>
+<p>It enables users to quickly create custom interfaces for coordinating multiple devices and managing measurement workflows, with minimal coding required.</p>
+<img alt="_images/scan_1.png" src="_images/scan_1.png" />
+<section id="what-can-you-do-with-lys-instr">
+<h2>What can you do with <em>lys_instr</em> ?<a class="headerlink" href="#what-can-you-do-with-lys-instr" title="Link to this heading"></a></h2>
+<p>Most scientific measurements follow a <em>move-and-detect</em> pattern—parameters are adjusted via motors or digital controls (<em>move</em>) and data are collected through detectors (<em>detect</em>).
+A measurement sequence that combines <em>move</em> and <em>detect</em> is known as a <em>scan</em>; a complete workflow may involve multiple nested <em>scans</em>.
+<em>lys_instr</em> helps you construct, control, and automate such workflows efficiently.
+In principle, you only need to provide minimal code for device-specific communication—the package takes care of everything else.</p>
+<p>Key functionalities of <em>lys_instr</em>:</p>
+<ul class="simple">
+<li><p>Asynchronous device control and monitoring</p></li>
+<li><p>Real-time data visualization and automatic data storage</p></li>
+<li><p>Efficient management of nested workflows</p></li>
+</ul>
+<p>Standout features of <em>lys_instr</em>:</p>
+<ul class="simple">
+<li><p>Lightweight and efficient: designed to be fast and resource-friendly</p></li>
+<li><p>Modular and extensible: easy to reconfigure measurement workflows directly in the GUI</p></li>
+<li><p>Seamless integration with data analysis tools: <em>lys</em> (<a class="reference external" href="https://github.com/lys-devel/lys">https://github.com/lys-devel/lys</a>)</p></li>
+</ul>
+<p>We recommend following the <a class="reference internal" href="tutorial.html"><span class="doc">Getting Started</span></a> guide to become familiar with this package and referring to the examples there for various use cases.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Common methods</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.Commons.preciseSleep"><code class="docutils literal notranslate"><span class="pre">preciseSleep()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="test.html#device-interfaces">Device interfaces</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.Interfaces.HardwareInterface"><code class="docutils literal notranslate"><span class="pre">HardwareInterface</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.Interfaces.lock"><code class="docutils literal notranslate"><span class="pre">lock()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.MultiMotor.MultiMotorInterface"><code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.MultiDetector.DetectorInterface"><code class="docutils literal notranslate"><span class="pre">DetectorInterface</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.MultiDetector.MultiDetectorInterface"><code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.DataStorage.DataStorage"><code class="docutils literal notranslate"><span class="pre">DataStorage</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="test.html#module-lys_instr.dummy.MultiMotor">Dummy devices</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.dummy.MultiMotor.MultiMotorDummy"><code class="docutils literal notranslate"><span class="pre">MultiMotorDummy</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.dummy.MultiDetector.MultiDetectorDummy"><code class="docutils literal notranslate"><span class="pre">MultiDetectorDummy</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="test.html#graphical-user-interfaces">Graphical user interfaces</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.gui.MultiMotor.MultiMotorGUI"><code class="docutils literal notranslate"><span class="pre">MultiMotorGUI</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.gui.MultiDetector.MultiDetectorGUI"><code class="docutils literal notranslate"><span class="pre">MultiDetectorGUI</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="test.html#lys_instr.gui.DataStorage.DataStorageGUI"><code class="docutils literal notranslate"><span class="pre">DataStorageGUI</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
 </ul>
 </div>
+</section>
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="test.html" class="btn btn-neutral float-right" title="Common methods" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="install.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

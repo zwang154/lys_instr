@@ -1,0 +1,195 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storage GUI &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Scan GUI" href="scanGUI.html" />
+    <link rel="prev" title="Detector GUI" href="detectorGUI.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#essential">Essential</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#advanced">Advanced</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="motorGUI.html">Motor GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="switchGUI.html">Switch GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detectorGUI.html">Detector GUI</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Storage GUI</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#creating-a-storage-gui">Creating a Storage GUI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#connecting-storage-to-detector">Connecting Storage to Detector</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="scanGUI.html">Scan GUI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Calibration and Dependency</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
+      <li class="breadcrumb-item active">Storage GUI</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lys_instr_/tutorial_/storageGUI.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="storage-gui">
+<h1>Storage GUI<a class="headerlink" href="#storage-gui" title="Link to this heading"></a></h1>
+<section id="creating-a-storage-gui">
+<h2>Creating a Storage GUI<a class="headerlink" href="#creating-a-storage-gui" title="Link to this heading"></a></h2>
+<p>To create a storage GUI subwindow:</p>
+<ol class="arabic simple">
+<li><p>Launch <em>lys</em> and open the <code class="docutils literal notranslate"><span class="pre">proc.py</span></code> file (press Ctrl+P).</p></li>
+<li><p>Add the following code to define a class for the storage GUI subwindow and save it (press Ctrl+S).</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">LysSubWindow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataStorage</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Window</span><span class="p">(</span><span class="n">LysSubWindow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">DataStorage</span><span class="p">()</span>
+        <span class="n">storageGUI</span> <span class="o">=</span> <span class="n">gui</span><span class="o">.</span><span class="n">DataStorageGUI</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">storageGUI</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjustSize</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">Window()</span></code> in the <em>lys</em> command line launches the GUI subwindow as follows:</p>
+<img alt="../../_images/storage_1.png" src="../../_images/storage_1.png" />
+<p>Click <strong>File</strong> (icon) to select the data-saving directory (“Base Folder”).
+By default, this is the directory from which you launched <em>lys</em>.
+You can enter a “Folder Name” and “File Name” (without extension) directly.</p>
+<p>The “Enabled” checkbox toggles data saving on or off.
+The “Numbered” checkbox enables automatic numbering in file names:
+the number specified in the spin box is appended to the file name (e.g., “yourDataFolder/yourFileName_0.npz”, “yourDataFolder/yourFileName_1.npz”).
+Data is saved in NumPy ndarray format (.npz).</p>
+</section>
+<section id="connecting-storage-to-detector">
+<h2>Connecting Storage to Detector<a class="headerlink" href="#connecting-storage-to-detector" title="Link to this heading"></a></h2>
+<p>In practice, a storage is used to save data acquired by a detector.
+Simply connecting a storage instance to a detector instance using the storage’s <code class="docutils literal notranslate"><span class="pre">connect()</span></code> method enables automated data saving.</p>
+<p>Using the same detector instance as on the previous page, you can create a GUI for connected storage and detector:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">LysSubWindow</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataStorage</span><span class="p">,</span> <span class="n">dummy</span><span class="p">,</span> <span class="n">gui</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Window</span><span class="p">(</span><span class="n">LysSubWindow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">detector</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">MultiDetectorDummy</span><span class="p">(</span><span class="n">frameShape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">DataStorage</span><span class="p">()</span>
+        <span class="n">storage</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">detector</span><span class="p">)</span>               <span class="c1"># Connect storage to detector</span>
+
+        <span class="n">detectorGUI</span> <span class="o">=</span> <span class="n">gui</span><span class="o">.</span><span class="n">MultiDetectorGUI</span><span class="p">(</span><span class="n">detector</span><span class="p">)</span>
+        <span class="n">storageGUI</span> <span class="o">=</span> <span class="n">gui</span><span class="o">.</span><span class="n">DataStorageGUI</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span>
+
+        <span class="n">VBox</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">()</span>          <span class="c1"># Create a vertical box to hold the two GUIs</span>
+        <span class="n">VBox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">storageGUI</span><span class="p">)</span>              <span class="c1"># Add storage GUI to the box (upper)</span>
+        <span class="n">VBox</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">detectorGUI</span><span class="p">)</span>             <span class="c1"># Add detector GUI to the box (lower)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">VBox</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjustSize</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The GUI layout is constructed using standard <em>QtWidgets</em> conventions (in the last 2-7 lines of the code above);
+you can ignore these details for now in this tutorial.</p>
+<p>Calling <code class="docutils literal notranslate"><span class="pre">Window()</span></code> in the <em>lys</em> command line launches the combined GUI subwindow as follows:</p>
+<img alt="../../_images/storage_2.png" src="../../_images/storage_2.png" />
+<p>On each acquisition event, the storage instance automatically saves the acquired data to the specified path.</p>
+<p>For real applications, you need to connect the data storage instance to a device-specific detector instance.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="detectorGUI.html" class="btn btn-neutral float-left" title="Detector GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="scanGUI.html" class="btn btn-neutral float-right" title="Scan GUI" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

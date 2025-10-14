@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Storage &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Extensions" href="extensions.html" />
+    <link rel="prev" title="Detector" href="detector.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../api.html">Python API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../api.html#core-elements">Core Elements</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="base.html">Base Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detector.html">Detector</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Data Storage</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.DataStorage.DataStorage"><code class="docutils literal notranslate"><span class="pre">DataStorage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.gui.DataStorage.DataStorageGUI"><code class="docutils literal notranslate"><span class="pre">DataStorageGUI</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="extensions.html">Extensions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#utilities">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#combinations">Combinations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#dummy-devices">Dummy Devices</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../api.html">Python API</a></li>
+      <li class="breadcrumb-item active">Data Storage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lys_instr_/api_/storage.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-lys_instr.DataStorage">
+<span id="data-storage"></span><h1>Data Storage<a class="headerlink" href="#module-lys_instr.DataStorage" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.DataStorage.</span></span><span class="sig-name descname"><span class="pre">DataStorage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<p>Threaded data storage and file management for multi-dimensional data.</p>
+<p>This class reserves disk space for data arrays, buffers and updates them with new values, and saves the buffered data to disk.
+Saving is performed asynchronously in a background thread, keeping the main application responsive.
+Qt signals are emitted to notify when the save path or saving state changes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Additional keyword arguments passed to QObject.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.base">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">base</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.base" title="Link to this definition"></a></dt>
+<dd><p>Returns the base directory for saving data files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Base directory.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.connect" title="Link to this definition"></a></dt>
+<dd><p>Connects this <code class="docutils literal notranslate"><span class="pre">DataStorage</span></code> instance to a detector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>detector</strong> (<em>object</em>) – Detector instance emitting <code class="docutils literal notranslate"><span class="pre">dataAcquired</span></code> and <code class="docutils literal notranslate"><span class="pre">busyStateChanged</span></code> signals.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.enabled">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">enabled</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.enabled" title="Link to this definition"></a></dt>
+<dd><p>Returns whether the <code class="docutils literal notranslate"><span class="pre">DataStorage</span></code> instance is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if the <code class="docutils literal notranslate"><span class="pre">DataStorage</span></code> instance is enabled, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.folder">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">folder</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.folder" title="Link to this definition"></a></dt>
+<dd><p>Returns the data folder name under base directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Data folder name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.getNumber">
+<span class="sig-name descname"><span class="pre">getNumber</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.getNumber"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.getNumber" title="Link to this definition"></a></dt>
+<dd><p>Gets the next available file number for saving.</p>
+<p>The number will be appended to the file name when saving if automatic numbering is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Next available file number, or None if numbering is disabled.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.name">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.name" title="Link to this definition"></a></dt>
+<dd><p>Returns the base file name for saving data files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>File name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.numbered">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">numbered</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.numbered" title="Link to this definition"></a></dt>
+<dd><p>Returns whether automatic file numbering is enabled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if automatic file numbering is enabled, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.reserve">
+<span class="sig-name descname"><span class="pre">reserve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.reserve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.reserve" title="Link to this definition"></a></dt>
+<dd><p>Reserves storage for a new data array with the specified shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Shape of the data array to reserve.</p></li>
+<li><p><strong>fillValue</strong> (<em>float</em><em>, </em><em>optional</em>) – Value to initialize the array with (default: NaN).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.save" title="Link to this definition"></a></dt>
+<dd><p>Saves the buffered data array asynchronously to disk.</p>
+<p>This method starts a worker thread to write the buffered data array and emits signals for path and saving state updates.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.saving">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">saving</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.saving" title="Link to this definition"></a></dt>
+<dd><p>Returns whether a save operation is currently in progress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if a save operation is in progress, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.savingStateChanged">
+<span class="sig-name descname"><span class="pre">savingStateChanged</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.savingStateChanged" title="Link to this definition"></a></dt>
+<dd><p>Signal (bool) emitted when saving state changes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.tagRequest">
+<span class="sig-name descname"><span class="pre">tagRequest</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.tagRequest" title="Link to this definition"></a></dt>
+<dd><p>Signal (dict) emitted to request metadata tags.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.update" title="Link to this definition"></a></dt>
+<dd><p>Updates the buffered data array with new values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>indexShape</strong> (<em>tuple</em>) – Index shape for the data.</p></li>
+<li><p><strong>data</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>np.ndarray</em><em>]</em>) – Dictionary mapping indices to data arrays for updating the buffer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-lys_instr.gui.DataStorage">
+<dt class="sig sig-object py" id="lys_instr.gui.DataStorage.DataStorageGUI">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.gui.DataStorage.</span></span><span class="sig-name descname"><span class="pre">DataStorageGUI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/gui/DataStorage.html#DataStorageGUI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.gui.DataStorage.DataStorageGUI" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="detector.html" class="btn btn-neutral float-left" title="Detector" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="extensions.html" class="btn btn-neutral float-right" title="Extensions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
