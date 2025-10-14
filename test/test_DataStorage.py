@@ -47,13 +47,13 @@ class TestDataStorage(unittest.TestCase):
             storage.base = tmpdir
             storage.folder = "newFolder"
             storage.name = "newName"
-            indexShape = (2, 2)
 
             n = storage.getNumber()
             storage.reserve(shape=(2, 2, 2, 2), fillValue=5)
             data = {(0, 0): np.ones((2, 2))}
-            storage.update(indexShape, data)
-            storage.save()
+            storage.update(data)
+            axes = [np.arange(2), np.arange(2), np.arange(2), np.arange(2)]
+            storage.save(axes)
             self.assertTrue(storage.saving, "Storage should be saving after save() is called.")
 
             timeout = 5  # seconds

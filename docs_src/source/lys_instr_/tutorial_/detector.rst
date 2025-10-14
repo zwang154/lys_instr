@@ -1,98 +1,75 @@
 
-Detector Control
-================
+Detector
+========
 
 Creating a Detector Instance
 ----------------------------
 
-A detector instance can be created by inheriting from the ``MultiDetectorInterface`` class, which provides essential features for a multi-dimensional detector.
-For real detector hardware, the user should implement device-specific behaviors by overriding the relevant methods in the subclass (see :class:`.MultiDetector.MultiDetectorInterface`).  
+A detector instance is created by subclassing ``MultiDetectorInterface``, which provides essential features for a multi-dimensional detector.
 
-For demonstration purposes, a dummy detector class ``MultiDetectorDummy`` is provided, which inherits from ``MultiDetectorInterface`` and simulates detector behavior without connecting to real hardware.
-A dummy detector instance collecting two-dimensional data, i.e., images, can be created as follows:
+For real hardware, you should implement device-specific communication methods in your subclass as follows:
+
+.. code-block:: python
+
+    class YourDetector(MultiDetectorInterface):       # Give a name to your subclass, e.g., ``YourDetector``
+
+        def __init__(self, indexShape=(), frameShape=(), exposure=None, **kwargs):
+            super().__init__(**kwargs)
+            self.exposure = exposure
+            self.start()
+
+        def _run(self, iter=1):
+            ... your code to tell the instrument to trigger data acquisition ...
+
+        def _get(self):
+            ... your code to read the acquired data from the instrument ...
+            return ... a dictionary with frame indices as keys and NumPy ndarrays of the acquired data as values ...
+
+        def _stop(self):
+            ... your code to tell the instrument to stop ongoing acquisition ...
+
+        def _isAlive(self):
+            ... your code to check if the detector is connected and functioning ...
+            return ... True if alive, False if not ...
+
+        @property
+        def axes(self):
+            ... your code to specify the physical axis values for each dimension ...
+            return ... a list of arrays or lists, one for each axis, in the order [index axes..., frame axes...]
+            # E.g., [listForIndexAxis1, listForIndexAxis2, ..., listForFrameAxis1, listForFrameAxis2, ...]
+
+
+``frameShape`` specifies the shape of each frame (for example, ``(256, 256)`` for a 256×256 image). 
+``indexShape`` specifies the shape of frame indices (for example, ``(10,)`` for 10 frames in a single run with indices 0 to 9).
+
+For example, to acquire 10 images of size 256×256 while sweeping a motor over 10 steps, set ``indexShape=(10,)`` and ``frameShape=(256, 256)``.
+If no indexing is needed, simply omit ``indexShape`` or set ``indexShape=()`` (that is, a single frame per run).
+
+See :doc:`Detector GUI </lys_instr_/tutorial_/detectorGUI>` for displaying non-two-dimensional frames.
+
+
+Checking Operations
+-------------------
+
+To verify functionality, use your own detector class (for example, ``YourDetector``).
+
+.. code-block:: python
+
+    detector = YourDetector(... your parameters ...)
+
+For demonstration, we use the dummy detector ``MultiDetectorDummy`` with ``indexShape=()`` and ``frameShape=(256, 256)`` to simulate detector behavior without real hardware.
 
 .. code-block:: python
 
     from lys_instr import dummy
 
-    detector = dummy.MultiDetectorDummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
+    detector = dummy.MultiDetectorDummy(frameShape=(256, 256))
 
-This detector captures a single 256×256 image (filled with random noise) per acquisition, with an exposure time of 0.1 seconds per frame.
-``frameShape`` specifies the shape of each frame, i.e., ``(256, 256)`` for a 256×256 image.
-``indexShape`` specifies the shape of the indices for the frames within a single acquisition, e.g., ``(1,)`` for a single frame (this case), ``(5,)`` for a sequence of 5 frames, or ``(5, 5)`` for a 5×5 grid of frames.
-``exposure`` specifies the exposure time in seconds for each frame.
-
-
-Creating the Detector GUI in *lys*
-----------------------------------
-
-As data acquired by a detector is generically multi-dimensional, we demonstrate creating a detector GUI within *lys*, which offers versatile tools for visualizing such data.
-
-After starting *lys*, open the ``proc.py`` file (press Ctrl+P), add the code below, and save it (press Ctrl+S) to define a class that creates the detector GUI subwindow.
+You can use the ``startAcq()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiDetectorInterface`` to confirm that the detector is functioning correctly.
+For example:
 
 .. code-block:: python
 
-    from lys.widgets import LysSubWindow
-    from lys_instr import dummy, gui
-
-    class AppWindow(LysSubWindow):
-        def __init__(self):
-            super().__init__()
-            detector = dummy.MultiDetectorDummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
-            detectorGUI = gui.MultiDetectorGUI(detector)
-            self.setWidget(detectorGUI)
-            self.adjustSize()
-
-The code structure is similar to the motor GUI in lys, except the detector GUI is created by passing the detector instance to the ``MultiDetectorGUI`` class.
-
-Calling this ``AppWindow()`` in the *lys* command line launches the GUI subwindow like the one below:
-
-.. image:: /lys_instr_/tutorial_/detector_1.png
-
-
-To set up image display:
-
-1. Drag the lower edge of the detector GUI subwindow to resize it for comfortable viewing.
-2. In the "MultiCut" tab, click "Add" and select the data axes for display (``2`` for ``Axis1``, ``3`` for ``Axis2``), then click "OK." (Since this detector captures 2D images with 1D indices, the total data shape is ``(1, 256, 256)``, and the axes for display are the 2nd and 3rd.)
-
-    .. image:: /lys_instr_/tutorial_/detector_2.png
-        :scale: 80%
-
-3. In the detector GUI subwindow, click and drag to select the full area for image display.
-
-An 256x256 image filled with random noise will be displayed as below on initialization by default:
-
-.. image:: /lys_instr_/tutorial_/detector_3.png
-
-The user can click the "Acquire" button to start data acquisition for a single frame, which takes 0.1 seconds per frame as specified by the ``Exp.``.
-The "Stream" button starts continuous acquisition of frames until the "Stop" button is clicked.
-The exposure time can be changed dynamically using the spin box or by direct input.
-The "Settings" button allows configuration of sequence acquisition and update frequency.
-The green indicators show the connection status of the detector.
-
-For advanced usage, such as displaying multi-dimensional data with nontrivial index shapes, see :doc:`Detector Options </lys_instr_/tutorial_/detectorOptions>`.
-
-
-Code-Only Implementation
-------------------------
-
-The above manual operations can be easily reproduced by adding the following code to ``proc.py`` in *lys* and then calling ``AppWindow()`` in the *lys* command line.
-
-.. code-block:: python
-
-    from lys.widgets import LysSubWindow
-    from lys_instr import dummy, gui
-
-    class AppWindow(LysSubWindow):
-        def __init__(self):
-            super().__init__()
-            detector = dummy.MultiDetectorDummy(indexShape=(1,), frameShape=(256, 256), exposure=0.1)
-            detectorGUI = gui.MultiDetectorGUI(detector)
-
-            mcut = detectorGUI._mcut
-            wave = mcut.cui._children.addWave([1, 2])
-            mcut.display(wave, type="grid", pos=(0, 0), wid=(4, 4))
-
-            self.setWidget(detectorGUI)
-            self.adjustSize()
+    data = detector.startAcq(wait=True, output=True)   # Start acquisition of 1 frame
+    print(data)     # Returns a dictionary, e.g., {(0,): array([[0.1, 0.2, ...], [...], ...])}
 

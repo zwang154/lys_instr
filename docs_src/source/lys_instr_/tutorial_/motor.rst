@@ -1,15 +1,52 @@
 
-Motor Control
-=============
+Motor
+=====
 
 Creating a Motor Instance
 -------------------------
 
-A motor instance can be created by inheriting from the ``MultiMotorInterface`` class, which provides essential features for a generic multi-axis motor.
-For real motor hardware, the user should implement device-specific behaviors—primarily hardware communication—by overriding the relevant methods in the subclass (see :class:`.MultiMotor.MultiMotorInterface`).
+A motor instance is created by subclassing ``MultiMotorInterface``, which provides essential features for a generic multi-axis motor.
 
-For demonstration purposes, a dummy motor class ``MultiMotorDummy`` is provided, which inherits from ``MultiMotorInterface`` and simulates motor behavior without connecting to real hardware.
-A dummy motor instance with two axes named "x" and "y" can be created as follows:
+For real hardware, you should implement device-specific communication methods in your subclass as follows:
+
+.. code-block:: python
+
+    class YourMotor(MultiMotorInterface):       # Give a name to your subclass, e.g., ``YourMotor``
+
+        def __init__(self, *axisNamesAll, **kwargs):
+            super().__init__(*axisNamesAll, **kwargs)
+            self.start()
+
+        def _set(self, **target):
+            # target (dict): Axis names as keys and target positions as values.
+            ... your code to tell the instruments to move to the target positions ...
+
+        def _get(self):
+            ... your code to read the current positions of all axes from the instruments ...
+            return ... a dictionary with axis names as keys and current positions (float) as values ...
+
+        def _stop(self):
+            ... your code to tell the instruments to stop all axes ...
+
+        def _isBusy(self):
+            ... your code to check if each axis is moving ...
+            return ... a dictionary with axis names as keys and busy states (bool) as values (True if busy, False if not) ...
+
+        def _isAlive(self):
+            ... your code to check if each axis is connected and functioning ...
+            return ... a dictionary with axis names as keys and alive states (bool) as values (True if alive, False if not) ...
+
+
+Checking Operations
+-------------------
+
+To verify functionality, use your own motor class (for example, ``YourMotor``).
+
+.. code-block:: python
+
+    motor = YourMotor(... your parameters ...)
+
+For demonstration, we use the dummy motor ``MultiMotorDummy`` with two axes, "x" and "y", to simulate motor behavior without real hardware.
 
 .. code-block:: python
 
@@ -17,73 +54,10 @@ A dummy motor instance with two axes named "x" and "y" can be created as follows
 
     motor = dummy.MultiMotorDummy("x", "y")
 
-CUI methods in the ``MultiMotorInterface`` class can be used to control and monitor the motor instance. For example:
+You can use the ``set()``, ``get()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiMotorInterface`` to confirm that the motor is functioning correctly.
+For example:
 
 .. code-block:: python
 
-    print(motor.get())      # Default positions: {"x": 0, "y": 0}
-    motor.set(x=1, y=2)     # Setting target positions immediately starts motion
-    print(motor.get())      # During motion: nonzero values; after motion: {"x": 1, "y": 2}
-
-
-Creating the Motor GUI
-----------------------
-
-A GUI for the motor can be created by passing the motor instance to the ``MultiMotorGUI`` class. 
-Continuing from the previous example:
-
-.. code-block:: python
-
-    import sys
-    from lys.Qt import QtWidgets
-    from lys_instr import gui
-
-    app = QtWidgets.QApplication(sys.argv)
-    motorGUI = gui.MultiMotorGUI(motor)
-    motorGUI.show()
-    sys.exit(app.exec_())
-
-A GUI window like the one below will appear:
-
-.. image:: /lys_instr_/tutorial_/motor_1.png
-    :scale: 80%
-
-The user can input target positions for each axis and click the 'Go' button to start motion, click the 'Stop' button to halt motion, or set the step size and use the arrow buttons to jog each axis.
-The "Settings" button allows configuration of value offsets, and the "Bookmark" button manages position bookmarks.
-The green indicators show the connection status of each axis.
-(See also :doc:`Motor Options </lys_instr_/tutorial_/motorOptions>` for details on customizing the motor GUI.)
-
-
-Starting the GUI in *lys*
--------------------------
-
-The motor GUI can also be launched from within the *lys* application (see :doc:`lys Integration </lys_instr_/tutorial_/lysIntegration>`).
-After starting *lys*, open the ``proc.py`` file (press Ctrl+P), add the code below, and save it (press Ctrl+S) to define a class that creates the motor GUI subwindow.
-
-.. code-block:: python
-
-    from lys.widgets import LysSubWindow
-    from lys_instr import gui, dummy
-
-    class AppWindow(LysSubWindow):
-        def __init__(self):
-            super().__init__()
-            motor = dummy.MultiMotorDummy("x", "y")  # Create the motor instance
-            motorGUI = gui.MultiMotorGUI(motor)      # Create the motor GUI
-            self.setWidget(motorGUI)                 # Set the motor GUI as the content of the lys subwindow
-            self.adjustSize()
-
-Calling ``AppWindow()`` in the *lys* command line launches the GUI subwindow like the one below:
-
-.. image:: /lys_instr_/tutorial_/motor_2.png
-
-Alternatively, the user can create a separate script file, e.g., ``your_script_name.py``, that contains the above class, and import it in the ``proc.py`` file as follows:
-
-.. code-block:: python
-
-    def any_name():
-        from path_to_your_script import your_script_name
-        return your_script_name.AppWindow()
-
-Calling ``any_name()`` in the *lys* command line launches the same GUI subwindow.
-
+    motor.set(x=1.0, y=2.0)    # You can also set a single axis: motor.set(x=1.0)
+    print(motor.get())         # Returns current positions, e.g. {'x': 0.18, 'y': 0.18}

@@ -51,14 +51,14 @@ class TestMultiMotorDummy(unittest.TestCase):
         self.assertTrue(all(motor.isBusy.values()), "All axes should be busy during motion.")
         
         # Wait for x to finish
-        timeout = 1/motor._speed + 5    # seconds
+        timeout = 1/motor._data["x"]._speed + 5    # seconds
         start = time.time()
         while motor.isBusy['x'] and (time.time() - start < timeout):
             QtTest.QTest.qWait(10)
         self.assertEqual([motor.isBusy['x'], motor.isBusy['y']], [False, True], "After x reaches target, x should not be busy, y should still be busy.")
 
         # Wait for y to finish
-        timeout = (2 - 1)/motor._speed + 5    # seconds
+        timeout = (2 - 1)/motor._data["y"]._speed + 5    # seconds
         start = time.time()
         while motor.isBusy['y'] and (time.time() - start < timeout):
             QtTest.QTest.qWait(10)
@@ -136,15 +136,15 @@ class TestMultiMotorDummy(unittest.TestCase):
         QtTest.QTest.qWait(100)
 
         # Error injection
-        motor._error[0] = True
+        motor._data['x'].error = True
         self.assertEqual([motor.isAlive['x'], motor.isAlive['y']], [False, True], "Axis x should be dead, y should be alive after error injection.")
 
         # Error recovery
-        motor._error[0] = False
+        motor._data['x'].error = False
         self.assertEqual([motor.isAlive['x'], motor.isAlive['y']], [True, True], "Both axes should be alive after error recovery.")
         
         # Wait for both axes to reach targets after recovery
-        timeout = 2/motor._speed + 5    # seconds
+        timeout = 2/max(motor._data['x']._speed, motor._data['y']._speed) + 5    # seconds
         start = time.time()
         while (motor.isBusy['x'] or motor.isBusy['y']) and (time.time() - start < timeout):
             QtTest.QTest.qWait(10)
@@ -172,35 +172,46 @@ class SlowMultiMotorDummy(MultiMotorDummy):
 
     This dummy motor adds an artificial delay to the `set()` method to test thread safety, locking, and the behavior of code that interacts with slow hardware. 
     """
-    def set(self, wait=False, waitInterval=0.1, **kwargs):
-        """
-        Sets target positions for the specified axes with an artificial delay.
+    # def set(self, wait=False, waitInterval=0.1, **kwargs):
+    #     """
+    #     Sets target positions for the specified axes with an artificial delay.
 
-        This override introduces a 1-second delay before setting axis values to simulate slow hardware response.
+    #     This override introduces a 1-second delay before setting axis values to simulate slow hardware response.
 
-        Args:
-            wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.
-            waitInterval (float, optional): Polling interval in seconds while waiting. Defaults to 0.1.
-            **kwargs: Axis-value pairs to set, e.g., x=1.0, y=2.0.
+    #     Args:
+    #         wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.
+    #         waitInterval (float, optional): Polling interval in seconds while waiting. Defaults to 0.1.
+    #         **kwargs: Axis-value pairs to set, e.g., x=1.0, y=2.0.
 
-        Raises:
-            ValueError: If any provided axis name is invalid.
-        """
-        with QtCore.QMutexLocker(self._mutex):
-            time.sleep(1)
+    #     Raises:
+    #         ValueError: If any provided axis name is invalid.
+    #     """
+    #     with QtCore.QMutexLocker(self._mutex):
+    #         time.sleep(1)
 
-            # Validate axis names
-            invalid = [name for name in kwargs if name not in self._info]
-            if invalid:
-                raise ValueError(f"Axis name(s) {invalid} not recognized. Available axes: {self.nameList}")
+    #         # Validate axis names
+    #         invalid = [name for name in kwargs if name not in self._info]
+    #         if invalid:
+    #             raise ValueError(f"Axis name(s) {invalid} not recognized. Available axes: {self.nameList}")
 
-            # Update busy state for each axis in kwargs and emit busy state only for axes that are now busy
-            for name, value in kwargs.items():
-                self._info[name].busy = not np.isnan(value)
-            self.busyStateChanged.emit({name: True for name in kwargs if self._info[name].busy})
+    #         # Update busy state for each axis in kwargs and emit busy state only for axes that are now busy
+    #         for name, value in kwargs.items():
+    #             self._info[name].busy = not np.isnan(value)
+    #         self.busyStateChanged.emit({name: True for name in kwargs if self._info[name].busy})
 
-            # Set actual values for the axes in kwargs
-            self._set(kwargs)
+    #         # Set actual values for the axes in kwargs
+    #         self._set(kwargs)
+
+    #     if wait:
+    #         self.waitForReady(waitInterval)
+
+    def set(self, wait=False, lock=True, **kwargs):
+        if lock:
+            with QtCore.QMutexLocker(self._mutex):
+                time.sleep(1)
+                self._set_impl(**kwargs)
+        else:
+            self._set_impl(**kwargs)
 
         if wait:
-            self.waitForReady(waitInterval)
+            self.waitForReady()

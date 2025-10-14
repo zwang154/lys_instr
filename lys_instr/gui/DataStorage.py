@@ -23,6 +23,7 @@ class DataStorageGUI(QtWidgets.QWidget):
         browse.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
 
         self._base = QtWidgets.QLineEdit(objectName="DataStorage_base")
+        self._base.setText(".")
         self._folder = QtWidgets.QLineEdit(objectName="DataStorage_folder")
         self._name = QtWidgets.QLineEdit(objectName="DataStorage_name")
 
