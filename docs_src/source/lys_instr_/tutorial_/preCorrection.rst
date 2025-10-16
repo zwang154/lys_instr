@@ -1,27 +1,11 @@
 
-Axis Calibration and Dependency
-===============================
-
-Axis Calibration
-----------------
-
-In some cases, motor axis values require calibration.
-The ``PreCorrection`` utility enables axis calibration using user-defined correction functions or data.
-
-Suppose the motor axis "x" requires calibration, and the relationship between the raw position and the corrected position is given by a set of data points.
-These data can be stored in a NumPy ``.npz`` file with the following structure:
-
-
-
-
-
-
-
-
 Axis Dependency
----------------
+===============
 
-``PreCorrection`` also supports defining dependencies among axes.
+By Functions
+------------
+
+The ``PreCorrection`` utility enables defining dependencies among axes.
 Suppose the position of "y" must always follow a fixed function of "x", for example, ``y = x/2`` while only "x" is directly controlled.
 
 A simple GUI combining a motor and a corrector can be constructed as follows:
@@ -67,7 +51,8 @@ The resulting GUI appears as follows. Only the "x" axis is enabled for control:
 .. image:: /lys_instr_/tutorial_/preCorrection_2.png
 
 In the **PreCorr** tab, right-click on the tree space and select "Add Target" to add a target axis, i.e., "y".
-Then, right-click on the target "y" and select "Add Variable", choosing "x" as the dependency axis.
+Then, right-click on the target "y" and select "Add Variable", choosing "x" as the variable axis.
+You can add multiple variables if needed.
 Next, double-click on the expression space of target "y" to enter ``x/2``.
 
 .. image:: /lys_instr_/tutorial_/preCorrection_3.png
@@ -75,3 +60,26 @@ Next, double-click on the expression space of target "y" to enter ``x/2``.
 Now, when you enter a target position for "x" in the **Motor** tab and click **Go**, the motor will move "x" to the specified position and "y" will automatically be set to half of "x".
 
 .. image:: /lys_instr_/tutorial_/preCorrection_4.png
+
+
+
+By Data
+-------
+
+``PreCorrection`` also allows for axis calibration using pre-defined data.
+
+The data file can be prepared with the structure:
+
+.. code-block:: python
+
+    from lys import Wave
+
+    data = [[0.0], [0.1], [0.2]]            # Your target axis
+    axes = [[0.0], [0.2], [0.4]]            # Your variable axis ("x" for here)
+    w = Wave(data, axes, variables=['x'])   # Specify the variable axis, must be an axis name of the motor
+
+    w.export('YourFileName.npz')
+
+The data is stored in a NumPy ``.npz`` file
+
+
