@@ -49,17 +49,17 @@ To address these issues, we introduce `lys_instr`—an object-oriented framework
 
 `lys_instr` adopts a three-layer architecture based on multiple object-oriented design patterns to maximize flexibility, modularity and ease of use.
 
-1. Base Level: Instrument Abstraction
+1. Base Layer: Instrument Abstraction
 
   This layer standardizes core instrument functionalities—motors, detectors, and storage—through abstract interfaces. Concrete device implementations are separated from these interfaces, following the *Template Method* design pattern. Independent automatic multi-threading management allows each instrument to operate asynchronously, ensuring responsive operation without blocking other instruments or the GUI.
 
-2. Intermediate Level: Workflow Coordination
+2. Intermediate Layer: Workflow Coordination
 
   This layer provides high-level abstractions, including the GUI, to coordinate base instruments for general experimental tasks. It standardizes common operations such as *move-and-detect*, scans, and nested scan sequences without requiring knowledge of concrete instrument implementations, following the *Bridge* design pattern. The GUI interacts with components via signals, adhering to the *Observer* design pattern, ensuring low coupling and high extensibility. Concepts from the *Composite* design pattern are also employed to efficiently manage nested scan configurations.
 
-3. Top Level: Control Panel Construction
+3. Top Layer: Control System Assembly
 
-  The highest layer supports flexible assembly of the measurement GUI. Following the *Mediator* design pattern, it manages connections among abstract devices (and, through the base level, the corresponding real hardware) and organizes the GUI for user control. This grants users maximum freedom to construct tailored control systems without managing complex aspects such as inter-device communication or multi-threading.
+  This layer supports flexible assembly of the measurement GUI. Following the *Mediator* design pattern, it manages connections among abstract devices (and, through the Base Layer, the corresponding real hardware) to enable automatic data flow, and organizes the GUI for user control. This grants users maximum freedom to construct tailored control systems without managing complex aspects such as inter-device communication or multi-threading.
 
 
 # Key Functionalities
