@@ -33,8 +33,7 @@ bibliography: paper.bib
 
 # Summary
 
-Automating scientific measurements has become increasingly important for experimentalists and is now a standard practice in modern laboratories. Although many commercial instruments provide their control software, researchers often need to coordinate multiple devices within a unified workflow. While several workflow management frameworks exist, they are typically broad in scope and require substantial effort to adapt to specific experimental setups. We present `lys_instr`, a Python package designed for experimentalists to build customizable graphical user interfaces (GUIs) and automate device-based scientific workflows. The package features a streamlined, asynchronous architecture optimized for iterative device manipulation and data acquisition, enabling efficient definition and execution of nested measurement processes from the GUI. `lys_instr` also integrates seamlessly with the `lys` platform [@Nakamura:2023] for data visualization and post-analysis. These features allow users to rapidly construct flexible control systems for complex experimental workflows with minimal time and coding effort.
-
+Modern experiments increasingly demand automation frameworks capable of coordinating diverse scientific instruments while remaining flexible and easy to customize. Existing solutions, however, often require substantial adaptation or manual handling of low-level communication and threading. We present `lys_instr`, a Python package that addresses these challenges through an object-oriented, multi-layered architecture for instrument control, workflow coordination, and GUI construction. It enables researchers to rapidly build responsive, asynchronous measurement systems with minimal coding effort. Seamlessly integrated with the `lys` platform [@Nakamura:2023], `lys_instr` unifies experiment control, data acquisition, and visualization, offering an efficient foundation for next-generation, automation-driven experimental research.
 
 
 # Statement of need
@@ -44,7 +43,6 @@ Modern scientific research increasingly relies on comprehensive measurements acr
 However, building such a system remains nontrivial for researchers. At the low level, specific instrument methods tightly coupled to diverse communication protocols (e.g., TCP/IP, VISA, serial, etc.) limit interchangeability and flexibility across systems. At the high level, coordinating workflows involving conditional logic, iterative processes, and advanced algorithms from different libraries can lead to redundant implementations of similar functionality across different contexts. Moreover, designing GUIs for these low- and high-level functionalities typically requires complex multithreading, further increasing implementation costs. Existing frameworks such as`QCoDeS` [@QCoDeS], `PyMeasure` [@PyMeasure], `PyLabControl` [@PyLabControl], `LabVIEW` [@LabVIEW], and `MATLAB`'s Instrument Control Toolbox [@MATLAB] provide powerful ecosystems for instrument control and measurement scripting, but require users to handle low-level communications and high-level workflow logic themselves. These challenges impose substantial overhead on researchers designing custom measurement systems.
 
 To address these issues, we introduce `lys_instr`—an object-oriented framework that abstracts common control patterns from experiment-specific implementations, reducing coding and design costs while enabling flexible and efficient automation.
-
 
 
 # Design Philosophy
@@ -64,7 +62,6 @@ To address these issues, we introduce `lys_instr`—an object-oriented framework
   The highest layer supports flexible assembly of the measurement GUI. Following the *Mediator* design pattern, it manages connections among abstract devices (and, through the base level, the corresponding real hardware) and organizes the GUI for user control. This grants users maximum freedom to construct tailored control systems without managing complex aspects such as inter-device communication or multi-threading.
 
 
-
 # Key Functionalities
 
 `lys_instr` provides a straightforward user interface—illustrated in the preliminary example in Figure 1—for integrated instrument/data management and declarative workflow control.  
@@ -76,11 +73,9 @@ To address these issues, we introduce `lys_instr`—an object-oriented framework
 In addition, `lys_instr` supports user-defined GUI layouts through the Top Layer. It further enhances extensibility through seamless integration with the `lys` platform (the outer window with tabs), enabling advanced on-the-fly customization of data visualization.
 
 
-
 # Projects using the software
 
 `lys_instr` has been deployed in complex, real-world scientific instruments, supporting multiple peer-reviewed publications. It automates Ultrafast Transmission Electron Microscopy (UTEM) at RIKEN Center for Emergent Matter Science, coordinating ultrafast laser excitation and pulsed electron beam detection in pump–probe experiments [@Nakamura:2020; @Nakamura:2021a; @Nakamura:2022; @Nakamura:2023a; @Shimojima:2021; @Shimojima:2023a; @Shimojima:2023b], and it controls electromagnetic lenses and electron deflectors for advanced microscopy with electron-beam precession [@Shiratori:2024; @Hayashi:2025].
-
 
 
 # Acknowledgements
