@@ -64,7 +64,9 @@ To address these issues, we introduce `lys_instr`—an object-oriented framework
 
 # Key Functionalities
 
-`lys_instr` provides a straightforward user interface—illustrated in the preliminary example in Figure 1—for integrated instrument/data management and declarative workflow control.  
+`lys_instr` provides a straightforward user interface—illustrated in the preliminary example in \autoref{fig:fig1}—for integrated instrument/data management and declarative workflow control.  
+
+![Example GUI of *lys_instr*. The main window, embedded in the *lys* window, is organized into three sectors: Storage panel (A), Detector panel (B), and Motor and Scan tabs (C). The Scan tab enables dynamic configuration of mutli-dimensional, nested experimental workflows.\label{fig:fig1}](fig1.png)
 
 **Integrated Instrument/Data Management:** The *Base Layer* ensures asynchronous operation across all instruments (Sector A for storage, Sector B for detector, and the *Motor* tab in C), keeping each GUI component responsive during cooperative measurements.  
 
