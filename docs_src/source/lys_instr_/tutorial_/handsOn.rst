@@ -12,7 +12,7 @@ Launch *lys*, enter the following code in the command line, and press **Enter**.
 
 .. code-block:: python
 
-    from lys_instr.tutorial import template0
+    from lys_instr.templates import template0
     template0.Window()
 
 A GUI window will appear as follows:

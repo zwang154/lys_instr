@@ -5,8 +5,9 @@ Axis Dependency
 By Functions
 ------------
 
-The ``PreCorrection`` utility enables defining dependencies among axes.
-Suppose the position of "y" must always follow a fixed function of "x", for example, ``y = x/2`` while only "x" is directly controlled.
+The ``PreCorrection`` utility allows defining dependencies between axes. 
+
+Suppose the stop point of "y" always needs to follow that of "x" as a fixed function, for example, ``y = x/2`` while only "x" is directly controlled.
 
 A simple GUI combining a motor and a corrector can be constructed as follows:
 
@@ -51,7 +52,7 @@ The resulting GUI appears as follows. Only the "x" axis is enabled for control:
 .. image:: /lys_instr_/tutorial_/preCorrection_2.png
 
 In the **PreCorr** tab, right-click on the tree space and select "Add Target" to add a target axis, i.e., "y".
-Then, right-click on the target "y" and select "Add Variable", choosing "x" as the variable axis.
+Then, right-click on the target "y" and select "Add new Variable", choosing "x" as the variable axis.
 You can add multiple variables if needed.
 Next, double-click on the expression space of target "y" to enter ``x/2``.
 
@@ -66,20 +67,29 @@ Now, when you enter a target position for "x" in the **Motor** tab and click **G
 By Data
 -------
 
-``PreCorrection`` also allows for axis calibration using pre-defined data.
+Such axis dependency can also be defined using user-provided data.
 
-The data file can be prepared with the structure:
+Prepare the data as a *Wave* object and export it to a NumPy ``.npz`` file as follows (see the lys documentation for *Wave* details):
 
 .. code-block:: python
 
     from lys import Wave
 
-    data = [[0.0], [0.1], [0.2]]            # Your target axis
-    axes = [[0.0], [0.2], [0.4]]            # Your variable axis ("x" for here)
-    w = Wave(data, axes, variables=['x'])   # Specify the variable axis, must be an axis name of the motor
+    data = [[0.0], [0.1], [0.2]]            # Data for your target axis
+    axes = [[0.0], [0.2], [0.4]]            # Corresponding data for your variable axis ("x" for here)
+    w = Wave(data, axes, variables=['x'])   # Specify the variable axis ("x" for here), must be an axis name of the motor
 
     w.export('YourFileName.npz')
 
-The data is stored in a NumPy ``.npz`` file
+In the **PreCorr** tab, after adding a target axis "y", right-click on the target and choose "Add new function".
 
+In the pop-up dialog, click "Select" to import the `.npz` file from your local directory and click "OK" to approve.
 
+.. image:: /lys_instr_/tutorial_/preCorrection_func_1.png
+    :scale: 80%
+
+Expand the "y" tree item, and you can see the imported data listed under "Func1(x)" if the import was successful.
+
+.. image:: /lys_instr_/tutorial_/preCorrection_func_2.png
+
+PreCorrection applies the interpolated x–y relation from the file, so the imported data behaves as the previous function-defined dependency for x values within the file's range (that is, x = 0.0–0.4).
