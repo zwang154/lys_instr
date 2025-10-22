@@ -5,7 +5,13 @@ from .interface import DummyDataInterface
 
 class RamanData(DummyDataInterface):
     def __init__(self, scanLevel=0):
-        sample = np.load(os.path.join('sampleRamanData.npy'))
+        here = os.path.dirname(__file__)
+        path = os.path.normpath(os.path.join(here, '..', '..', 'resources', 'sampleRamanData.npy'))
+
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"sampleRamanData.npy not found at {path}. Put the file in lys_instr/resources/")
+        
+        sample = np.load(path)
         self._data = sample[:, :, :, 1, :]
         self._axes = [np.linspace(0, 360, self._data.shape[-2], endpoint=False), sample[0, 0, 0, 0, :]][-1 - scanLevel:]
         if scanLevel == 1:
