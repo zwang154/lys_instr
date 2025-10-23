@@ -51,7 +51,7 @@ class MultiMotorDummy(MultiMotorInterface):
     This class simulates a multi-axis motor controller, including axis positions, busy/alive state management, and per-axis error injection for testing purposes.
     """
 
-    def __init__(self, *axisNamesAll, speed=0.2, **kwargs):
+    def __init__(self, *axisNamesAll, speed=10, **kwargs):
         """
         Initializes the dummy multi-axis motor with the given axis names.
 

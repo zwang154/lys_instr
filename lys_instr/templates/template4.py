@@ -8,7 +8,7 @@ class TemplateWindow(LysSubWindow):
         super().__init__()
         self.setWindowTitle("template4")
         self._storage = DataStorage()
-        self._detector = detector if detector else dummy.MultiDetectorDummy(indexShape=(8, 8), frameShape=(256, 256))
+        self._detector = detector if detector else dummy.MultiDetectorDummy(indexShape=(9, 9), frameShape=(256, 256))
         self._motor = motor if motor else dummy.MultiMotorDummy("t")
         self._storage.connect(self._detector)
         self._detectorName = detectorName

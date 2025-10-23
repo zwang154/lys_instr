@@ -116,7 +116,7 @@ class _ScanRangeRow(QtWidgets.QWidget):
             r = (self._from.value(), self._step.value(), self._numSteps.value())
         else:
             r = self._freeExpr.text()
-        return {"type": "scan", "name": self._scanAxis.currentText(), "mode": mode, "range": r}
+        return {"type": "motorScan", "name": self._scanAxis.currentText(), "mode": mode, "range": r}
     
     def load(self, d):
         self._scanAxis.setCurrentText(d["name"])
@@ -187,7 +187,7 @@ class _ScanSwitchRow(QtWidgets.QWidget):
         self._title.setText("Scan " + str(index))
     
     def save(self):
-        return {"type": "switch", "name": self._scanAxis.currentText(), "mode": self._scanMode.currentText(), "range": self._freeExpr.text()}
+        return {"type": "switchScan", "name": self._scanAxis.currentText(), "mode": self._scanMode.currentText(), "range": self._freeExpr.text()}
     
     def load(self, d):
         self._scanAxis.setCurrentText(d["name"])
@@ -214,10 +214,10 @@ class _ScanList(QtWidgets.QListWidget):
     def _buildMenu(self):
         menu = QtWidgets.QMenu()
 
-        add = QtWidgets.QAction('Add new scan', triggered=lambda: self._add(type="scan"))
-        switch = QtWidgets.QAction('Add new switch', triggered=lambda: self._add(type="switch"))
-        menu.addAction(add)
-        menu.addAction(switch)
+        addMotor = QtWidgets.QAction('Add motor scan', triggered=lambda: self._add(type="motorScan"))
+        addSwitch = QtWidgets.QAction('Add switch scan', triggered=lambda: self._add(type="switchScan"))
+        menu.addAction(addMotor)
+        menu.addAction(addSwitch)
         if len(self.selectedItems()) > 0:
             up = QtWidgets.QAction('Move up', triggered=lambda: self._move(-1))
             down = QtWidgets.QAction('Move down', triggered=lambda: self._move(1))
@@ -236,10 +236,10 @@ class _ScanList(QtWidgets.QListWidget):
         menu.addAction(cls)
         menu.exec_(QtGui.QCursor.pos())
 
-    def _add(self, index=None, data=None, type="scan"):
+    def _add(self, index=None, data=None, type="motorScan"):
         if index == None:
             index = len(self._scans)
-        if type == "scan":
+        if type == "motorScan":
             scan=_ScanRangeRow("Scan" + str(len(self._scans)+1), self._scanner)
         else:
             scan=_ScanSwitchRow("Scan" + str(len(self._scans)+1), self._switches)
