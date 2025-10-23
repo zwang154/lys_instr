@@ -45,7 +45,7 @@ However, building such a system remains nontrivial for researchers. At the low l
 To address these issues, we introduce `lys_instr`—an object-oriented framework that abstracts common control patterns from experiment-specific implementations, reducing coding and design costs while enabling flexible and efficient automation.
 
 
-# Design Philosophy
+# Design philosophy
 
 `lys_instr` adopts a three-layer architecture based on levels of abstraction, separating individual instrument control, workflow coordination, and control system assembly. Each layer applies object-oriented design patterns in GoF [@Gamma:1994], suited to its role, enhancing flexibility, modularity, and ease of use. The framework builds on the `lys` platform, leveraging its powerful multidimensional data visualization capabilities.
 
@@ -60,6 +60,8 @@ To address these issues, we introduce `lys_instr`—an object-oriented framework
 3. Top Layer: Control-System Assembly
 
   This layer enables flexible assembly of components from the Base and Intermediate Layers into a complete control system, on both the character user interface (CUI) and GUI levels. Following the *Mediator* design pattern, it manages connections among abstract devices (and, through the Base Layer, the corresponding real hardware) to enable automatic data flow, and organizes the GUI for user interaction. This grants users maximum freedom to construct tailored control systems without managing complex aspects such as inter-device communication or multi-threading. Several typical GUI templates are also provided for quick hands-on use.
+
+Overall, `lys_instr` provides prebuilt support for standard instruments, common workflows, and GUI components, so users generally need to implement only device-specific interfaces for hardware communication for automating their measurement workflows.
 
 
 # Example of Constructed GUI
