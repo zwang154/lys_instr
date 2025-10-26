@@ -40,7 +40,30 @@ For real hardware, you should implement device-specific communication methods in
             return ... a dictionary with axis names as keys and alive states (bool) as values (True if alive, False if not) ...
 
 
-Here illustrates a step-by-step construction of `YourMotor` assuming a dummy hardware with two axes, "x" and "y".
+Step-by-Step Demonstration
+--------------------------
+
+Here we illustrate step-by-step construction of ``YourMotor`` for a dummy device (example with axes "x" and "y").
+
+Implement ``YourMotor`` as a subclass of ``MultiMotorInterface`` and attach a per-axis simulator that provides position values.
+(``_ValueInfo`` in ``lys_instr.dummy`` is a helper class that simulates axis behavior.)
+The constructor accepts positional axis names via ``*axisNamesAll``, for example, ``YourMotor("x", "y")``.
+
+.. code-block:: python
+
+    from lys_instr import MultiMotorInterface
+
+    class YourMotor(MultiMotorInterface):
+
+        def __init__(self, *axisNamesAll, **kwargs):
+            super().__init__(*axisNamesAll, **kwargs)
+
+            from lys_instr.dummy.MultiMotor import _ValueInfo
+            self._simulator = {name: _ValueInfo(10) for name in axisNamesAll}  # motor speed = 10 units/s
+
+            self.start()
+
+Alternatively, you can use a constructor that explicitly accepts two axis name parameters, for example, ``axisName_x`` and ``axisName_y``.
 
 .. code-block:: python
 
@@ -51,52 +74,79 @@ Here illustrates a step-by-step construction of `YourMotor` assuming a dummy har
         def __init__(self, axisName_x, axisName_y, **kwargs):
             super().__init__(axisName_x, axisName_y, **kwargs)
 
-            # Code to establish connection and initialize the instruments
-            # In this case, we simply call a dummy data simulator
             from lys_instr.dummy.MultiMotor import _ValueInfo
             self._simulator = {axisName_x: _ValueInfo(10), axisName_y: _ValueInfo(10)}  # motor speed = 10 units/s
             
             self.start()
 
+Implement ``_set()`` to assign target positions for specified axes (this starts movement in the simulator).
+``_set()`` accepts keyword arguments mapping axis names to numeric targets.
+
+.. code-block:: python
+
         def _set(self, **target):
-            # Code to tell the instruments to move to the target positions for specified axes
             for name, d in self._simulator.items():
                 if name in target:
                     d.set(target[name])
 
+Implement ``_get()`` to read the position of each simulator axis and return a dictionary mapping axis names to their current positions.
+
+.. code-block:: python
+
         def _get(self):
-            # Code to read the current positions of all axes from the instruments
-            # Returns a dictionary with axis names as keys and current positions (float) as values
             return {name: d.position for name, d in self._simulator.items()}
 
+Implement ``_stop()`` to halt all axis motion by calling each axis's ``stop()`` method.
+
+.. code-block:: python
+
         def _stop(self):
-            # Code to tell the instruments to stop all axes
             for d in self._simulator.values():
                 d.stop()
 
+Implement ``_isBusy()`` to check the simulator and return a dictionary mapping axis names to booleans indicating whether each axis is currently moving.
+
+.. code-block:: python
+
         def _isBusy(self):
-            # Code to check if each axis is moving
-            # Returns a dictionary with axis names as keys and busy states (bool) as values (True if busy, False if not)
             return {name: d.busy for name, d in self._simulator.items()}
 
+Implement ``_isAlive()`` to check the simulator and return a dictionary mapping axis names to booleans indicating whether each axis is connected and functioning.
+
+.. code-block:: python
+
         def _isAlive(self):
-            # Code to check if each axis is connected and functioning
-            # Returns a dictionary with axis names as keys and alive states (bool) as values (True if alive, False if not)
             return {name: not d.error for name, d in self._simulator.items()}
 
-The class constructed above is in fact the `MultiMotorDummy` class provided in the ``lys_instr.dummy`` module.
+Optionally, implement a settings panel method that returns a *QWidget* for later use by GUI.
+The ``_OptionalPanel`` class in the ``lys_instr.dummy.MultiMotor`` module can readily be used.
+
+.. code-block:: python
+
+        def settingsWidget(self):
+            from lys_instr.dummy.MultiMotor import _OptionalPanel
+            return _OptionalPanel(self)
+
+The class constructed above is actually the ``MultiMotorDummy`` class provided in the ``lys_instr.dummy`` module.
 
 
 Checking Operations
 -------------------
 
-To verify functionality, use your own motor class (for example, ``YourMotor``).
+To verify functionality, instantiate your motor class, for example, ``YourMotor``.
+(Import it if defined in a separate module.)
 
 .. code-block:: python
 
     motor = YourMotor(... your parameters ...)
 
-For demonstration, we use the dummy motor ``MultiMotorDummy`` with two axes, "x" and "y", to simulate motor behavior without real hardware.
+For demonstration, we use the ``YourMotor`` class defined above with two axes, "x" and "y":
+
+.. code-block:: python
+
+    motor = YourMotor("x", "y")
+
+This is functionally equivalent to instantiating the provided ``MultiMotorDummy`` class:
 
 .. code-block:: python
 
@@ -104,7 +154,7 @@ For demonstration, we use the dummy motor ``MultiMotorDummy`` with two axes, "x"
 
     motor = dummy.MultiMotorDummy("x", "y")
 
-You can use the ``set()``, ``get()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiMotorInterface`` to confirm that the motor is functioning correctly.
+Now, you can use the ``set()``, ``get()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiMotorInterface`` to confirm that the motor is functioning correctly.
 For example:
 
 .. code-block:: python

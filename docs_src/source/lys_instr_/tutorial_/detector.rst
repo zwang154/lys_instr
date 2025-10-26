@@ -15,6 +15,7 @@ For real hardware, you should implement device-specific communication methods in
 
         def __init__(self, indexShape=(), frameShape=(), exposure=None, **kwargs):
             super().__init__(**kwargs)
+            ... your code to establish connection and initialize the instruments ...
             self.exposure = exposure
             self.start()
 
@@ -48,16 +49,123 @@ If no indexing is needed, simply omit ``indexShape`` or set ``indexShape=()`` (t
 See :doc:`Detector GUI </lys_instr_/tutorial_/detectorGUI>` for displaying non-two-dimensional frames.
 
 
+Step-by-Step Demonstration
+--------------------------
+
+Here we illustrate step-by-step construction of ``YourDetector`` for a dummy device that provides pre-encoded or synthetic data frames.
+
+Implement ``YourDetector`` by subclassing ``MultiDetectorInterface``.
+The data supply logic is delegated to the ``setData()``, which maintains an internal buffer ``_data`` to store acquired frames.
+
+.. code-block:: python
+
+    class YourDetector(MultiDetectorInterface):
+
+        def __init__(self, indexShape=(), frameShape=(), exposure=None, **kwargs):
+            super().__init__(**kwargs)
+
+            self.setData(data, indexShape, frameShape)
+            self.error = False
+
+            self.exposure = exposure
+            self.start()
+
+        def setData(self, data=None, indexShape=None, frameShape=None):
+            if data is None:
+                self._obj = RandomData(indexShape, frameShape)
+            else:
+                self._obj = data
+            self._data = {}
+
+By default, ``setData()`` generates random noise with the specified ``indexShape`` and ``frameShape``. 
+It can also load pre-encoded frames via the GUI by user selection. 
+For real hardware, the details of the dummy data generation logic can be ignored.
+
+Implement ``_run()`` to sequentially fetch or generate frames, populate ``_data`` for respective indices, emit ``updated`` signal after each frame, and check ``_shouldStop`` to allow cancellation.
+
+.. code-block:: python
+
+        def _run(self, iter=1):
+            self._shouldStop = False
+            
+            i = 0
+            while i != iter:
+                for idx, data in self._obj:
+                    if self._shouldStop:
+                        return
+                    time.sleep(self.exposure * self._obj.nframes)
+                    self._data[idx] = data
+                    self.updated.emit()
+                i += 1
+
+Implement ``_stop()`` to request acquisition cancellation by setting a flag checked by ``_run()``.
+
+.. code-block:: python
+
+        def _stop(self):
+            self._shouldStop = True
+
+Implement ``_get()`` to return the acquired frames in ``_data`` and clear the buffer afterward.
+
+.. code-block:: python
+
+        def _get(self):
+            data = self._data.copy()
+            self._data.clear()
+            return data
+
+Implement ``_isAlive()`` to report the connection status of the device, here managed by an internal ``error`` flag.
+
+.. code-block:: python
+
+        def _isAlive(self):
+            return not self.error
+
+Implement the properties ``frameShape``, ``indexShape``, and ``axes`` to return the corresponding attributes from ``__init__()``.
+
+.. code-block:: python
+
+        @property
+        def frameShape(self):
+            return self._obj.frameShape
+
+        @property
+        def indexShape(self):
+            return self._obj.indexShape
+
+        @property
+        def axes(self):
+            return self._obj.axes
+
+Optionally, implement a settings panel method that returns a *QWidget* for later use by GUI.
+The ``_OptionalPanel`` class in the ``lys_instr.dummy.MultiDetector`` module can readily be used.
+
+.. code-block:: python
+
+        def settingsWidget(self):
+            from lys_instr.dummy.MultiDetector import _OptionalPanel
+            return _OptionalPanel(self)
+
+The class constructed above is actually the ``MultiDetectorDummy`` class provided in the ``lys_instr.dummy`` module.
+
+
 Checking Operations
 -------------------
 
-To verify functionality, use your own detector class (for example, ``YourDetector``).
+To verify functionality, instantiate your detector class, for example, ``YourDetector``.
+(Import it if defined in a separate module.)
 
 .. code-block:: python
 
     detector = YourDetector(... your parameters ...)
 
-For demonstration, we use the dummy detector ``MultiDetectorDummy`` with ``indexShape=()`` and ``frameShape=(256, 256)`` to simulate detector behavior without real hardware.
+For demonstration, we use the ``YourDetector`` class defined above with ``indexShape=()`` and ``frameShape=(256, 256)``:
+
+.. code-block:: python
+
+    detector = YourDetector(frameShape=(256, 256))
+
+This is functionally equivalent to instantiating the provided ``MultiDetectorDummy`` class:
 
 .. code-block:: python
 
@@ -65,7 +173,7 @@ For demonstration, we use the dummy detector ``MultiDetectorDummy`` with ``index
 
     detector = dummy.MultiDetectorDummy(frameShape=(256, 256))
 
-You can use the ``startAcq()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiDetectorInterface`` to confirm that the detector is functioning correctly.
+Now, you can use the ``startAcq()``, ``stop()``, ``isBusy()``, and ``isAlive()`` methods provided by ``MultiDetectorInterface`` to confirm that the detector is functioning correctly.
 For example:
 
 .. code-block:: python
