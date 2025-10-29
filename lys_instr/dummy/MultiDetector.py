@@ -10,19 +10,23 @@ class MultiDetectorDummy(MultiDetectorInterface):
     """
     Dummy implementation of ``MultiDetectorInterface``.
 
-    This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.
+    This class simulates a detector that Produces indexed frames from a supplied data source or by generating random frames.
+    Acquisition runs in a background loop (started by ``start()`` in ``__init__``) and populates an internal buffer.
+    Signals ``updated``, ``dataAcquired``, and ``aliveStateChanged``, defined in ``MultiDetectorInterface``, are emitted as appropriate.
     """
 
     def __init__(self, data=None, indexShape=(), frameShape=(100, 100), exposure=0.1, **kwargs):
         """
-        Initializes the dummy multi-detector with the given parameters.
+        Initializes the dummy detector and starts acquisition.
+
+        Calls ``start()`` to begin the acquisition thread.
 
         Args:
-            data (DummyDataInterface): The data to be used as dummy. If not specified, random data will be used based on indexShape and frameShape.
-            indexShape (tuple of int): Shape of the index grid for random data. This argument will be ignored when data is not None.
-            frameShape (tuple of int): Shape of each data frame for random data. This argument will be ignored when data is not None.
-            exposure (float, optional): Time per frame in seconds.
-            **kwargs: Additional keyword arguments passed to the parent class.
+            data (Optional[DummyDataInterface]): Data source; if None, random frames are generated.
+            indexShape (Tuple[int, ...]): Shape of the index grid for generated data. Ignored if ``data`` is not None.
+            frameShape (Tuple[int, ...]): Shape of each data frame for generated data. Ignored if ``data`` is not None.
+            exposure (float): Time in seconds to wait per frame (frame exposure).
+            **kwargs: Additional keyword arguments forwarded to the parent initializer.
         """
         super().__init__(**kwargs)
         self.setData(data, indexShape, frameShape)
@@ -32,9 +36,11 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def _run(self, iter=1):
         """
-        Runs the acquisition thread associated with the ``MultiDetectorInterface``, simulating indexed/arrayed data frame acquisition.
+        Runs the background acquisition loop that simulates frame acquisition.
 
-        This method generates random data frames at the specified frame time, updates the acquired indices, and emits an update signal after each frame is acquired.
+        For each iteration, walks the data source (``self._obj``) to acquire frames, sleeps per frame according to exposure time (``self.exposure``), 
+        stores acquired frames into the internal buffer (``self._data``), and emits notification signal (``updated``) after each frame.
+        Returns early if stop request flag (``self._shouldStop``) is set.
         """
         self._shouldStop = False
         
@@ -50,16 +56,18 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def _stop(self):
         """
-        Stops the acquisition thread.
+        Requests the acquisition loop to stop.
+
+        Sets an internal stop request flag so the background thread will exit at the next check.
         """
         self._shouldStop = True
 
     def _get(self):
         """
-        Retrieves and clears the acquired data.
+        Retrieves and clears the accumulated data buffer.
 
         Returns:
-            dict: A copy of the acquired data, indexed by frame indices.
+            dict: Shallow copy of acquired frames keyed by index tuples.
         """
         data = self._data.copy()
         self._data.clear()
@@ -67,53 +75,61 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def _isAlive(self):
         """
-        Gets the alive state of the simulated detector.
+        Returns the alive state of the simulated detector.
 
         Returns:
-            bool: True if the detector is alive, False if it is dead.
+            bool: True if the detector is alive, False otherwise.
         """
         return not self.error
 
     @property
     def frameShape(self):
         """
-        Shape of each data frame acquired by the detector.
+        Shape of a single acquired data frame.
 
         Returns:
-            tuple of int: The shape of each data frame.
+            tuple[int, ...]: Frame dimensions (height, width, ...) as provided by the data source.
         """
         return self._obj.frameShape
 
     @property
     def indexShape(self):
         """
-        Shape of the index grid for data acquisition.
+        Shape of the index grid.
 
         Returns:
-            tuple of int: The shape of the index grid.
+            tuple[int, ...]: Dimensions of the index grid used to iterate over frames.
         """
         return self._obj.indexShape
 
     @property
     def axes(self):
         """
-        Coordinate axes for each dimension of the data.
+        Axis coordinates for the full data.
 
         Returns:
-            list[numpy.ndarray]: Coordinate axes for each dimension of the data.
+            List[numpy.ndarray]: Coordinate arrays corresponding to each axis of the index grid.
         """
         return self._obj.axes
 
     def settingsWidget(self):
         """
-        Returns a QWidget for optional settings.
+        Creates and returns an optional settings QWidget.
 
         Returns:
-            QtWidgets.QWidget: The optional settings panel.
+            QtWidgets.QWidget: The settings panel widget.
         """
         return _OptionalPanel(self)
 
     def setData(self, data=None, indexShape=None, frameShape=None):
+        """
+        Configures the dummy data source.
+
+        Args:
+            data (Optional[DummyDataInterface]): Data source. If None, a random-data generator (``RandomData``) is created.
+            indexShape (Optional[Tuple[int, ...]]): Index-grid shape used by the random-data generator.
+            frameShape (Optional[Tuple[int, ...]]): Frame shape used by the random-data generator.
+        """
         if data is None:
             self._obj = RandomData(indexShape, frameShape)
         else:
@@ -123,17 +139,17 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
 class _OptionalPanel(QtWidgets.QWidget):
     """
-    Optional settings panel for ``MultiDetectorDummy``.
+    Optional settings panel.
 
-    Provides a button to toggle the simulated detector's alive state.
+    Provides GUI to toggle the simulated detector's alive state and to choose dummy data sources.
     """
 
     def __init__(self, obj):
         """
-        Initializes the optional settings panel with a reference to the backend object.
+        Initializes the settings panel.
 
         Args:
-            obj: The backend detector object.
+            obj (MultiDetectorInterface): Backend detector object using the panel.
         """
         super().__init__()
         self.setWindowTitle("Settings")
@@ -142,7 +158,7 @@ class _OptionalPanel(QtWidgets.QWidget):
 
     def _initLayout(self):
         """
-        Initializes and arranges the widgets in the optional settings panel.
+        Builds and arranges the panel's widgets.
         """
         self._switch = QtWidgets.QPushButton("Change", clicked=self._toggleAlive)
         aliveLayout = QtWidgets.QHBoxLayout()
@@ -163,7 +179,7 @@ class _OptionalPanel(QtWidgets.QWidget):
 
     def _toggleAlive(self):
         """
-        Toggles the alive state of the backend detector and emits relevant signals.
+        Toggles the backend detector's alive state and emits notification signals.
         """
         backend = self._obj
         backend.error = not backend.error

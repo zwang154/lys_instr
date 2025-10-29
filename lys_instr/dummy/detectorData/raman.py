@@ -4,7 +4,24 @@ from .interface import DummyDataInterface
 
 
 class RamanData(DummyDataInterface):
+    """
+    Dummy Raman data provider backed by NumPy sample data.
+
+    The class loads ``resources/sampleRamanData.npy`` from the package and exposes frames, index shape and coordinate axes.
+    It supports two ``scanLevel`` modes (0 or 1).
+    """
+
     def __init__(self, scanLevel=0):
+        """
+        Initializes the data provider by loading the sample data.
+
+        Args:
+            scanLevel (int): 0 for no index dimension, 1 for a single index axis.
+
+        Raises:
+            FileNotFoundError: If the sample data file is missing.
+            NotImplementedError: If an unsupported ``scanLevel`` is passed.
+        """
         here = os.path.dirname(__file__)
         path = os.path.normpath(os.path.join(here, '..', '..', 'resources', 'sampleRamanData.npy'))
 
@@ -24,29 +41,74 @@ class RamanData(DummyDataInterface):
 
     @classmethod
     def name(cls):
+        """
+        Returns the name of the data provider.
+
+        Returns:
+            str: Name of the data provider ("Raman").
+        """
         return "Raman"
 
     @property
     def frameShape(self):
+        """
+        Shape of each data frame.
+
+        Returns:
+            tuple[int, ...]: Shape of each data frame.
+        """
         return (self._data.shape[-1],)
 
     @property
     def indexShape(self):
+        """
+        Shape of the index grid to be filled by data frames.
+
+        Returns:
+            tuple[int, ...]: Shape of the index grid (empty tuple when no index).
+        """
         return self._indexShape
 
     @property
     def axes(self):
+        """
+        Axis coordinates for the full data.
+
+        Returns:
+            list[numpy.ndarray]: Coordinate arrays corresponding to each axis of the index grid.
+        """
         return self._axes
     
     @property
     def nframes(self):
+        """
+        Number of frames produced per iteration of the data provider.
+
+        Returns:
+            int: Number of frames per iteration (always 1 for this provider).
+        """
         return 1
 
     def __iter__(self):
+        """
+        Returns an iterator over (index, frame) pairs.
+
+        Returns:
+            Iterator[tuple, numpy.ndarray]: Iterator over (index, frame) pairs.
+        """
         self._n = 0
         return self
     
     def __next__(self):
+        """
+        Returns the next (index, frame) pair.
+
+        Returns:
+            tuple[tuple[int, ...], numpy.ndarray]: (index, frame)
+
+        Raises:
+            StopIteration: When no more frames are available.
+        """
         if self._n >= np.prod(self._indexShape):
             raise StopIteration()
         idx = np.unravel_index(self._n, self._indexShape)
