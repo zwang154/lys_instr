@@ -9,11 +9,9 @@ from lys.Qt import QtCore
 
 class _AxisInfo():
     """
-    Stores the busy and alive state information for a single motor axis.
+    Per-axis state container.
 
-    Attributes:
-        busy (bool): Whether the axis is currently busy.
-        alive (bool): Whether the axis is currently alive (not in error).
+    Holds the current busy/alive state and an optional target value for a single motor axis.
     """
 
     def __init__(self, busy=False, alive=True):
@@ -30,16 +28,12 @@ class _AxisInfo():
 
 class MultiControllerInterface(HardwareInterface):
     """
-    Abstract interface for multi-axis motor controllers.
+    Abstract interface for multi-axis controllers (e.g., motors, switches, or similar).
 
     This class provides background polling, state management, and Qt signals for axis value and state updates.
-    Subclasses must implement device-specific methods: ``_get()``, ``_set()``, ``_isBusy()``, and ``_isAlive()``.
-    ``_get()``, ``_set()``, and ``_isBusy()`` should raise RuntimeError if the device is not responding or if there is a communication error.
-    ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that causes interruption.
-
-    Args:
-        *axisNamesAll: Names of all axes to manage.
-        **kwargs: Additional keyword arguments passed to QThread.
+    Subclasses must implement device-specific methods: ``_get()``, ``_set()``, ``_isBusy()``, and ``_isAlive()``. 
+    ``_get()``, ``_set()``, and ``_isBusy()`` should raise ``RuntimeError`` on communication errors; 
+    ``_isAlive()`` should return the current alive state without raising ``RuntimeError`` that interrupts monitoring.
     """
 
     #: Signal (dict) emitted when axis values change.
@@ -105,12 +99,12 @@ class MultiControllerInterface(HardwareInterface):
         """
         Sets target values for one or more axes.
 
-        For each axis specified in ``kwargs``, sets its target value.
-        For example, to set x to 1.0 and y to 2.0, call: ``set(x=1.0, y=2.0)``.
+        For each axis specified in ``kwargs``, sets its target value, e.g., ``set(x=1.0, y=2.0)``.
         Optionally waits until all axes become idle after setting.
 
         Args:
             wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.
+            lock (bool, optional): If True, acquire the instance mutex while applying targets. Defaults to True.
             **kwargs: Axis-value pairs to set, e.g., x=1.0, y=2.0.
 
         Raises:
@@ -126,6 +120,18 @@ class MultiControllerInterface(HardwareInterface):
             self.waitForReady()
 
     def _set_impl(self, **kwargs):
+        """
+        Internal implementation that applies target values to axes.
+
+        Validates provided axis names, updates per-axis state (target and busy flags), emits any busy-state updates,
+        and finally calls the subclass-implemented ``_set`` method to perform the hardware operation.
+
+        Args:
+            **kwargs (float): Axis-value pairs to set (e.g., x=1.0, y=2.0).
+
+        Raises:
+            ValueError: If any provided axis name is invalid.
+        """
         # Validate axis names
         invalid = [name for name in kwargs if name not in self._info]
         if invalid:
@@ -175,10 +181,10 @@ class MultiControllerInterface(HardwareInterface):
 
     def waitForReady(self):
         """
-        Blocks further interaction until the device is no longer busy.
+        Blocks further interaction until all axes are idle.
 
         Returns:
-            bool: True once all axes become idle.
+            None
         """
         loop = QtCore.QEventLoop()
 
@@ -195,7 +201,7 @@ class MultiControllerInterface(HardwareInterface):
     @property
     def isBusy(self):
         """
-        Returns the current busy state of all axes.
+        Current busy state of all axes.
 
         Returns:
             dict[str, bool]: Mapping of axis names to their busy state.
@@ -209,7 +215,7 @@ class MultiControllerInterface(HardwareInterface):
     @property
     def isAlive(self):
         """
-        Returns the current alive state of all axes.
+        Current alive state of all axes.
 
         Returns:
             dict[str, bool]: Mapping of axis names to their alive state.
@@ -219,34 +225,32 @@ class MultiControllerInterface(HardwareInterface):
     @property
     def nameList(self):
         """
-        Returns the list of axis names.
+        List of all axis names.
 
         Returns:
-            list of str: List of axis names.
+            list[str]: Axis names in the order they were registered.
         """
         return list(self._info.keys())
     
     @property
     def target(self):
         """
-        Returns the current target values of all axes.
+        Current target values of all axes.
 
         Returns:
-            dict[str, float]: Mapping of axis names to their target positions.
+            dict[str, float]: Mapping of axis names to their target values.
         """
         return {name: info.target for name, info in self._info.items() if info.target is not None}
 
     def settingsWidget(self):
         """
-        Returns a generic settings dialog.
+        Returns a device-specific settings dialog.
 
-        This method is intended to be overridden in subclasses to provide a device-specific settings UI.
+        Subclasses should override this to provide a QDialog for device settings.
+        The base implementation returns None.
 
         Returns:
-            QDialog: The settings dialog.
-
-        Raises:
-            NotImplementedError: If the subclass does not implement this method.
+            QDialog | None: Settings dialog, or None if not provided by the base class.
         """
         return None
 
@@ -276,10 +280,10 @@ class MultiControllerInterface(HardwareInterface):
 
     def _get(self):
         """
-        Should be implemented in subclasses to provide device-specific logic for getting axis positions.
+        Should be implemented in subclasses to provide device-specific logic for getting axis values.
 
         Returns:
-            dict[str, float]: Mapping of axis names to their current positions.
+            dict[str, float]: Mapping of axis names to their current values.
 
         Raises:
             NotImplementedError: If the subclass does not implement this method.
@@ -288,7 +292,7 @@ class MultiControllerInterface(HardwareInterface):
 
     def _set(self, **kwargs):
         """
-        Should be implemented in subclasses to provide device-specific logic for setting axis positions.
+        Should be implemented in subclasses to provide device-specific logic for setting axis values.
 
         Args:
             kwargs (dict[str, float]): Axis-value pairs to set, e.g., x=1.0, y=2.0.
@@ -300,33 +304,89 @@ class MultiControllerInterface(HardwareInterface):
 
 
 class MultiSwitchInterface(MultiControllerInterface):
+    """
+    Interface for switch-type multi-axis controllers.
+
+    Convenience subclass for devices where each axis behaves like a switch with discrete label positions.
+    """
+
     def __init__(self, labelNames, *axisNamesAll, **kwargs):
+        """
+        Initializes the interface with given label and axis names.
+
+        Args:
+            labelNames (Iterable[str]): Labels associated with the switch axes.
+            *axisNamesAll: Axis names managed by the controller.
+            **kwargs: Additional keyword arguments passed to the base class.
+        """
         super().__init__(*axisNamesAll, **kwargs)
         self._labels = labelNames
 
     @property
     def labelNames(self):
+        """
+        List of label names associated with the switch axes.
+
+        Returns:
+            list[str]: Label names in the order corresponding to axis registration.
+        """
         return self._labels
     
 
 class OffsettableMultiMotorInterface(MultiControllerInterface):
     """
-    Add offset functionality for MultiMotor.
+    Interface for motor-type multi-axis controllers with offset functionality.
+
+    Convenience subclass for devices where each axis exposes a continuous position value.
+    This class adds a per-axis offsets dictionary that is applied to get()/set() operations and can be persisted to disk.
     """
+
     offsetChanged = QtCore.pyqtSignal()
 
     class offsetDict(dict):
+        """
+        Dictionary subclass that stores per-axis offsets and emits a signal when any value changes.
+        """
+
         valueChanged = QtCore.pyqtSignal()
 
         def __init__(self, axesNames, parent):
+            """
+            Initializes the offsets dictionary for the supplied axis names.
+
+            The dictionary is pre-populated with zeros for each axis and keeps a weak reference to the parent so that changes can notify the parent object.
+
+            Args:
+                axesNames (Iterable[str]): Axis names to initialize with zero.
+                parent: Parent instance which owns this dict.
+            """
             super().__init__({name: 0 for name in axesNames})
             self._parent = weakref.ref(parent)
 
         def __setitem__(self, key, value):
+            """
+            Sets an offset value and notifies the parent.
+
+            Emits the parent's ``offsetChanged`` signal after updating the dictionary so listeners can react.
+
+            Args:
+                key (str): Axis name.
+                value (float): Offset value for the axis.
+            """
             super().__setitem__(key, value)
             self._parent().offsetChanged.emit()
 
     def __init__(self, *axesNames, autoSave=True, **kwargs):
+        """
+        Initializes offset support for the multi-axis interface.
+
+        Creates an internal per-axis offsets dictionary, optionally loads persisted offsets, and wires change notifications for automatic updates.
+
+        Args:
+            *axesNames (Iterable[str]): Axis names managed by the controller.
+            autoSave (bool): If True, load persisted offsets and save on changes. Defaults to True.
+            **kwargs: Additional keyword arguments passed to the base class.
+        """
         super().__init__(*axesNames, **kwargs)
         self._offsetDict = self.offsetDict(axesNames, self)
         if autoSave:
@@ -335,13 +395,42 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
         self.offsetChanged.connect(lambda: self.valueChanged.emit(self.get()))
 
     def _valueChanged(self):
+        """
+        Notifies listeners that current axis values changed (offsets applied).
+
+        Emits the ``valueChanged`` signal with the current output of ``get()`` (offsets applied).
+        """
         self.valueChanged.emit(self.get())
 
     def set(self, **kwargs):
+        """
+        Sets target values for axes in user coordinates (stored offsets subtracted).
+
+        Each provided value is adjusted by adding the corresponding per-axis offset before delegating to the parent implementation. 
+        For example, calling ``set(x=1.0)`` will result in the value ``1.0 + self.offset.get('x', 0)`` being sent to the underlying controller.
+
+        Args:
+            **kwargs (float): Axis-value pairs in user coordinates.
+
+        Returns:
+            None
+        """
         kwargs = {key: value + self.offset.get(key, 0) for key, value in kwargs.items()}
         super().set(**kwargs)
 
     def get(self, type=dict):
+        """
+        Gets current axis values in user coordinates (stored offsets subtracted).
+
+        Args:
+            type (type, optional): Output container type (dict, list, np.ndarray). Defaults to dict.
+
+        Returns:
+        dict | list | np.ndarray: Axis values in user coordinates (stored offsets subtracted).
+        
+        Raises:
+            TypeError: If an unsupported output type is requested.
+        """
         valueDict = {key: value - self.offset.get(key, 0) for key, value in super().get().items()}
         if type is dict:
             return valueDict
@@ -355,11 +444,17 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
     @property
     def offset(self):
         """
-        Dictionary of offset for respective axes.
+        Dictionary mapping axis names to respective offsets.
         """
         return self._offsetDict
 
     def save(self, path=".lys/lys_instr/motorOffsets"):
+        """
+        Persists per-axis offsets to disk.
+
+        Args:
+            path (str): Filesystem path to save offsets to.
+        """
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if os.path.exists(path):
             with open(path, "r") as file:
@@ -372,6 +467,12 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
             file.write(str(d))
 
     def load(self, path=".lys/lys_instr/motorOffsets"):
+        """
+        Load persisted per-axis offsets into memory.
+
+        Args:
+            path (str): Filesystem path to load offsets from.
+        """
         if not os.path.exists(path):
             return
         with open(path, "r") as file:
@@ -382,4 +483,9 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
 
 
 class MultiMotorInterface(OffsettableMultiMotorInterface):
+    """
+    Multi-axis motor interface.
+
+    Thin subclass of OffsettableMultiMotorInterface kept for semantic clarity and for future device-specific extensions.
+    """
     pass

@@ -11,15 +11,16 @@ class _AcqThread(QtCore.QThread):
     Runs the detector's acquisition loop as a worker thread and emits signals when new data is acquired.
     """
 
+    #: Signal (dict) emitted when new data is acquired.
     dataAcquired = QtCore.pyqtSignal(dict)
-    """emitted when new data is acquired."""
 
     def __init__(self, detector, iter=1):
         """
-        Initializes the acquisition thread for the detector.
+        Initializes the acquisition thread for a detector.
 
         Args:
             detector (DetectorInterface): The detector instance to run acquisition for.
+            iter (int, optional): Number of acquisition iterations for this thread. Defaults to 1.
         """
         super().__init__()
         self._detector = detector
@@ -51,27 +52,30 @@ class DetectorInterface(HardwareInterface):
     This class provides background polling, threaded (worker) acquisition, and Qt signal management for detector state and data updates.
     Subclasses must implement device-specific methods: ``_get()``, ``_stop()``, and ``_isAlive()``.
     ``_get()`` and ``_stop()`` should raise ``RuntimeError`` if the device is not responding or a communication error occurs.
-    ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that causes interruption.
-    The ``updated`` signal should be emitted by the acquisition thread to inform when new data is acquired.
-
-    Args:
-        exposure(float or None): The initial exposure time. If the device does not support the exposure time, None should be set.
-        **kwargs: Additional keyword arguments passed to QThread.
+    ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that interrupts monitoring.
+    The ``updated`` signal is emitted by the acquisition thread when new data is available.
     """
 
+    #: Signal (bool) emitted when alive state changes.
     aliveStateChanged = QtCore.pyqtSignal(bool)
-    """Emitted when alive state changes."""
 
+    #: Signal (bool) emitted when busy state changes.
     busyStateChanged = QtCore.pyqtSignal(bool)
-    """Emitted when busy state changes."""
 
+    #: Signal (dict) emitted when data is acquired.
     dataAcquired = QtCore.pyqtSignal(dict)
-    """emitted when data is acquired."""
 
+    #: Signal emitted by the acquisition thread when new data is acquired.
     updated = QtCore.pyqtSignal()
-    """emitted by the acquisition thread when new data is acquired."""
 
     def __init__(self, exposure=1, **kwargs):
+        """
+        Initializes the interface.
+
+        Args:
+            exposure (float or None): Initial exposure time.
+            **kwargs: Additional keyword arguments passed to the base class.
+        """
         super().__init__(**kwargs)
         self._exposure = exposure
         self._mutex = QtCore.QMutex()
@@ -95,7 +99,7 @@ class DetectorInterface(HardwareInterface):
         """
         Starts acquisition in an acquisition thread.
 
-        If both `wait` and `output` are True, the method blocks until acquisition is complete and returns the acquired data.
+        If both `wait` and `output` are True, the method blocks until acquisition completes and returns the acquired data.
 
         Args:
             iter (int): Number of iterations.
@@ -103,7 +107,7 @@ class DetectorInterface(HardwareInterface):
             output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.
 
         Returns:
-            dict[tuple, np.ndarray] or None: Acquired data if output is True, otherwise None.
+            dict[tuple, np.ndarray] | None: Acquired data that maps index tuples to frames when ``output`` is True; otherwise None.
         """
         if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
@@ -132,7 +136,7 @@ class DetectorInterface(HardwareInterface):
         """
         Cleans up after acquisition is finished.
 
-        Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.
+        Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal.
         """
         with QtCore.QMutexLocker(self._mutex):
             self._busy = False
@@ -143,11 +147,8 @@ class DetectorInterface(HardwareInterface):
         """
         Blocks further interaction until the device is no longer busy.
 
-        Args:
-            interval (float, optional): Polling interval in seconds. Defaults to 0.1.
-
         Returns:
-            bool: True once all axes become idle.
+            None
         """
         loop = QtCore.QEventLoop()
 
@@ -177,21 +178,20 @@ class DetectorInterface(HardwareInterface):
     @property
     def exposure(self):
         """
-        Return the exposure time.
-        If the detector does not support the exposure time, None will be returned.
+        Exposure time.
 
         Returns:
-            float or None: The exposure time
+            float | None: The exposure time.
         """
         return self._exposure
     
     @exposure.setter
     def exposure(self, value):
         """
-        Set the exposure time.
+        Sets the exposure time.
 
         Args:
-            value(float): The exporesure time to be set.
+            value (float | None): Exposure time to set, or None to indicate unsupported.
         """
         self._exposure = value
 
@@ -224,7 +224,7 @@ class DetectorInterface(HardwareInterface):
         Should be implemented in subclasses to provide device-specific logic for getting acquired data.
 
         Returns:
-            dict[tuple, np.ndarray]: Mapping of indices to their data frames.
+            dict[tuple, np.ndarray]: Mapping of index tuples to their data frames.
 
         Raises:
             NotImplementedError: If the subclass does not implement this method.
@@ -263,33 +263,31 @@ class DetectorInterface(HardwareInterface):
 
     def settingsWidget(self):
         """
-        Returns a generic settings dialog.
+        Returns a device-specific settings dialog.
 
-        This method is intended to be overridden in subclasses to provide a device-specific settings UI.
+        Subclasses should override this to provide a QDialog for device settings.
 
-        Returns:
-            QDialog: The settings dialog.
-        
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
 
 class MultiDetectorInterface(DetectorInterface):
     """
-    Abstract interface for multi-detector devices.
+    Abstract interface for multi-dimensional detector devices.
 
-    This class extends DetectorInterface to support detectors that acquire multi-dimensional data frames.
-    Subclasses should implement device-specific logic for data acquisition and shape reporting.
+    This class extends ``DetectorInterface`` to support detectors that acquire data with multi-dimensional indices.
+    Subclasses should implement device-specific acquisition and property reporting logic.
     """
+
     @property
     def axes(self):
         """
-        The axes for the full data.
+        Axis coordinates for the full data.
 
         Returns:
-            list of numpy.ndarray: The axes for the full data.
+            list[numpy.ndarray]: Coordinate arrays corresponding to each axis of the index grid.
 
         Raises:
             NotImplementedError: If the subclass does not implement this property.
@@ -299,7 +297,7 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def frameDim(self):
         """
-        The number of dimensions for a single frame of data.
+        Number of dimensions for a single frame of data.
 
         Returns:
             int: Number of dimensions for a single frame.
@@ -309,20 +307,20 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def indexDim(self):
         """
-        The number of dimensions for indexing acquired data frames.
+        Dimension of the index grid.
 
         Returns:
-            int: Number of dimensions for indexing acquired data.
+            int: Dimension of the index grid.
         """
         return len(self.indexShape)
 
     @property
     def frameShape(self):
         """
-        The shape of a single frame.
+        Shape of a single frame.
 
         Returns:
-            tuple: Shape of a single frame.
+            tuple[int, ...]: Dimensions of a single frame.
 
         Raises:
             NotImplementedError: If the subclass does not implement this property.
@@ -332,10 +330,10 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def indexShape(self):
         """
-        The shape of the single frame.
+        Shape of the index tuples.
 
         Returns:
-            tuple: Shape of the indices.
+            tuple[int, ...]: Shape of the index tuples.
 
         Raises:
             NotImplementedError: If the subclass does not implement this property.
@@ -345,10 +343,10 @@ class MultiDetectorInterface(DetectorInterface):
     @property
     def dataShape(self):
         """
-        The shape of the acquired data.
+        Shape of the full data.
 
         Returns:
-            tuple: Shape of the acquired data.
+            tuple[int, ...]: Combined shape of the full dataset.
         """
         return tuple([*self.indexShape, *self.frameShape])
     
