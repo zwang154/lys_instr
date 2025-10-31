@@ -43,8 +43,6 @@ Clicking the "Offset" button defines the current value of the axis as zero and r
 Clicking the "Unset" button removes the offset and restores the true values.
 The "Now At" and "Move To" fields in the main window are automatically updated to reflect the current offset.
 
-See also :doc:`Motor Options </lys_instr_/tutorial_/motorOptions>` for details on customizing the motor GUI.
-
 
 
 Customizing Set, Jog, and Offset

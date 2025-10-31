@@ -1,5 +1,5 @@
 
-Data Storage
+Storage
 ============
 
 .. automodule:: lys_instr.DataStorage
