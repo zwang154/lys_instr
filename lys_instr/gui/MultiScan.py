@@ -4,13 +4,34 @@ from lys.Qt import QtWidgets, QtCore, QtGui
 
 
 class _ScanRangeRow(QtWidgets.QWidget):
+    """
+    Motor-scan row widget.
+
+    Widget for selecting and configuring a scan range for a scanner (motor).
+    Supports linear ranges and free-expression ranges configured via the GUI.
+    """
+
     def __init__(self, title, scanners):
+        """
+        Create the motor-scan row.
+
+        Args:
+            title (str): Row title shown in the GUI.
+            scanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
+        """
         super().__init__()
         self._scanners = scanners
         self._initLayout(title, scanners.keys())
         self._scanMode.currentTextChanged.connect(self._scanModeChanged)
 
     def _initLayout(self, title, scannerNames):
+        """
+        Create and arrange widgets for the row.
+
+        Args:
+            title (str): Row title shown in the GUI.
+            scannerNames (Iterable[str]): Names of available scanners (motors) to populate the axis combobox.
+        """
         self._title = QtWidgets.QLabel(title)
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
         self._scanAxis.addItems(scannerNames)
@@ -53,6 +74,12 @@ class _ScanRangeRow(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def _scanAxisChanged(self, text):
+        """
+        Enable or disable controls when the axis selection changes.
+
+        Args:
+            text (str): Newly selected axis name or 'loop' for the loop dummy.
+        """
         b = text not in ["loop"]
         if text == "loop":
             self._scanMode.setCurrentIndex(0)
@@ -67,6 +94,12 @@ class _ScanRangeRow(QtWidgets.QWidget):
         self._freeExpr.setEnabled(b)
 
     def _scanModeChanged(self, text):
+        """
+        Show or hide widgets according to the selected scan mode.
+
+        Args:
+            text (str): Newly selected scan mode (either "Linear" or "Free").
+        """
         if text == "Linear":
             self._freeExpr.hide()
             self._freeExprLabel.hide()
@@ -88,14 +121,32 @@ class _ScanRangeRow(QtWidgets.QWidget):
 
     @property
     def scanObj(self):
+        """
+        Scanner corresponding to the currently selected axis.
+
+        Returns:
+            object: Scanner (motor) object for the selected axis.
+        """
         return self._scanners[self.scanName]
 
     @property
     def scanName(self):
+        """
+        Currently selected scan axis name.
+
+        Returns:
+            str: Name of the currently selected scan axis.
+        """
         return self._scanAxis.currentText()
 
     @property
     def scanRange(self):
+        """
+        List of values that this row will iterate over when executed.
+
+        Returns:
+            list[float | str]: Sequence of numeric values (Linear mode) or expression strings (Free mode).
+        """
         if self._scanMode.currentText() == "Linear":
             values = [self._from.value() + i * self._step.value() for i in range(self._numSteps.value())]
         elif self._scanMode.currentText() == "Free":
@@ -104,13 +155,31 @@ class _ScanRangeRow(QtWidgets.QWidget):
     
     @property
     def scanIndex(self):
+        """
+        Index of the nearest value in the scan range.
+
+        Returns:
+            int: Index of the value in ``scanRange`` closest to the current scanner reading (motor-axis value).
+        """
         value = self.scanObj.get()[self.scanName]
         return np.argmin(abs(np.array(self.scanRange) - value))
 
     def setIndex(self, index):
+        """
+        Set the index label for this scan row.
+
+        Args:
+            index (int): Index for this scan row.
+        """
         self._title.setText("Scan " + str(index))
     
     def save(self):
+        """
+        Return a mapping representing this scan row for saving.
+
+        Returns:
+            dict[str, object]: Mapping with keys 'type', 'name', 'mode' and 'range'.
+        """
         mode = self._scanMode.currentText()
         if mode == "Linear":
             r = (self._from.value(), self._step.value(), self._numSteps.value())
@@ -119,6 +188,12 @@ class _ScanRangeRow(QtWidgets.QWidget):
         return {"type": "motorScan", "name": self._scanAxis.currentText(), "mode": mode, "range": r}
     
     def load(self, d):
+        """
+        Load a saved row configuration into the row.
+
+        Args:
+            d (dict[str, object]): Mapping produced by the ``save`` method.
+        """
         self._scanAxis.setCurrentText(d["name"])
         mode =d["mode"]
         self._scanMode.setCurrentText(mode)
@@ -130,12 +205,32 @@ class _ScanRangeRow(QtWidgets.QWidget):
 
 
 class _ScanSwitchRow(QtWidgets.QWidget):
+    """
+    Switch-scan row widget.
+
+    Widget for selecting and configuring a scan over a switch with discrete labels.
+    Supports iteration over available labels or a user-provided free list.
+    """
+
     def __init__(self, title, switches):
+        """
+        Create the switch-scan row.
+
+        Args:
+            title (str): Row title shown in the GUI.
+        """
         super().__init__()
         self._switches = switches
         self._initLayout(title, switches.keys())
 
     def _initLayout(self, title, scannerNames):
+        """
+        Create widgets for the switch-scan row.
+
+        Args:
+            title (str): Row title shown in the GUI.
+            scannerNames (Iterable[str]): Names of available scanners (switches) to populate the axis combobox.
+        """
         self._title = QtWidgets.QLabel(title)
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
         self._scanAxis.addItems(scannerNames)
@@ -156,6 +251,12 @@ class _ScanSwitchRow(QtWidgets.QWidget):
         self._scanModeChanged("Iteration")
 
     def _scanModeChanged(self, text):
+        """
+        Show or hide widgets according to the selected scan mode.
+
+        Args:
+            text (str): Newly selected scan mode (either 'Iteration' or 'Free').
+        """
         self._freeExpr.setEnabled(text!="Iteration")
         if text == "Iteration" and len(self._freeExpr.text()) == 0:
             sw = self._switches[self._scanAxis.currentText()]
@@ -163,14 +264,32 @@ class _ScanSwitchRow(QtWidgets.QWidget):
 
     @property
     def scanName(self):
+        """
+        Currently selected scan axis name.
+
+        Returns:
+            str: Name of the currently selected scan axis.
+        """
         return self._scanAxis.currentText()
 
     @property
     def scanObj(self):
+        """
+        Scanner corresponding to the currently selected axis.
+
+        Returns:
+            object: Scanner (switch) object for the selected axis.
+        """
         return self._switches[self.scanName]
 
     @property
     def scanRange(self):
+        """
+        List of labels that this row will iterate over when executed.
+
+        Returns:
+            list[str]: Sequence of label strings (Iteration mode) or expression strings (Free mode).
+        """
         if self._scanMode.currentText() == "Iteration":
             sw = self._switches[self._scanAxis.currentText()]
             values = sw.labelNames
@@ -180,26 +299,62 @@ class _ScanSwitchRow(QtWidgets.QWidget):
 
     @property
     def scanIndex(self):
+        """
+        Index of the current switch state within the scan range.
+
+        Returns:
+            int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis level).
+        """
         value = self.scanObj.get()[self.scanName]
         return self.scanRange.index(value)
 
     def setIndex(self, index):
+        """
+        Set the index label for this scan row.
+
+        Args:
+            index (int): Index for this scan row.
+        """
         self._title.setText("Scan " + str(index))
     
     def save(self):
+        """
+        Return a mapping representing this scan row for saving.
+
+        Returns:
+            dict[str, object]: Mapping with keys 'type', 'name', 'mode' and 'range'.
+        """
         return {"type": "switchScan", "name": self._scanAxis.currentText(), "mode": self._scanMode.currentText(), "range": self._freeExpr.text()}
     
     def load(self, d):
+        """
+        Load a saved row configuration into the row.
+
+        Args:
+            d (dict[str, object]): Mapping produced by the ``save`` method.
+        """
         self._scanAxis.setCurrentText(d["name"])
         self._scanMode.setCurrentText(d["mode"])
         self._freeExpr.setText(d["range"])
 
 
 class _ScanList(QtWidgets.QListWidget):
+    """
+    List widget for scan rows.
+
+    Holds a sequence of motor and switch scan-row widgets and provides operations to add, remove, reorder, copy/paste, and save/load the configured scan list.
+    """
     _path = ".lys/instr/scanlist.dic"
     _savePath = ".lys/instr/scanSaveList.dic"
 
     def __init__(self, scanner, switches):
+        """
+        List widget holding a sequence of scan rows (either motor-scan or switch-scan).
+
+        Args:
+            scanner (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
+            switches (dict[str, MultiSwitchInterface]): Mapping from axis name to the scanner (switch) that owns that axis.
+        """
         super().__init__()
         self._scanner = scanner
         self._switches = switches
@@ -212,6 +367,9 @@ class _ScanList(QtWidgets.QListWidget):
             self.load(d)
 
     def _buildMenu(self):
+        """
+        Build and show the context menu for list operations.
+        """
         menu = QtWidgets.QMenu()
 
         addMotor = QtWidgets.QAction('Add motor scan', triggered=lambda: self._add(type="motorScan"))
@@ -237,6 +395,14 @@ class _ScanList(QtWidgets.QListWidget):
         menu.exec_(QtGui.QCursor.pos())
 
     def _add(self, index=None, data=None, type="motorScan"):
+        """
+        Insert a new scan row into the list.
+
+        Args:
+            index (int | None): Insertion index; append when ``None``.
+            data (dict | None): Optional row mapping produced by a row's ``save()`` method to load into the new row.
+            type (str): Scan row type, either "motorScan" or "switchScan".
+        """
         if index == None:
             index = len(self._scans)
         if type == "motorScan":
@@ -254,6 +420,12 @@ class _ScanList(QtWidgets.QListWidget):
         self._refresh()
 
     def _del(self, index=None):
+        """
+        Remove a scan row from the list at the given index or the selected item.
+
+        Args:
+            index (int | None): Index to remove; if ``None``, remove the current selection.
+        """
         if index is None:
             index = self.row(self.selectedItems()[0])
         self._scans.pop(index)
@@ -266,6 +438,12 @@ class _ScanList(QtWidgets.QListWidget):
         self._refresh()
 
     def _move(self, direction):
+        """
+        Move the selected scan up or down by one position.
+
+        Args:
+            direction (int): -1 to move up, +1 to move down.
+        """
         index = self.row(self.selectedItems()[0])
         item = self._scans[index]
         self._del(index)
@@ -274,21 +452,33 @@ class _ScanList(QtWidgets.QListWidget):
         self._refresh()
 
     def _clear(self):
+        """
+        Remove all scan rows from the list.
+        """
         while len(self._scans) > 0:
             self._del(0)
         self._refresh()
 
     def _copy(self):
+        """
+        Copy the current scan list to the temporary path for later pasting.
+        """
         d = self.save()
         with open(self._path, "w") as f:
             f.write(str(d))
     
     def _paste(self):
+        """
+        Paste a previously copied scan list from the temporary path.
+        """
         with open(self._path, "r") as f:
             d = eval(f.read())
         self.load(d)
 
     def _refresh(self):
+        """
+        Refresh the list widgets and save the current scan list to disk.
+        """
         for i, scan in enumerate(self._scans):
             scan.setIndex(i+1)
         os.makedirs(os.path.dirname(self._savePath),exist_ok=True)
@@ -305,9 +495,21 @@ class _ScanList(QtWidgets.QListWidget):
         return self._scans[index]
     
     def save(self):
+        """
+        Return a mapping representing the current scan list for saving.
+
+        Returns:
+            dict[str, dict[str, object]]: Mapping where keys are 'Scan1', 'Scan2', ... and values are the per-row mappings produced by each row's ``save()`` method.
+        """
         return {"Scan" + str(i+1): scan.save() for i, scan in enumerate(self._scans)}
     
     def load(self, d):
+        """
+        Load a saved scan-list mapping into the widget.
+
+        Args:
+            d (dict[str, dict[str, object]]): Mapping produced by :meth:`save` where keys are 'Scan1', 'Scan2', ... and values are the per-row mappings produced by each row's ``save()`` method.
+        """
         self._clear()
         i = 0
         while "Scan" + str(i+1) in d:
@@ -316,12 +518,27 @@ class _ScanList(QtWidgets.QListWidget):
 
 
 class _FileNameBox(QtWidgets.QGroupBox):
+    """
+    File name configuration widget.
+
+    Provides a GUI for composing default filenames for scan runs.
+    """
+
     def __init__(self, scans):
+        """
+        Create the file name configuration widget.
+
+        Args:
+            scans (Iterable): Iterable of scan row objects used to compose default file names.
+        """
         super().__init__("Filename")
         self.__initLayout()
         self._scans = scans
 
     def __initLayout(self):
+        """
+        Create file name widgets and helper labels.
+        """
         self._name = QtWidgets.QLineEdit(objectName="scan_filename")
         self._check = QtWidgets.QCheckBox("Default", toggled=self._toggled, objectName="scan_default")
 
@@ -336,6 +553,12 @@ class _FileNameBox(QtWidgets.QGroupBox):
         self.setLayout(v)
 
     def _toggled(self):
+        """
+        Update the file name field when the default toggle changes.
+
+        Enable or disable the filename edit. 
+        When the default toggle is checked, compose a default filename by joining each scan's ``scanName_[index]`` (from last to first) and set it in the line edit.
+        """
         self._name.setEnabled(not self._check.isChecked())
         if self._check.isChecked():
             strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]              
@@ -343,17 +566,32 @@ class _FileNameBox(QtWidgets.QGroupBox):
 
     @property
     def text(self):
+        """
+        Return the current file name shown in the widget.
+
+        Returns:
+            str: Current file name.
+        """
         return self._name.text()
 
 
 class ScanWidget(QtWidgets.QWidget):
+    """
+    Scan configuration and execution panel.
+
+    Provides a list-based GUI for composing a sequence of motor and switch scans, configuring detector/process settings, and starting/stopping scan execution.
+    """
+
     def __init__(self, storage, motors, switches, detectors, numScans=1):
         """
-        Initializes the ScanTab with storage, motors, and detectors.
+        Initialize the Scan widget.
+
         Args:
             storage (DataStorage): The data storage object.
-            motors (list of MultiMotor): List of motor objects.
-            detectors (dict of MultiDetector): Dictionary of detector objects whose key is used to identify them.
+            motors (Iterable[MultiMotorInterface]): Motor controllers available for scanning.
+            switches (Iterable[MultiSwitchInterface]): Switch controllers available for scanning.
+            detectors (dict): Mapping of detector names to respective detector objects.
+            numScans (int): Initial number of scans.
         """
         super().__init__()
         self._storage = storage
@@ -364,18 +602,38 @@ class ScanWidget(QtWidgets.QWidget):
         self._initLayout(self._scanners, self._switches, self._detectors)
 
     def _initScanners(self, motors):
-        scanners = {"loop": _Loop()}        # Dummy loop as the first scanner
+        """
+        Create the mapping of scanner names to scanner objects (including a dummy loop).
+
+        Returns:
+            dict[str, object]: Mapping of axis name to scanner object (includes a "loop" dummy).
+        """
+        scanners = {"loop": _Loop()}
         for motor in motors:
             scanners.update({axis: motor for axis in motor.nameList})
         return scanners
 
     def _initSwitches(self, switches):
-        scanners = {}        
+        """
+        Create the mapping of switch axis names to switch objects.
+
+        Returns:
+            dict[str, object]: Mapping of switch axis name to switch controller object.
+        """
+        scanners = {}
         for sw in switches:
             scanners.update({axis: sw for axis in sw.nameList})
         return scanners
 
     def _initLayout(self, scanners, switches, process):
+        """
+        Construct the scan list GUI and control buttons.
+
+        Args:
+            scanners (dict[str, object]): Mapping of axis name to scanner objects.
+            switches (dict[str, object]): Mapping of switch axis name to switch objects.
+            process (dict): Detector/process mapping passed to the detector configuration box.
+        """
         label = QtWidgets.QLabel("List of parameters (right click to edit)")
 
         self._list = _ScanList(scanners, switches)
@@ -402,6 +660,15 @@ class ScanWidget(QtWidgets.QWidget):
         self.setLayout(layout)
     
     def __detectorBox(self, detectors):
+        """
+        Create detector selection and exposure controls.
+
+        Args:
+            detectors (dict): Mapping of detector names to detector objects.
+
+        Returns:
+            QtWidgets.QGroupBox: Group box containing detector selection and exposure controls.
+        """
         self._detectorsBox = QtWidgets.QComboBox(objectName="ScanTab_detectors")
         self._detectorsBox.addItems(detectors.keys())
 
@@ -420,6 +687,11 @@ class ScanWidget(QtWidgets.QWidget):
         return processBox
         
     def _start(self):
+        """
+        Start the configured scan run.
+
+        Builds the nested process chain from the configured scan list and starts the executor thread.
+        """
         process = _DetectorProcess(self._detectors[self._detectorsBox.currentText()], self._exposure.value())
         for s in self._list:
             process = _ScanProcess(s.scanName, s.scanObj, s.scanRange, process)
@@ -439,12 +711,18 @@ class ScanWidget(QtWidgets.QWidget):
         self._thread.start()
 
     def _scanFinished(self):
+        """
+        Handle scan completion and restore GUI and storage state.
+        """
         self._startBtn.setEnabled(True)
         self._stopBtn.setEnabled(False)
         self._storage.name = self._oldName
         self._storage.numbered = True
 
     def _updateName(self):
+        """
+        Update the storage filename using current scan parameter values.
+        """
         name = str(self._name)
         for i, scan in enumerate(self._list):
             value = scan.scanObj.get()[scan.scanName]
@@ -457,19 +735,48 @@ class ScanWidget(QtWidgets.QWidget):
         self._storage.name = name
 
     def _stop(self):
+        """
+        Request the running scan to stop.
+        """
         self._thread.kill()
 
     def _setScanNames(self, scanNamesDict):
+        """
+        Populate the provided mapping with the current scan axis names.
+
+        Args:
+            scanNamesDict (dict): Mutable mapping that will be updated by this method. The key 'scanNames' is set to a list[str] containing the current scan axis names in order.
+        """
         scanNamesDict["scanNames"] = [s.scanName for s in self._list]
 
 
 class _Loop(QtCore.QObject):
+    """
+    Dummy loop scanner.
+    """
+
     def __init__(self, name="loop"):
+        """
+        Create the loop object.
+
+        Args:
+            name (str, optional): Key used in mappings for the loop value. Defaults to "loop".
+        """
         super().__init__()
         self._name = name
         self._value = None
 
     def set(self, *args, **kwargs):
+        """
+        Set the loop value.
+
+        Args:
+            *args: If provided, the first positional argument is used as the loop value.
+            **kwargs: If no positional args are provided, the first keyword value is used.
+
+        Raises:
+            ValueError: If neither positional nor keyword arguments are provided.
+        """
         if args:
             self._value = args[0]
         elif kwargs:
@@ -478,43 +785,104 @@ class _Loop(QtCore.QObject):
             raise ValueError("No value provided to _Loop.set()")
 
     def get(self):
+        """
+        Return the current loop value as a mapping.
+
+        Returns:
+            dict[str, object]: Mapping of the loop names to respective current values.
+        """
         return {self._name: self._value}
 
 
 class _Executor(QtCore.QThread):
+    """
+    Thread wrapper for executing a scan process.
+    """
+
     def __init__(self, process):
+        """
+        Create a new executor for the given process.
+
+        Args:
+            process (object): Object exposing ``execute()`` and ``stop()`` used by the executor.
+        """
         super().__init__()
         self.process = process
 
     def run(self):
+        """
+        Run the wrapped process's ``execute()`` method in this thread.
+        """
         self.process.execute()
 
     def kill(self):
+        """
+        Request the running scan process to stop.
+        """
         self.process.stop()
 
 
 class _DetectorProcess(QtCore.QObject):
+    """
+    Detector process wrapper.
+
+    Wraps a detector and exposure value and exposes ``execute()`` and ``stop()`` used by the scan executor.
+    Emits ``beforeAcquisition`` before starting acquisition.
+    """
+
     beforeAcquisition = QtCore.pyqtSignal()
 
     def __init__(self, detector, exposure):
+        """
+        Create a detector process wrapper.
+
+        Args:
+            detector (object): Detector object to control.
+            exposure (float): Exposure time to apply before acquisition.
+        """
         super().__init__()
         self._detector = detector
         self._exposure = exposure
 
     def execute(self):        
+        """
+        Execute the detector process.
+
+        Configures exposure if provided, emits ``beforeAcquisition`` and starts the detector.
+        """
         if self._detector.exposure is not None:
             self._detector.exposure = self._exposure
         self.beforeAcquisition.emit()
         self._detector.startAcq(wait=True)
         
     def stop(self):
+        """
+        Stop the wrapped detector acquisition.
+        """
         self._detector.stop()
 
 
 class _ScanProcess(QtCore.QObject):
+    """
+    Scan process wrapper.
+
+    Iterates a sequence of values for a single scan axis and delegates to the nested process for acquisition at each value.
+    Exposes ``execute()`` and ``stop()``.
+    """
+
+    #: Signal emitted before each acquisition.
     beforeAcquisition = QtCore.pyqtSignal()
 
     def __init__(self, name, obj, values, process):
+        """
+        Create a scan process for a single axis.
+
+        Args:
+            name (str): Axis name used in set() calls.
+            obj (object): Controller exposing set(..., wait=True) and get().
+            values (Iterable): Sequence of values to iterate over (elements are numeric or label strings).
+            process (object): Nested process exposing execute() and stop().
+        """
         super().__init__()
         self._name = name
         self._obj = obj
@@ -525,6 +893,9 @@ class _ScanProcess(QtCore.QObject):
         self._mutex = QtCore.QMutex()
 
     def execute(self):
+        """
+        Iterate values, set the axis value and delegate to the nested process.
+        """
         for value in self._values:
             if self._shouldStop:
                 return
@@ -532,6 +903,9 @@ class _ScanProcess(QtCore.QObject):
             self._process.execute()
 
     def stop(self):
+        """
+        Request the scan to stop and stop the nested process.
+        """
         with QtCore.QMutexLocker(self._mutex):
             self._shouldStop = True
         self._process.stop()

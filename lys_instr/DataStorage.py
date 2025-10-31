@@ -20,9 +20,9 @@ class DataStorage(QtCore.QObject):
 
     def __init__(self, **kwargs):
         """
-        Initializes the data storage instance.
+        Initialize the data storage instance.
 
-        Sets default storage options and prepares internal buffers.
+        Set default storage options and prepare internal buffers.
 
         Args:
             **kwargs: Additional keyword arguments passed to the base class.
@@ -52,7 +52,7 @@ class DataStorage(QtCore.QObject):
     @base.setter
     def base(self, value):
         """
-        Sets the base directory for saving data files.
+        Set the base directory for saving data files.
         """
         self._base = value
 
@@ -69,7 +69,7 @@ class DataStorage(QtCore.QObject):
     @folder.setter
     def folder(self, value):
         """
-        Sets the data folder name under the base directory.
+        Set the data folder name under the base directory.
         """
         self._folder = value
 
@@ -86,7 +86,7 @@ class DataStorage(QtCore.QObject):
     @name.setter
     def name(self, value):
         """
-        Sets the base filename used for saved data files.
+        Set the base filename used for saved data files.
         """
         self._name = value
 
@@ -103,7 +103,7 @@ class DataStorage(QtCore.QObject):
     @numbered.setter
     def numbered(self, value):
         """
-        Sets whether automatic file numbering is enabled.
+        Set whether automatic file numbering is enabled.
         """
         self._numbered = value
 
@@ -120,19 +120,19 @@ class DataStorage(QtCore.QObject):
     @enabled.setter
     def enabled(self, value):
         """
-        Sets whether the data storage instance is enabled.
+        Set whether the data storage instance is enabled.
         """
         self._enabled = value
 
     def getNumber(self):
         """
-        Next available file number for saving.
+        Return the next available file number for saving.
 
-        If automatic numbering is enabled the returned number will be appended to the base filename (for example: "<name>_<number>.npz").
+        If automatic numbering is enabled the returned number will be appended to the base filename (for example: ``<name>_<number>.npz``).
         If numbering is disabled this method returns ``None``.
 
         Returns:
-            int | None: Next available file number, or None if numbering is disabled.
+            int | None: Next available file number, or ``None`` if numbering is disabled.
         """
         if not self.numbered:
             return None
@@ -147,7 +147,7 @@ class DataStorage(QtCore.QObject):
 
     def connect(self, detector):
         """
-        Connects this data storage instance to a detector.
+        Connect this data storage instance to a detector.
 
         Args:
             detector (``MultiDetectorInterface``): Detector that emits ``dataAcquired`` and ``busyStateChanged`` signals.
@@ -157,7 +157,7 @@ class DataStorage(QtCore.QObject):
 
     def _busyStateChanged(self, detector, busy):
         """
-        Reserves storage if busy, otherwise saves the buffered data.
+        Reserve storage if busy; otherwise save the buffered data.
 
         Args:
             detector (``MultiDetectorInterface``): Detector that the data storage instance is connected to.
@@ -170,18 +170,18 @@ class DataStorage(QtCore.QObject):
 
     def reserve(self, shape, fillValue=None):
         """
-        Reserves storage for a new data array with the specified shape.
+        Reserve storage for a new data array with the specified shape.
 
-        Allocates and initializes an internal NumPy array with the given shape,
-        records a file path and tag for the upcoming save, emits ``tagRequest`` to request metadata, 
-        and updates saving state via the ``savingStateChanged`` signal.
+        Allocate and initialize an internal NumPy array with the given shape,
+        record a file path and tag for the upcoming save, emit ``tagRequest`` to request metadata, 
+        and update saving state via the ``savingStateChanged`` signal.
 
         Args:
             shape (tuple, optional): Shape of the data array to reserve.
-            fillValue (float | None, optional): Value to initialize the array with. If None the array is initialized with NaNs. Defaults to None.
+            fillValue (float | None, optional): Value to initialize the array with. If ``None`` the array is initialized with NaNs. Defaults to ``None``.
 
         Returns:
-            None
+            ``None``
         """
         if not self.enabled:
             self.savingStateChanged.emit(self.saving)
@@ -204,7 +204,7 @@ class DataStorage(QtCore.QObject):
 
     def update(self, data):
         """
-        Updates the buffered data array with new values.
+        Update the buffered data array with new values.
 
         Each entry in ``data`` maps an index tuple to a frame array; the buffer is updated in-place at those indices. 
 
@@ -218,7 +218,7 @@ class DataStorage(QtCore.QObject):
 
     def save(self, axes):
         """
-        Saves the buffered data array asynchronously to disk.
+        Save the buffered data array asynchronously to disk.
 
         This method constructs a ``lys.Wave`` from the buffered array and provided coordinate arrays, attaches the queued metadata tag to ``lys.Wave.note``, 
         and enqueues the Wave for export on a background worker thread.
@@ -243,7 +243,7 @@ class DataStorage(QtCore.QObject):
 
     def _savingFinished(self):
         """
-        Handles completion of a save thread.
+        Handle completion of a save thread.
 
         Remove any non-running save threads from the internal thread list and emit ``savingStateChanged`` so listeners can update their state.
         """
@@ -273,7 +273,7 @@ class _SaveThread(QtCore.QThread):
 
     def __init__(self, wave, path):
         """
-        Initializes the save thread.
+        Initialize the save thread.
 
         Args:
             wave (Wave): The ``lys.Wave`` instance to save.
@@ -285,7 +285,7 @@ class _SaveThread(QtCore.QThread):
 
     def run(self):
         """
-        Runs the save thread and exports the Wave to disk.
+        Run the save thread and export the Wave to disk.
 
         Calls ``lys.Wave.export`` on ``self.wave`` to write the Wave to ``self.path``.
         This runs in the worker thread so the main application thread is not blocked by file I/O.

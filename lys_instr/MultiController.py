@@ -16,7 +16,7 @@ class _AxisInfo():
 
     def __init__(self, busy=False, alive=True):
         """
-        Initializes the axis state.
+        Initialize the axis state.
 
         Args:
             busy (bool, optional): Initial busy state. Defaults to False.
@@ -47,7 +47,7 @@ class MultiControllerInterface(HardwareInterface):
 
     def __init__(self, *axisNamesAll, **kwargs):
         """
-        Initializes the interface with the given axis names.
+        Initialize the interface with the given axis names.
 
         Args:
             *axisNamesAll: Names of all axes to manage.
@@ -60,10 +60,10 @@ class MultiControllerInterface(HardwareInterface):
     @lock
     def _loadState(self):
         """
-        Polls the device and updates the state of all axes.
+        Poll the device and update the state of all axes.
 
-        Emits the ``busyStateChanged`` and ``aliveStateChanged`` signals if any axis state has changed.
-        Logs any runtime errors that occur during state loading.
+        Emit the ``busyStateChanged`` and ``aliveStateChanged`` signals if any axis state has changed.
+        Log any runtime errors that occur during state loading.
         """
         try:
             bs = self._isBusy()
@@ -97,10 +97,10 @@ class MultiControllerInterface(HardwareInterface):
 
     def set(self, wait=False, lock=True, **kwargs):
         """
-        Sets target values for one or more axes.
+        Set target values for one or more axes.
 
-        For each axis specified in ``kwargs``, sets its target value, e.g., ``set(x=1.0, y=2.0)``.
-        Optionally waits until all axes become idle after setting.
+        For each axis specified in ``kwargs``, set its target value, e.g., ``set(x=1.0, y=2.0)``.
+        Optionally wait until all axes become idle after setting.
 
         Args:
             wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.
@@ -121,10 +121,10 @@ class MultiControllerInterface(HardwareInterface):
 
     def _set_impl(self, **kwargs):
         """
-        Internal implementation that applies target values to axes.
+        Apply target values to axes.
 
-        Validates provided axis names, updates per-axis state (target and busy flags), emits any busy-state updates,
-        and finally calls the subclass-implemented ``_set`` method to perform the hardware operation.
+        Validate provided axis names, update per-axis state (target and busy flags), emit any busy-state updates,
+        and finally call the subclass-implemented ``_set`` method to perform the hardware operation.
 
         Args:
             **kwargs (float): Axis-value pairs to set (e.g., x=1.0, y=2.0).
@@ -150,7 +150,7 @@ class MultiControllerInterface(HardwareInterface):
 
     def get(self, type=dict):
         """
-        Gets the current values of all axes in the specified data type.
+        Get the current values of all axes in the specified data type.
 
         Args:
             type (type, optional): Output type (`dict`, `list`, or `np.ndarray`). Defaults to `dict`.
@@ -173,15 +173,15 @@ class MultiControllerInterface(HardwareInterface):
 
     def stop(self):
         """
-        Stops all axes.
+        Stop all axes.
 
-        Calls the instance-specific ``_stop()`` method to perform the actual stopping logic.
+        Call the instance-specific ``_stop()`` method to perform the actual stopping logic.
         """
         self._stop()
 
     def waitForReady(self):
         """
-        Blocks further interaction until all axes are idle.
+        Block further interaction until all axes are idle.
 
         Returns:
             None
@@ -244,13 +244,13 @@ class MultiControllerInterface(HardwareInterface):
 
     def settingsWidget(self):
         """
-        Returns a device-specific settings dialog.
+        Return a device-specific settings dialog.
 
         Subclasses should override this to provide a QDialog for device settings.
-        The base implementation returns None.
+        The base implementation returns ``None``.
 
         Returns:
-            QDialog | None: Settings dialog, or None if not provided by the base class.
+            QDialog | None: Settings dialog, or ``None`` if not provided by the base class.
         """
         return None
 
@@ -305,14 +305,14 @@ class MultiControllerInterface(HardwareInterface):
 
 class MultiSwitchInterface(MultiControllerInterface):
     """
-    Interface for switch-type multi-axis controllers.
+    Interface for switch-type multi-axis controllers (referred to as switches for short).
 
     Convenience subclass for devices where each axis behaves like a switch with discrete label positions.
     """
 
     def __init__(self, labelNames, *axisNamesAll, **kwargs):
         """
-        Initializes the interface with given label and axis names.
+        Initialize the interface with given label and axis names.
 
         Args:
             labelNames (Iterable[str]): Labels associated with the switch axes.
@@ -335,12 +335,13 @@ class MultiSwitchInterface(MultiControllerInterface):
 
 class OffsettableMultiMotorInterface(MultiControllerInterface):
     """
-    Interface for motor-type multi-axis controllers with offset functionality.
+    Interface for motor-type multi-axis controllers (referred to as motors for short) with offset functionality.
 
     Convenience subclass for devices where each axis exposes a continuous position value.
-    This class adds a per-axis offsets dictionary that is applied to get()/set() operations and can be persisted to disk.
+    This class adds a per-axis offsets dictionary that is applied to ``get()``/``set()`` operations and can be persisted to disk.
     """
 
+    #: Signal emitted when any axis offset value changes.
     offsetChanged = QtCore.pyqtSignal()
 
     class offsetDict(dict):
@@ -348,11 +349,12 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
         Dictionary subclass that stores per-axis offsets and emits a signal when any value changes.
         """
 
+        #: Signal emitted when any axis offset value changes.
         valueChanged = QtCore.pyqtSignal()
 
         def __init__(self, axesNames, parent):
             """
-            Initializes the offsets dictionary for the supplied axis names.
+            Initialize the offsets dictionary for the supplied axis names.
 
             The dictionary is pre-populated with zeros for each axis and keeps a weak reference to the parent so that changes can notify the parent object.
 
@@ -365,9 +367,9 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
 
         def __setitem__(self, key, value):
             """
-            Sets an offset value and notifies the parent.
+            Set an offset value and notify the parent.
 
-            Emits the parent's ``offsetChanged`` signal after updating the dictionary so listeners can react.
+            Emit the parent's ``offsetChanged`` signal after updating the dictionary so listeners can react.
 
             Args:
                 key (str): Axis name.
@@ -378,9 +380,9 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
 
     def __init__(self, *axesNames, autoSave=True, **kwargs):
         """
-        Initializes offset support for the multi-axis interface.
+        Initialize offset support for the multi-axis interface.
 
-        Creates an internal per-axis offsets dictionary, optionally loads persisted offsets, and wires change notifications for automatic updates.
+        Create an internal per-axis offsets dictionary, optionally load persisted offsets, and wire change notifications for automatic updates.
 
         Args:
             *axesNames (Iterable[str]): Axis names managed by the controller.
@@ -396,17 +398,17 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
 
     def _valueChanged(self):
         """
-        Notifies listeners that current axis values changed (offsets applied).
+        Notify listeners that current axis values changed (offsets applied).
 
-        Emits the ``valueChanged`` signal with the current output of ``get()`` (offsets applied).
+        Emit the ``valueChanged`` signal with the current output of ``get()`` (offsets applied).
         """
         self.valueChanged.emit(self.get())
 
     def set(self, **kwargs):
         """
-        Sets target values for axes in user coordinates (stored offsets subtracted).
+        Set target values for axes in user coordinates (stored offsets subtracted).
 
-        Each provided value is adjusted by adding the corresponding per-axis offset before delegating to the parent implementation. 
+        Adjust each provided value by adding the corresponding per-axis offset before delegating to the parent implementation. 
         For example, calling ``set(x=1.0)`` will result in the value ``1.0 + self.offset.get('x', 0)`` being sent to the underlying controller.
 
         Args:
@@ -420,13 +422,13 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
 
     def get(self, type=dict):
         """
-        Gets current axis values in user coordinates (stored offsets subtracted).
+        Get current axis values in user coordinates (stored offsets subtracted).
 
         Args:
             type (type, optional): Output container type (dict, list, np.ndarray). Defaults to dict.
 
         Returns:
-        dict | list | np.ndarray: Axis values in user coordinates (stored offsets subtracted).
+            dict | list | np.ndarray: Axis values in user coordinates (stored offsets subtracted).
         
         Raises:
             TypeError: If an unsupported output type is requested.
@@ -450,10 +452,10 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
 
     def save(self, path=".lys/lys_instr/motorOffsets"):
         """
-        Persists per-axis offsets to disk.
+        Persist per-axis offsets to disk.
 
         Args:
-            path (str): Filesystem path to save offsets to.
+            path (str): Filesystem path to save offsets to. Defaults to ``.lys/lys_instr/motorOffsets``.
         """
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if os.path.exists(path):
@@ -471,7 +473,7 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
         Load persisted per-axis offsets into memory.
 
         Args:
-            path (str): Filesystem path to load offsets from.
+            path (str): Filesystem path to load offsets from. Defaults to ``.lys/lys_instr/motorOffsets``.
         """
         if not os.path.exists(path):
             return

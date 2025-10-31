@@ -8,12 +8,12 @@ class DummyDataInterface:
     @classmethod
     def name(cls):
         """
-        Returns the name of the dummy data set.
+        Return the name of the dummy data set.
 
         Returns:
             str: Name of the dummy data set.
         """
-        raise NotImplementedError("Dummy data class should impolement this method.")
+        raise NotImplementedError("Dummy data class should implement this method.")
     
     @property
     def frameShape(self):
@@ -23,7 +23,7 @@ class DummyDataInterface:
         Returns:
             tuple[int, ...]: Shape of each data frame.
         """
-        raise NotImplementedError("Dummy data class should impolement this method.")
+        raise NotImplementedError("Dummy data class should implement this method.")
 
     @property
     def indexShape(self):
@@ -33,7 +33,7 @@ class DummyDataInterface:
         Returns:
             tuple[int, ...]: Shape of the index grid.
         """
-        raise NotImplementedError("Dummy data class should impolement this method.")
+        raise NotImplementedError("Dummy data class should implement this method.")
 
     @property
     def axes(self):
@@ -43,18 +43,23 @@ class DummyDataInterface:
         Returns:
             list[numpy.ndarray]: Coordinate arrays corresponding to each axis of the index grid.
         """
-        raise NotImplementedError("Dummy data class should impolement this method.")
+        raise NotImplementedError("Dummy data class should implement this method.")
     
     @property
     def nframes(self):
         """
-        Number of frames produced per iteration of the data provider.
+        Number of sub-frames per yielded frame.
+
+        Values > 1 indicate multi-slice frames (e.g., when an index row is treated as a leading frame dimension).
+
+        Returns:
+            int: Number of sub-frames per yielded frame.
         """
         raise NotImplementedError("Dummy data class should impolement this method.")
 
     def __iter__(self):
         """
-        Returns an iterator over (index, frame) pairs.
+        Return an iterator over (index, frame) pairs.
 
         Subclasses should yield frames where each frame's shape matches ``frameShape``.
 
@@ -65,8 +70,8 @@ class DummyDataInterface:
     
     def __next__(self):
         """
-        Returns the next (index, frame) pair.
-        
+        Return the next (index, frame) pair.
+
         Subclasses must return the next frame and raise ``StopIteration`` when the sequence is exhausted.
 
         Returns:

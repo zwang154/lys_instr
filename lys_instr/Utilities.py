@@ -5,7 +5,7 @@ def preciseSleep(sleepTime):
     """
     Sleep for the specified interval (in seconds) with improved temporal precision.
 
-    This function avoids overshooting the requested sleep time by busy-waiting for the last ~0.5 ms.
+    Avoid overshooting the requested sleep time by busy-waiting for the last ~0.5 ms.
 
     Args:
         sleepTime (float): Total time to sleep, in seconds. Non-positive values return immediately.

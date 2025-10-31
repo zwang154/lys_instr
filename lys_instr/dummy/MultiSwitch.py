@@ -11,7 +11,7 @@ class _LevelInfo(QtCore.QObject):
 
     def __init__(self, state, interval):
         """
-        Initializes the container.
+        Initialize the container.
 
         Args:
             state (str): Initial level of the switch axis.
@@ -25,9 +25,9 @@ class _LevelInfo(QtCore.QObject):
 
     def set(self, state):
         """
-        Sets a target for the switch axis.
+        Set a target for the switch axis.
 
-        This method stores the requested target and starts timing used to determine whether the target is reached.
+        Store the requested target and start timing used to determine whether the target is reached.
         The target level is applied after the configured interval elapses.
 
         Args:
@@ -38,10 +38,10 @@ class _LevelInfo(QtCore.QObject):
 
     def _update(self):
         """
-        Updates the level of the switch axis after the configured time interval.
+        Update the level of the switch axis after the configured time interval.
 
-        Determines the switch level based on elapsed time since ``set`` was called and the configured switch interval.
-        Clears the target when it is reached.
+        Determine the switch level based on elapsed time since ``set`` was called and the configured switch interval.
+        Clear the target when it is reached.
         """
         if self._target is None:
             return
@@ -80,14 +80,14 @@ class MultiSwitchDummy(MultiSwitchInterface):
     """
     Dummy implementation of ``MultiSwitchInterface``.
 
-    This class simulates a multi-axis switch controller, including axis levels, busy/alive state management, and per-axis error injection for testing purposes.
+    This class simulates a multi-axis switch, including axis levels, busy/alive state management, and per-axis error injection for testing purposes.
     """
 
     def __init__(self, *axisNamesAll, levelNames=['OFF', 'LOW', 'MEDIUM', 'HIGH'], interval=0.1, **kwargs):
         """
-        Initializes the dummy multi-axis switch.
+        Initialize the dummy multi-axis switch.
 
-        Calls ``start()`` to begin the background polling thread.
+        Call ``start()`` to begin the background polling thread.
 
         Args:
             *axisNamesAll: Names of axes to simulate.
@@ -101,7 +101,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
 
     def _set(self, **target):
         """
-        Sets target levels for the specified axes.
+        Set target levels for the specified axes.
 
         Only axes present in ``target`` are updated; other axes are left unchanged.
 
@@ -114,7 +114,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
 
     def _get(self):
         """
-        Gets current levels for all axes.
+        Get current levels for all axes.
 
         Returns:
             dict[str, str]: Mapping of axis names to respective current levels.
@@ -123,7 +123,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
     
     def _isBusy(self):
         """
-        Returns busy state for all axes.
+        Return busy state for all axes.
 
         Returns:
             dict[str, bool]: Mapping of axis names to busy states.
@@ -132,7 +132,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
 
     def _isAlive(self):
         """
-        Returns alive state for all axes.
+        Return alive state for all axes.
 
         Returns:
             dict[str, bool]: Mapping of axis names to alive flags.
@@ -141,7 +141,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
 
     def settingsWidget(self):
         """
-        Creates and returns an optional settings widget.
+        Create and return an optional settings widget.
 
         Returns:
             QtWidgets.QWidget: The settings panel widget.

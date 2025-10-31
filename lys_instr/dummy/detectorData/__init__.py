@@ -7,7 +7,7 @@ dummyOptions = [RandomData, RandomData2D, RamanData]
 
 def loadDataByName(name):
     """
-    Returns a dummy data instance matching the given class name.
+    Return a dummy data instance matching the given class name.
 
     Args:
         name (str): Class name of the dummy data provider.
@@ -30,7 +30,7 @@ def loadDataByName(name):
 
 class DummyDataSelector(QtWidgets.QComboBox):
     """
-    QComboBox that selects and emits dummy data instances.
+    QComboBox for selecting and emitting dummy data providers.
 
     This widget lists available dummy data providers from ``dummyOptions``.
     When the selection changes, it emits the ``changed`` signal with the new provider instance.
@@ -41,7 +41,7 @@ class DummyDataSelector(QtWidgets.QComboBox):
 
     def __init__(self, detector):
         """
-        Initializes the dummy data selector.
+        Initialize the dummy data selector.
 
         Args:
             detector (object): Object with an ``_obj`` attribute holding the current dummy data instance.
@@ -53,9 +53,9 @@ class DummyDataSelector(QtWidgets.QComboBox):
 
     def _setCurrentByValue(self, value):
         """
-        Sets the current combo entry to match the given data provider.
+        Set the current combo entry to match the given data provider.
 
-        Uses ``value.name()`` to find and select the matching provider in the combo box.
+        Use ``value.name()`` to find and select the matching provider in the combo box.
 
         Args:
             value (object): Dummy data instance whose class exposes a ``name()`` method.

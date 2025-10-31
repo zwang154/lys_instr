@@ -6,7 +6,7 @@ def lock(func):
     """
     Decorator to ensure thread-safe execution of a method using a QMutex.
 
-    This method acquires the instance's ``_mutex`` before executing the decorated method, ensuring that only one thread can execute the method at a time.
+    This decorator acquires the instance's ``_mutex`` before executing the decorated method, ensuring that only one thread can execute the method at a time.
 
     Args:
         func (callable): The method to be decorated.
@@ -36,9 +36,9 @@ class HardwareInterface(QtCore.QThread):
 
     def __init__(self, interval=0.1, **kwargs):
         """
-        Initializes the hardware interface.
+        Initialize the hardware interface.
 
-        Registers the device instance and appends it to the internal instance list (``__list``).
+        Register the device instance and append it to the internal instance list (``__list``).
 
         Args:
             interval (float, optional): Time interval (in seconds) between successive state polls. Defaults to 0.1.
@@ -52,7 +52,7 @@ class HardwareInterface(QtCore.QThread):
 
     def run(self):
         """
-        Overrides ``QtCore.QThread.run()`` to define the background execution loop for a device instance.
+        Override ``QtCore.QThread.run()`` to define the background execution loop for a device instance.
         
         This method is executed automatically when ``start()`` is called, which is typically done in subclasses.
         It repeatedly calls ``_loadState()`` at the specified interval until ``kill()`` is called.
@@ -65,7 +65,7 @@ class HardwareInterface(QtCore.QThread):
 
     def kill(self):
         """
-        Stops the monitoring thread for this device instance.
+        Stop the monitoring thread for this device instance.
 
         This method sets the internal stop flag under the mutex so the running thread will exit its loop and terminate cleanly.
         """
@@ -74,7 +74,7 @@ class HardwareInterface(QtCore.QThread):
 
     def _loadState(self):
         """
-        Polls and updates the current device state.
+        Poll and update the current device state.
 
         Subclasses should override this method to implement device-specific polling and state-update logic.
         """
@@ -83,7 +83,7 @@ class HardwareInterface(QtCore.QThread):
     @classmethod
     def killAll(cls):
         """
-        Stops all active monitoring threads for instances of this class.
+        Stop all active monitoring threads for instances of this class.
 
         This method calls ``kill()`` on each registered device instance and clears the internal instance list ``__list``.
         """

@@ -13,7 +13,7 @@ class RamanData(DummyDataInterface):
 
     def __init__(self, scanLevel=0):
         """
-        Initializes the data provider by loading the sample data.
+        Initialize the data provider by loading the sample data.
 
         Args:
             scanLevel (int): 0 for no index dimension, 1 for a single index axis.
@@ -42,7 +42,7 @@ class RamanData(DummyDataInterface):
     @classmethod
     def name(cls):
         """
-        Returns the name of the data provider.
+        Return the name of the data provider.
 
         Returns:
             str: Name of the data provider ("Raman").
@@ -82,16 +82,16 @@ class RamanData(DummyDataInterface):
     @property
     def nframes(self):
         """
-        Number of frames produced per iteration of the data provider.
+        Number of sub-frames per yielded frame.
 
         Returns:
-            int: Number of frames per iteration (always 1 for this provider).
+            int: Number of sub-frames per yielded frame (always 1 for this provider).
         """
         return 1
 
     def __iter__(self):
         """
-        Returns an iterator over (index, frame) pairs.
+        Return an iterator over (index, frame) pairs.
 
         Returns:
             Iterator[tuple, numpy.ndarray]: Iterator over (index, frame) pairs.
@@ -101,7 +101,7 @@ class RamanData(DummyDataInterface):
     
     def __next__(self):
         """
-        Returns the next (index, frame) pair.
+        Return the next (index, frame) pair.
 
         Returns:
             tuple[tuple[int, ...], numpy.ndarray]: (index, frame)

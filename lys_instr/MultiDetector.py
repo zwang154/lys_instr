@@ -16,7 +16,7 @@ class _AcqThread(QtCore.QThread):
 
     def __init__(self, detector, iter=1):
         """
-        Initializes the acquisition thread for a detector.
+        Initialize the acquisition thread for a detector.
 
         Args:
             detector (DetectorInterface): The detector instance to run acquisition for.
@@ -29,7 +29,7 @@ class _AcqThread(QtCore.QThread):
 
     def run(self, *args, **kwargs):
         """
-        Runs the detector's acquisition loop.
+        Run the detector's acquisition loop.
 
         Overrides the ``run()`` method of QThread and is called when the worker thread is started.
         """
@@ -38,7 +38,7 @@ class _AcqThread(QtCore.QThread):
 
     def _onUpdated(self):
         """
-        Emits the ``dataAcquired`` signal with the latest acquired data.
+        Emit the ``dataAcquired`` signal with the latest acquired data.
 
         Called in response to the detector's ``updated`` signal.
         """
@@ -70,7 +70,7 @@ class DetectorInterface(HardwareInterface):
 
     def __init__(self, exposure=1, **kwargs):
         """
-        Initializes the interface.
+        Initialize the interface.
 
         Args:
             exposure (float or None): Initial exposure time.
@@ -83,9 +83,9 @@ class DetectorInterface(HardwareInterface):
 
     def _loadState(self):
         """
-        Polls the device and updates its state.
+        Poll the device and update its state.
 
-        Emits the ``aliveStateChanged`` signal if the alive state has changed.
+        Emit the ``aliveStateChanged`` signal if the alive state has changed.
         """
         if not hasattr(self, "_alive"):
             self._alive = True
@@ -97,7 +97,7 @@ class DetectorInterface(HardwareInterface):
 
     def startAcq(self, iter=1, wait=False, output=False):
         """
-        Starts acquisition in an acquisition thread.
+        Start acquisition in an acquisition thread.
 
         If both `wait` and `output` are True, the method blocks until acquisition completes and returns the acquired data.
 
@@ -107,7 +107,7 @@ class DetectorInterface(HardwareInterface):
             output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.
 
         Returns:
-            dict[tuple, np.ndarray] | None: Acquired data that maps index tuples to frames when ``output`` is True; otherwise None.
+            dict[tuple, np.ndarray] | None: Acquired data that maps index tuples to frames when ``output`` is True; otherwise ``None``.
         """
         if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
@@ -134,9 +134,9 @@ class DetectorInterface(HardwareInterface):
 
     def _onAcqFinished(self):
         """
-        Cleans up after acquisition is finished.
+        Clean up after acquisition is finished.
 
-        Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal.
+        Reset the acquisition thread reference, update the busy state, and emit the ``busyStateChanged`` signal.
         """
         with QtCore.QMutexLocker(self._mutex):
             self._busy = False
@@ -145,7 +145,7 @@ class DetectorInterface(HardwareInterface):
 
     def waitForReady(self):
         """
-        Blocks further interaction until the device is no longer busy.
+        Block further interaction until the device is no longer busy.
 
         Returns:
             None
@@ -164,7 +164,7 @@ class DetectorInterface(HardwareInterface):
 
     def stop(self):
         """
-        Stops the acquisition and emits the latest acquired data.
+        Stop the acquisition and emit the latest acquired data.
 
         This method waits for the acquisition worker thread to finish if it is running.
         """
@@ -188,17 +188,17 @@ class DetectorInterface(HardwareInterface):
     @exposure.setter
     def exposure(self, value):
         """
-        Sets the exposure time.
+        Set the exposure time.
 
         Args:
-            value (float | None): Exposure time to set, or None to indicate unsupported.
+            value (float | None): Exposure time to set, or ``None`` to indicate unsupported.
         """
         self._exposure = value
 
     @property
     def isBusy(self):
         """
-        Returns whether the detector is currently busy.
+        Current busy state of the detector.
 
         This property reflects the internal busy flag, which is True during acquisition.
 
@@ -210,7 +210,7 @@ class DetectorInterface(HardwareInterface):
     @property
     def isAlive(self):
         """
-        Returns the current alive state of the detector.
+        Current alive state of the detector.
 
         This property should be implemented in subclasses to provide device-specific logic.
 
@@ -263,7 +263,7 @@ class DetectorInterface(HardwareInterface):
 
     def settingsWidget(self):
         """
-        Returns a device-specific settings dialog.
+        Return a device-specific settings dialog.
 
         Subclasses should override this to provide a QDialog for device settings.
 

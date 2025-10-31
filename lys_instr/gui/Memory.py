@@ -4,7 +4,21 @@ from lys.Qt import QtWidgets, QtCore
 
 
 class ControllerMemory(QtWidgets.QWidget):
+    """
+    Memory panel for controller positions.
+
+    Displays saved controller positions, allows saving/loading/deleting entries, and stores positions in a JSON file under the local ``.lys`` directory.
+    """
+
     def __init__(self, objs, path=None, parent=None):
+        """
+        Create the memory panel and load saved positions.
+
+        Args:
+            objs (Sequence): Sequence of controller objects used to read/write positions.
+            path (str | None): Optional filename to use for saved positions (stored under ``.lys/.lys_instr``).
+            parent (QWidget | None): Optional parent widget.
+        """
         super().__init__(parent)
         self._objs = objs
         self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
@@ -15,7 +29,9 @@ class ControllerMemory(QtWidgets.QWidget):
         self._updateMemory()
 
     def __initLayout(self):
-        # Create memory panel
+        """
+        Create and arrange widgets for the memory panel.
+        """
         self._positionList = QtWidgets.QTreeWidget()
         self._positionList.setColumnCount(3)
         self._positionList.setHeaderLabels(["Label", "Position", "Memo"])
@@ -30,7 +46,6 @@ class ControllerMemory(QtWidgets.QWidget):
         self._positionList.setItemDelegateForColumn(0, _NoEditDelegate(self._positionList))
         self._positionList.setItemDelegateForColumn(1, _NoEditDelegate(self._positionList))
 
-        # Collapsible panel layout
         save = QtWidgets.QPushButton("Save", clicked=self._save)
         save.setEnabled(True)
         load = QtWidgets.QPushButton("Load", clicked=self._load)
@@ -50,6 +65,12 @@ class ControllerMemory(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def _import(self, path):
+        """
+        Import saved positions from disk and set the memory file path.
+
+        Args:
+            path (str | None): Optional filename in the local memory directory (``.lys/.lys_instr``) to load. If ``None``, no file is loaded.
+        """
         if path is None:
             self._path = None
 
@@ -63,6 +84,9 @@ class ControllerMemory(QtWidgets.QWidget):
                 self._savedPositions = json.load(f)
 
     def _export(self):
+        """
+        Write the current saved positions to the configured memory file.
+        """
         if self._path is None:
             return
         with open(self._path, "w") as f:
@@ -70,7 +94,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
     def _save(self):
         """
-        Saves the current axis positions to the memory file.
+        Save the current axis positions to the memory file.
         """
         labels = {item["label"] for item in self._savedPositions}
         i = 1
@@ -85,7 +109,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
     def _load(self):
         """
-        Loads a selected saved axis position item from the memory file and set the axes accordingly.
+        Load the selected saved axis position and apply it to the controllers.
         """
         selections = self._positionList.selectedItems()
         if not selections:
@@ -99,7 +123,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
     def _delete(self):
         """
-        Deletes selected saved positions from the memory file.
+        Delete selected saved positions from the memory file.
         """
         selectedlabels = {i.text(0) for i in self._positionList.selectedItems()}
         self._savedPositions = [item for item in self._savedPositions if item["label"] not in selectedlabels]
@@ -108,7 +132,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
     def _memoEdited(self, item, column):
         """
-        Handles edits to the memo field in the memory panel.
+        Handle edits to the memo field in the memory panel.
 
         Args:
             item (QTreeWidgetItem): The edited item.
@@ -125,7 +149,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
     def _updateMemory(self):
         """
-        Updates the memory panel with the latest saved positions.
+        Update the memory panel with the latest saved positions.
         """
         self._positionList.clear()
         for itemDict in self._savedPositions:
@@ -141,7 +165,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
     def _updateMemoryBtns(self, loadBtn, deleteBtn):
         """
-        Enables or disables memory panel buttons based on selection.
+        Enable or disable memory panel buttons based on selection.
 
         Args:
             loadBtn (QPushButton): The load button.
@@ -159,9 +183,9 @@ class _NoEditDelegate(QtWidgets.QStyledItemDelegate):
 
     def createEditor(self, parent, option, index):
         """
-        Prevents editing by always returning None.
+        Prevent editing by always returning None.
 
         Returns:
-            None
+            ``None``
         """
         return None

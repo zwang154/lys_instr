@@ -8,12 +8,12 @@ class PreCorrector(QtCore.QObject):
 
     This class automatically applies configured correction callables whenever controller axis targets change. 
     Correction parameters are stored in ``_correctParams``, which maps a target axis name to a callable that computes the corrected value from current master-axis parameters.
-    The corrector expects controllers passed to the constructor to provide a ``busyStateChanged`` Qt signal and a ``nameList`` iterable of axis names.
+    The corrector expects controllers passed to the constructor to provide a ``busyStateChanged`` Qt signal and a ``nameList`` iterable of axis names (typically motors).
     """
 
     def __init__(self, controllers):
         """
-        Initializes the corrector with the given controllers.
+        Initialize the corrector with the given controllers.
 
         Args:
             controllers (Iterable): Iterable of controller objects. Each controller must provide a ``busyStateChanged`` Qt signal and a ``nameList`` iterable of its axis names.
@@ -50,7 +50,7 @@ class PreCorrector(QtCore.QObject):
 
     def _busy(self, busy):
         """
-        Handles controller busy-state updates.
+        Handle controller busy-state updates.
 
         Args:
             busy (dict): Mapping of axis name (str) to bool indicating busy state.
@@ -78,10 +78,10 @@ class PreCorrector(QtCore.QObject):
 
     def _replaceBusyMethod(self, targ, dep, reset=False):
         """
-        Overrides or restores a controller's ``_isBusy`` method.
+        Override or restore a controller's ``_isBusy`` method.
 
-        Replaces the ``_isBusy`` attribute of the controller named ``targ`` with a wrapper that marks the target axis busy if it was already busy or if controller ``dep`` is busy. 
-        When ``reset`` is True the original ``_isBusy`` method is restored.
+        Replace the ``_isBusy`` attribute of the controller named ``targ`` with a wrapper that marks the target axis busy if it was already busy or if controller ``dep`` is busy. 
+        When ``reset`` is True, restore the original ``_isBusy`` method.
 
         Args:
             targ (str): Name of the target controller whose busy method will be modified.
@@ -110,7 +110,7 @@ class _FunctionCombination:
 
     def __init__(self):
         """
-        Initializes the combination of correction callables.
+        Initialize the combination of correction callables.
         """
         super().__init__()
         self._funcs = dict()
@@ -119,19 +119,18 @@ class _FunctionCombination:
 
     def __call__(self, **scanParams):
         """
-        Evaluates the combined correction for the given scan parameters.
+        Evaluate the combined correction for the given scan parameters.
 
-        Each registered correction callable is invoked with the provided keyword scan parameters (typically named motor-axis positions, e.g. ``x=..., y=...``).
+        Invoke each registered correction callable with the provided keyword scan parameters (typically named motor-axis positions, e.g. ``x=..., y=...``).
         Correction callables must accept those keyword arguments and return a numeric value.
-        If ``expression`` is set, each registered correction callable is invoked and its return value is supplied as a local variable to the expression. 
-        If ``expression`` is None or an empty string, the return value of the first registered correction callable (in insertion order) is used.
+        If ``expression`` is set, invoke each registered correction callable and supply its return value as a local variable to the expression. 
+        If ``expression`` is ``None`` or an empty string, use the return value of the first registered correction callable (in insertion order).
 
         Args:
             **scanParams: Keyword scan parameters forwarded to each correction callable.
 
         Returns:
-            float | int: Computed correction (typically the corrected target value
-                for an axis).
+            float | int: Computed correction (typically the corrected target value for an axis).
 
         Caution:
             The expression is evaluated with ``eval`` using ``{"__builtins__": None}``. Only trusted expressions should be used.
@@ -163,20 +162,20 @@ class _FunctionCombination:
         Expression string used to combine registered correction callables.
 
         Returns:
-            str | None: Expression string that combines registered correction callables' return values, or None if no expression is set.
+            str | None: Expression string that combines registered correction callables' return values, or ``None`` if no expression is set.
         """
         return self._formula
 
     @expression.setter
     def expression(self, value):
         """
-        Sets the expression string used to combine registered correction callables.
+        Set the expression string used to combine registered correction callables.
         """
         self._formula = value
 
     def argNames(self, excludeFixed=True):
         """
-        Returns the ordered list of unique argument names required by the registered correction callables.
+        Return the ordered list of unique argument names required by the registered correction callables.
 
         Args:
             excludeFixed (bool): If True, exclude arguments that the correction callable reports as fixed.
@@ -199,7 +198,7 @@ class _InterpolatedFunction:
 
     def __init__(self, interpolator, argNames):
         """
-        Creates the interpolator wrapper.
+        Create the interpolator wrapper.
 
         Args:
             interpolator (callable): An interpolation callable that accepts a 2D sequence of input points and returns an iterable of values.
@@ -212,7 +211,7 @@ class _InterpolatedFunction:
 
     def __call__(self, **kwargs):
         """
-        Evaluates the interpolated function for the provided named args.
+        Evaluate the interpolated function for the provided named args.
 
         Any arguments present in ``fixedValues`` override values supplied in ``kwargs``. 
         Missing arguments are passed as ``None`` to the interpolator.
@@ -242,7 +241,7 @@ class _InterpolatedFunction:
 
     def argNames(self, excludeFixed=False):
         """
-        Returns the ordered list of unique argument names required by the registered correction callables.
+        Return the ordered list of unique argument names required by the registered correction callables.
 
         Args:
             excludeFixed (bool): If True, exclude arguments that the correction callable reports as fixed.

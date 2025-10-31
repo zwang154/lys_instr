@@ -6,7 +6,20 @@ from .widgets import FolderButton
 
 
 class DataStorageGUI(QtWidgets.QWidget):
+    """
+    GUI widget for configuring data storage options.
+
+    Provide controls to select base folder, data folder, file name, numbering, and enable/disable saving.
+    Update the storage backend and show a saving-status indicator.
+    """
+
     def __init__(self, obj):
+        """
+        Create the storage GUI and bind it to the storage object.
+
+        Args:
+            obj (DataStorage): The storage backend object (must provide ``base``, ``folder``, ``name``, ``getNumber()`` and the ``savingStateChanged`` signal).
+        """
         super().__init__()
         self._obj = obj
         self._settingPath = False
@@ -18,6 +31,9 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._obj.savingStateChanged.connect(self._savingStateChanged)
 
     def _initLayout(self):
+        """
+        Create and arrange the widgets for the storage configuration panel.
+        """
         # Widgets for data saving
         browse = FolderButton(clicked=self._browse)
         browse.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
@@ -32,7 +48,6 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._savedIndicator.setAlignment(QtCore.Qt.AlignCenter)
 
         self._savingState = QtWidgets.QLabel("[Status] Waiting")
-        # self._dataShapeText = QtWidgets.QLabel("Data Shape: (None)")
 
         self._numberedCheck = QtWidgets.QCheckBox("Numbered", checked=True, objectName="DataStorage_numbered")
         self._enabledCheck = QtWidgets.QCheckBox("Enabled", checked=True, objectName="DataStorage_enabled")
@@ -68,6 +83,9 @@ class DataStorageGUI(QtWidgets.QWidget):
         self.setLayout(mainLayout)
 
     def _pathChanged(self):
+        """
+        Handle changes to path-related widgets and propagate them to the storage object.
+        """
         if self._settingPath:
             return
 
@@ -92,11 +110,20 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._settingPath = False
 
     def _browse(self):
+        """
+        Open a dialog to choose the base folder and update the Base field.
+        """
         baseStr = QtWidgets.QFileDialog.getExistingDirectory(self, "Select base folder", self._base.text())
         if baseStr:
             self._base.setText(baseStr)
 
     def _savingStateChanged(self, saving):
+        """
+        Update the GUI to reflect the current saving state.
+
+        Args:
+            saving (bool): True when saving is in progress, False otherwise.
+        """
         if saving:
             text = f"[Status] {len(self._obj._paths)} files reserved, {len(self._obj._threads)} files being saved."
             self._savingState.setText(text)

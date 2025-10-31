@@ -17,12 +17,12 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def __init__(self, data=None, indexShape=(), frameShape=(100, 100), exposure=0.1, **kwargs):
         """
-        Initializes the dummy detector and starts acquisition.
+        Initialize the dummy detector and start acquisition.
 
-        Calls ``start()`` to begin the acquisition thread.
+        Call ``start()`` to begin the acquisition thread.
 
         Args:
-            data (Optional[DummyDataInterface]): Data source; if None, random frames are generated.
+            data (Optional[DummyDataInterface]): Data source; if ``None``, random frames are generated.
             indexShape (Tuple[int, ...]): Shape of the index grid for generated data. Ignored if ``data`` is not None.
             frameShape (Tuple[int, ...]): Shape of each data frame for generated data. Ignored if ``data`` is not None.
             exposure (float): Time in seconds to wait per frame (frame exposure).
@@ -36,11 +36,11 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def _run(self, iter=1):
         """
-        Runs the background acquisition loop that simulates frame acquisition.
+        Run the background acquisition loop that simulates frame acquisition.
 
-        For each iteration, walks the data source (``self._obj``) to acquire frames, sleeps per frame according to exposure time (``self.exposure``), 
-        stores acquired frames into the internal buffer (``self._data``), and emits notification signal (``updated``) after each frame.
-        Returns early if stop request flag (``self._shouldStop``) is set.
+        For each iteration, walk the data source (``self._obj``) to acquire frames, sleep per frame according to exposure time (``self.exposure``),
+        store acquired frames into the internal buffer (``self._data``), and emit the notification signal (``updated``) after each frame.
+        Return early if the stop request flag (``self._shouldStop``) is set.
         """
         self._shouldStop = False
         
@@ -56,15 +56,15 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def _stop(self):
         """
-        Requests the acquisition loop to stop.
+        Request the acquisition loop to stop.
 
-        Sets an internal stop request flag so the background thread will exit at the next check.
+        Set an internal stop request flag so the background thread will exit at the next check.
         """
         self._shouldStop = True
 
     def _get(self):
         """
-        Retrieves and clears the accumulated data buffer.
+        Retrieve and clear the accumulated data buffer.
 
         Returns:
             dict: Shallow copy of acquired frames keyed by index tuples.
@@ -75,7 +75,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def _isAlive(self):
         """
-        Returns the alive state of the simulated detector.
+        Return the alive state of the simulated detector.
 
         Returns:
             bool: True if the detector is alive, False otherwise.
@@ -114,7 +114,7 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def settingsWidget(self):
         """
-        Creates and returns an optional settings QWidget.
+        Create and return an optional settings QWidget.
 
         Returns:
             QtWidgets.QWidget: The settings panel widget.
@@ -123,10 +123,10 @@ class MultiDetectorDummy(MultiDetectorInterface):
 
     def setData(self, data=None, indexShape=None, frameShape=None):
         """
-        Configures the dummy data source.
+        Configure the dummy data source.
 
         Args:
-            data (Optional[DummyDataInterface]): Data source. If None, a random-data generator (``RandomData``) is created.
+            data (Optional[DummyDataInterface]): Data source. If ``None``, a random-data generator (``RandomData``) is created.
             indexShape (Optional[Tuple[int, ...]]): Index-grid shape used by the random-data generator.
             frameShape (Optional[Tuple[int, ...]]): Frame shape used by the random-data generator.
         """
@@ -146,7 +146,7 @@ class _OptionalPanel(QtWidgets.QWidget):
 
     def __init__(self, obj):
         """
-        Initializes the settings panel.
+        Initialize the settings panel.
 
         Args:
             obj (MultiDetectorInterface): Backend detector object using the panel.
@@ -158,7 +158,7 @@ class _OptionalPanel(QtWidgets.QWidget):
 
     def _initLayout(self):
         """
-        Builds and arranges the panel's widgets.
+        Build and arrange the panel's widgets.
         """
         self._switch = QtWidgets.QPushButton("Change", clicked=self._toggleAlive)
         aliveLayout = QtWidgets.QHBoxLayout()
@@ -179,7 +179,7 @@ class _OptionalPanel(QtWidgets.QWidget):
 
     def _toggleAlive(self):
         """
-        Toggles the backend detector's alive state and emits notification signals.
+        Toggle the backend detector's alive state and emit notification signals.
         """
         backend = self._obj
         backend.error = not backend.error
