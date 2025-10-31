@@ -1,0 +1,639 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lys_instr.MultiController &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lys_instr.MultiController</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lys_instr.MultiController</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">weakref</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Interfaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">HardwareInterface</span><span class="p">,</span> <span class="n">lock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtCore</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_AxisInfo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Per-axis state container.</span>
+
+<span class="sd">    Holds the current busy/alive state and an optional target value for a single motor axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">busy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">alive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the axis state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            busy (bool, optional): Initial busy state. Defaults to False.</span>
+<span class="sd">            alive (bool, optional): Initial alive state. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="n">busy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">alive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="MultiControllerInterface">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiControllerInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiControllerInterface</span><span class="p">(</span><span class="n">HardwareInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract interface for multi-axis controllers (e.g., motors, switches, or similar).</span>
+
+<span class="sd">    This class provides background polling, state management, and Qt signals for axis value and state updates.</span>
+<span class="sd">    Subclasses must implement device-specific methods: ``_get()``, ``_set()``, ``_isBusy()``, and ``_isAlive()``. </span>
+<span class="sd">    ``_get()``, ``_set()``, and ``_isBusy()`` should raise ``RuntimeError`` on communication errors; </span>
+<span class="sd">    ``_isAlive()`` should return the current alive state without raising ``RuntimeError`` that interrupts monitoring.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: Signal (dict) emitted when axis values change.</span>
+    <span class="n">valueChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="c1">#: Signal (dict) emitted when busy state changes.</span>
+    <span class="n">busyStateChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="c1">#: Signal (dict) emitted when alive state changes.</span>
+    <span class="n">aliveStateChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the interface with the given axis names.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *axisNamesAll: Names of all axes to manage.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_info</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">_AxisInfo</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">axisNamesAll</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutex</span><span class="p">()</span>
+
+    <span class="nd">@lock</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loadState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Poll the device and update the state of all axes.</span>
+
+<span class="sd">        Emit the ``busyStateChanged`` and ``aliveStateChanged`` signals if any axis state has changed.</span>
+<span class="sd">        Log any runtime errors that occur during state loading.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isBusy</span><span class="p">()</span>
+            <span class="n">busyUpdate</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">b</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">b</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">busy</span><span class="p">}</span>
+
+            <span class="c1"># Emit valueChanged signal if any axis is busy</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">bs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">busyUpdate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">vs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="n">vs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">b</span> <span class="ow">or</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">busyUpdate</span><span class="p">})</span>
+
+            <span class="c1"># Update busy state log and emit busyStateChanged signal if any axis has changed its busy state</span>
+            <span class="k">if</span> <span class="n">busyUpdate</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">busyUpdate</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="n">b</span>
+                    <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">busyUpdate</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Runtime error in _loadState: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">al</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isAlive</span><span class="p">()</span>
+            <span class="n">aliveUpdate</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">a</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">al</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">a</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">alive</span><span class="p">}</span>
+
+            <span class="c1"># Update alive state if any axis has changed its alive state</span>
+            <span class="k">if</span> <span class="n">aliveUpdate</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">aliveUpdate</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">a</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">al</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MultiControllerInterface.set">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiControllerInterface.set">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set target values for one or more axes.</span>
+
+<span class="sd">        For each axis specified in ``kwargs``, set its target value, e.g., ``set(x=1.0, y=2.0)``.</span>
+<span class="sd">        Optionally wait until all axes become idle after setting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            wait (bool, optional): If True, block until all axes become idle after setting. Defaults to False.</span>
+<span class="sd">            lock (bool, optional): If True, acquire the instance mutex while applying targets. Defaults to True.</span>
+<span class="sd">            **kwargs: Axis-value pairs to set, e.g., x=1.0, y=2.0.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any provided axis name is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">lock</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_set_impl</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_impl</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">waitForReady</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply target values to axes.</span>
+
+<span class="sd">        Validate provided axis names, update per-axis state (target and busy flags), emit any busy-state updates,</span>
+<span class="sd">        and finally call the subclass-implemented ``_set`` method to perform the hardware operation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs (float): Axis-value pairs to set (e.g., x=1.0, y=2.0).</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any provided axis name is invalid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate axis names</span>
+        <span class="n">invalid</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">invalid</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Axis name(s) </span><span class="si">{</span><span class="n">invalid</span><span class="si">}</span><span class="s2"> not recognized. Available axes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nameList</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Update busy state for each axis in kwargs and emit busy state only for axes that are now busy</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="kc">True</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">busy</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">updated</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">updated</span><span class="p">)</span>
+
+        <span class="c1"># Set actual values for the axes in kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MultiControllerInterface.get">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiControllerInterface.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current values of all axes in the specified data type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type (type, optional): Output type (`dict`, `list`, or `np.ndarray`). Defaults to `dict`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict or list or np.ndarray: Axis values in the requested format.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If an unsupported output type is requested.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valueDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">valueDict</span>
+        <span class="k">elif</span> <span class="nb">type</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">valueDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nameList</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">type</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">valueDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nameList</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="MultiControllerInterface.stop">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiControllerInterface.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stop all axes.</span>
+
+<span class="sd">        Call the instance-specific ``_stop()`` method to perform the actual stopping logic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MultiControllerInterface.waitForReady">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiControllerInterface.waitForReady">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">waitForReady</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Block further interaction until all axes are idle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loop</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QEventLoop</span><span class="p">()</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">on_busy_changed</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_isBusy</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="ow">and</span> <span class="n">loop</span><span class="o">.</span><span class="n">isRunning</span><span class="p">():</span>
+                <span class="n">loop</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_isBusy</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">on_busy_changed</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">)</span>
+        <span class="n">loop</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
+
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current busy state of all axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to their busy state.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If the device is not responding or a communication error occurs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isBusy</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current alive state of all axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to their alive state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isAlive</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">nameList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List of all axis names.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Axis names in the order they were registered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">target</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current target values of all axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, float]: Mapping of axis names to their target values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">info</span><span class="o">.</span><span class="n">target</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_info</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+
+<div class="viewcode-block" id="MultiControllerInterface.settingsWidget">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiControllerInterface.settingsWidget">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a device-specific settings dialog.</span>
+
+<span class="sd">        Subclasses should override this to provide a QDialog for device settings.</span>
+<span class="sd">        The base implementation returns None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QDialog | None: Settings dialog, or None if not provided by the base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_isBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for determining busy state.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to their busy state.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for determining alive state.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to their alive state.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for getting axis values.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, float]: Mapping of axis names to their current values.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Should be implemented in subclasses to provide device-specific logic for setting axis values.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            kwargs (dict[str, float]): Axis-value pairs to set, e.g., x=1.0, y=2.0.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="MultiSwitchInterface">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiSwitchInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiSwitchInterface</span><span class="p">(</span><span class="n">MultiControllerInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interface for switch-type multi-axis controllers (referred to as switches for short).</span>
+
+<span class="sd">    Convenience subclass for devices where each axis behaves like a switch with discrete label positions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labelNames</span><span class="p">,</span> <span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the interface with given label and axis names.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            labelNames (Iterable[str]): Labels associated with the switch axes.</span>
+<span class="sd">            *axisNamesAll: Axis names managed by the controller.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="n">labelNames</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">labelNames</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List of label names associated with the switch axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Label names in the order corresponding to axis registration.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span></div>
+
+    
+
+<div class="viewcode-block" id="OffsettableMultiMotorInterface">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.OffsettableMultiMotorInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OffsettableMultiMotorInterface</span><span class="p">(</span><span class="n">MultiControllerInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interface for motor-type multi-axis controllers (referred to as motors for short) with offset functionality.</span>
+
+<span class="sd">    Convenience subclass for devices where each axis exposes a continuous position value.</span>
+<span class="sd">    This class adds a per-axis offsets dictionary that is applied to ``get()``/``set()`` operations and can be persisted to disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#: Signal emitted when any axis offset value changes.</span>
+    <span class="n">offsetChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+
+<div class="viewcode-block" id="OffsettableMultiMotorInterface.offsetDict">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.OffsettableMultiMotorInterface.offsetDict">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">offsetDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dictionary subclass that stores per-axis offsets and emits a signal when any value changes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1">#: Signal emitted when any axis offset value changes.</span>
+        <span class="n">valueChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axesNames</span><span class="p">,</span> <span class="n">parent</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Initialize the offsets dictionary for the supplied axis names.</span>
+
+<span class="sd">            The dictionary is pre-populated with zeros for each axis and keeps a weak reference to the parent so that changes can notify the parent object.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                axesNames (Iterable[str]): Axis names to initialize with zero.</span>
+<span class="sd">                parent: Parent instance which owns this dict.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">axesNames</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">ref</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Set an offset value and notify the parent.</span>
+
+<span class="sd">            Emit the parent&#39;s ``offsetChanged`` signal after updating the dictionary so listeners can react.</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                key (str): Axis name.</span>
+<span class="sd">                value (float): Offset value for the axis.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="p">()</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">axesNames</span><span class="p">,</span> <span class="n">autoSave</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize offset support for the multi-axis interface.</span>
+
+<span class="sd">        Create an internal per-axis offsets dictionary, optionally load persisted offsets, and wire change notifications for automatic updates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *axesNames (Iterable[str]): Axis names managed by the controller.</span>
+<span class="sd">            autoSave (bool): If True, load persisted offsets and save on changes. Defaults to True.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">axesNames</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_offsetDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offsetDict</span><span class="p">(</span><span class="n">axesNames</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">autoSave</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_valueChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Notify listeners that current axis values changed (offsets applied).</span>
+
+<span class="sd">        Emit the ``valueChanged`` signal with the current output of ``get()`` (offsets applied).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+<div class="viewcode-block" id="OffsettableMultiMotorInterface.set">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.OffsettableMultiMotorInterface.set">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set target values for axes in user coordinates (stored offsets subtracted).</span>
+
+<span class="sd">        Adjust each provided value by adding the corresponding per-axis offset before delegating to the parent implementation. </span>
+<span class="sd">        For example, calling ``set(x=1.0)`` will result in the value ``1.0 + self.offset.get(&#39;x&#39;, 0)`` being sent to the underlying controller.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs (float): Axis-value pairs in user coordinates.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OffsettableMultiMotorInterface.get">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.OffsettableMultiMotorInterface.get">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get current axis values in user coordinates (stored offsets subtracted).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            type (type, optional): Output container type (dict, list, np.ndarray). Defaults to dict.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict | list | np.ndarray: Axis values in user coordinates (stored offsets subtracted).</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If an unsupported output type is requested.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valueDict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">valueDict</span>
+        <span class="k">elif</span> <span class="nb">type</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">valueDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nameList</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">type</span> <span class="ow">is</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">valueDict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nameList</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Unsupported type: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">))</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">offset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dictionary mapping axis names to respective offsets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsetDict</span>
+
+<div class="viewcode-block" id="OffsettableMultiMotorInterface.save">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.OffsettableMultiMotorInterface.save">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;.lys/lys_instr/motorOffsets&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Persist per-axis offsets to disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): Filesystem path to save offsets to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+                <span class="n">txt</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="OffsettableMultiMotorInterface.load">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.OffsettableMultiMotorInterface.load">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s2">&quot;.lys/lys_instr/motorOffsets&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load persisted per-axis offsets into memory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): Filesystem path to load offsets from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+            <span class="n">txt</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">txt</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MultiMotorInterface">
+<a class="viewcode-back" href="../../lys_instr_/api_/motor.html#lys_instr.MultiController.MultiMotorInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiMotorInterface</span><span class="p">(</span><span class="n">OffsettableMultiMotorInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multi-axis motor interface.</span>
+
+<span class="sd">    Thin subclass of OffsettableMultiMotorInterface kept for semantic clarity and for future device-specific extensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

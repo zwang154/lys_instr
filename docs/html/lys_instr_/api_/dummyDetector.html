@@ -1,0 +1,480 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dummy Detector &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Contributing" href="../../contributing.html" />
+    <link rel="prev" title="Dummy Motor" href="dummyMotor.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../api.html">Python API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#core-elements">Core Elements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#utilities">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#combinations">Combinations</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../api.html#dummy-devices">Dummy Devices</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="dummyMotor.html">Dummy Motor</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Dummy Detector</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy"><code class="docutils literal notranslate"><span class="pre">MultiDetectorDummy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface"><code class="docutils literal notranslate"><span class="pre">DummyDataInterface</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.dummy.detectorData.raman.RamanData"><code class="docutils literal notranslate"><span class="pre">RamanData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.dummy.detectorData.random.RandomData"><code class="docutils literal notranslate"><span class="pre">RandomData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lys_instr.dummy.detectorData.random.RandomData2D"><code class="docutils literal notranslate"><span class="pre">RandomData2D</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../api.html">Python API</a></li>
+      <li class="breadcrumb-item active">Dummy Detector</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lys_instr_/api_/dummyDetector.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-lys_instr.dummy.MultiDetector">
+<span id="dummy-detector"></span><h1>Dummy Detector<a class="headerlink" href="#module-lys_instr.dummy.MultiDetector" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="lys_instr.dummy.MultiDetector.MultiDetectorDummy">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.dummy.MultiDetector.</span></span><span class="sig-name descname"><span class="pre">MultiDetectorDummy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indexShape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameShape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(100,</span> <span class="pre">100)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/MultiDetector.html#MultiDetectorDummy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="detector.html#lys_instr.MultiDetector.MultiDetectorInterface" title="lys_instr.MultiDetector.MultiDetectorInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code></a></p>
+<p>Dummy implementation of <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code>.</p>
+<p>This class simulates a detector that Produces indexed frames from a supplied data source or by generating random frames.
+Acquisition runs in a background loop (started by <code class="docutils literal notranslate"><span class="pre">start()</span></code> in <code class="docutils literal notranslate"><span class="pre">__init__</span></code>) and populates an internal buffer.
+Signals <code class="docutils literal notranslate"><span class="pre">updated</span></code>, <code class="docutils literal notranslate"><span class="pre">dataAcquired</span></code>, and <code class="docutils literal notranslate"><span class="pre">aliveStateChanged</span></code>, defined in <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code>, are emitted as appropriate.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.MultiDetector.MultiDetectorDummy.axes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">axes</span></span><a class="headerlink" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy.axes" title="Link to this definition"></a></dt>
+<dd><p>Axis coordinates for the full data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Coordinate arrays corresponding to each axis of the index grid.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List[numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.MultiDetector.MultiDetectorDummy.frameShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frameShape</span></span><a class="headerlink" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy.frameShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of a single acquired data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Frame dimensions (height, width, …) as provided by the data source.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.MultiDetector.MultiDetectorDummy.indexShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">indexShape</span></span><a class="headerlink" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy.indexShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of the index grid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dimensions of the index grid used to iterate over frames.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.dummy.MultiDetector.MultiDetectorDummy.setData">
+<span class="sig-name descname"><span class="pre">setData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indexShape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameShape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/MultiDetector.html#MultiDetectorDummy.setData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy.setData" title="Link to this definition"></a></dt>
+<dd><p>Configure the dummy data source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface" title="lys_instr.dummy.detectorData.interface.DummyDataInterface"><em>DummyDataInterface</em></a><em>]</em>) – Data source. If None, a random-data generator (<code class="docutils literal notranslate"><span class="pre">RandomData</span></code>) is created.</p></li>
+<li><p><strong>indexShape</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>...</em><em>]</em><em>]</em>) – Index-grid shape used by the random-data generator.</p></li>
+<li><p><strong>frameShape</strong> (<em>Optional</em><em>[</em><em>Tuple</em><em>[</em><em>int</em><em>, </em><em>...</em><em>]</em><em>]</em>) – Frame shape used by the random-data generator.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.dummy.MultiDetector.MultiDetectorDummy.settingsWidget">
+<span class="sig-name descname"><span class="pre">settingsWidget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/MultiDetector.html#MultiDetectorDummy.settingsWidget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.MultiDetector.MultiDetectorDummy.settingsWidget" title="Link to this definition"></a></dt>
+<dd><p>Create and return an optional settings QWidget.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The settings panel widget.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>QtWidgets.QWidget</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-lys_instr.dummy.detectorData.interface">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.interface.DummyDataInterface">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.dummy.detectorData.interface.</span></span><span class="sig-name descname"><span class="pre">DummyDataInterface</span></span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/interface.html#DummyDataInterface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Abstract interface for dummy detector data providers.</p>
+<p>Subclasses should provide an iterable sequence of frames and metadata describing frame shape, index grid shape, and coordinate axes.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.interface.DummyDataInterface.axes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">axes</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface.axes" title="Link to this definition"></a></dt>
+<dd><p>Axis coordinates for the full data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Coordinate arrays corresponding to each axis of the index grid.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.interface.DummyDataInterface.frameShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frameShape</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface.frameShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of each data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape of each data frame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.interface.DummyDataInterface.indexShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">indexShape</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface.indexShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of the index grid for data frames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape of the index grid.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.interface.DummyDataInterface.name">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/interface.html#DummyDataInterface.name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface.name" title="Link to this definition"></a></dt>
+<dd><p>Return the name of the dummy data set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name of the dummy data set.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.interface.DummyDataInterface.nframes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nframes</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface.nframes" title="Link to this definition"></a></dt>
+<dd><p>Number of sub-frames per yielded frame.</p>
+<p>Values &gt; 1 indicate multi-slice frames (e.g., when an index row is treated as a leading frame dimension).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of sub-frames per yielded frame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-lys_instr.dummy.detectorData.raman">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.raman.RamanData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.dummy.detectorData.raman.</span></span><span class="sig-name descname"><span class="pre">RamanData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scanLevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/raman.html#RamanData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.raman.RamanData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface" title="lys_instr.dummy.detectorData.interface.DummyDataInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">DummyDataInterface</span></code></a></p>
+<p>Dummy Raman data provider backed by NumPy sample data.</p>
+<p>The class loads <code class="docutils literal notranslate"><span class="pre">resources/sampleRamanData.npy</span></code> from the package and exposes frames, index shape and coordinate axes.
+It supports two <code class="docutils literal notranslate"><span class="pre">scanLevel</span></code> modes (0 or 1).</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.raman.RamanData.axes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">axes</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.raman.RamanData.axes" title="Link to this definition"></a></dt>
+<dd><p>Axis coordinates for the full data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Coordinate arrays corresponding to each axis of the index grid.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.raman.RamanData.frameShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frameShape</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.raman.RamanData.frameShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of each data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape of each data frame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.raman.RamanData.indexShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">indexShape</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.raman.RamanData.indexShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of the index grid to be filled by data frames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape of the index grid (empty tuple when no index).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.raman.RamanData.name">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/raman.html#RamanData.name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.raman.RamanData.name" title="Link to this definition"></a></dt>
+<dd><p>Return the name of the data provider.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name of the data provider (“Raman”).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.raman.RamanData.nframes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nframes</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.raman.RamanData.nframes" title="Link to this definition"></a></dt>
+<dd><p>Number of sub-frames per yielded frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of sub-frames per yielded frame (always 1 for this provider).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class" id="module-lys_instr.dummy.detectorData.random">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.dummy.detectorData.random.</span></span><span class="sig-name descname"><span class="pre">RandomData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexShape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frameShape</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/random.html#RandomData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lys_instr.dummy.detectorData.interface.DummyDataInterface" title="lys_instr.dummy.detectorData.interface.DummyDataInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">DummyDataInterface</span></code></a></p>
+<p>Dummy random data provider for given index and frame shapes.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData.axes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">axes</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData.axes" title="Link to this definition"></a></dt>
+<dd><p>Axis coordinates for the full data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Coordinate arrays corresponding to each axis of the index grid (evenly spaced integers).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData.frameShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">frameShape</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData.frameShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of each generated data frame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape of each generated data frame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData.indexShape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">indexShape</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData.indexShape" title="Link to this definition"></a></dt>
+<dd><p>Shape of the index grid to be filled by generated data frames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape of the index grid.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple[int, …]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData.name">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/random.html#RandomData.name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData.name" title="Link to this definition"></a></dt>
+<dd><p>Return the name of the data provider.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name of the data provider (“Random”).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData.nframes">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nframes</span></span><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData.nframes" title="Link to this definition"></a></dt>
+<dd><p>Number of sub-frames per yielded frame.</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">len(indexShape)</span> <span class="pre">+</span> <span class="pre">len(frameShape)</span> <span class="pre">&lt;=</span> <span class="pre">3</span></code> -&gt; 1</p></li>
+<li><p>If both are 2-D -&gt; <code class="docutils literal notranslate"><span class="pre">indexShape[1]</span></code> (inner/column count)</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">indexShape=()</span></code> and <code class="docutils literal notranslate"><span class="pre">frameShape=(100,</span> <span class="pre">100)</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">indexShape=(10,)</span></code> and <code class="docutils literal notranslate"><span class="pre">frameShape=(100,</span> <span class="pre">100)</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">indexShape=(5,</span> <span class="pre">3)</span></code> and <code class="docutils literal notranslate"><span class="pre">frameShape=(100,</span> <span class="pre">100)</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">3</span></code></p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of sub-frames per yielded frame.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>NotImplementedError</strong> – If the combination of shapes is unsupported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData2D">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.dummy.detectorData.random.</span></span><span class="sig-name descname"><span class="pre">RandomData2D</span></span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/random.html#RandomData2D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData2D" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#lys_instr.dummy.detectorData.random.RandomData" title="lys_instr.dummy.detectorData.random.RandomData"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomData</span></code></a></p>
+<p>Convenience 2-D random-data provider.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="lys_instr.dummy.detectorData.random.RandomData2D.name">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/dummy/detectorData/random.html#RandomData2D.name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.dummy.detectorData.random.RandomData2D.name" title="Link to this definition"></a></dt>
+<dd><p>Return the name of the data provider.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name of the data provider (“Random 2D”).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="dummyMotor.html" class="btn btn-neutral float-left" title="Dummy Motor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../contributing.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

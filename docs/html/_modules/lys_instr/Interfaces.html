@@ -1,0 +1,211 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lys_instr.Interfaces &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lys_instr.Interfaces</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lys_instr.Interfaces</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.Utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">preciseSleep</span>
+
+
+<div class="viewcode-block" id="lock">
+<a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.lock">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">lock</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorator to ensure thread-safe execution of a method using a QMutex.</span>
+
+<span class="sd">    This decorator acquires the instance&#39;s ``_mutex`` before executing the decorated method, ensuring that only one thread can execute the method at a time.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        func (callable): The method to be decorated.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        callable: The wrapped method with mutex locking.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+
+<div class="viewcode-block" id="HardwareInterface">
+<a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.HardwareInterface">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HardwareInterface</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QThread</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for hardware interfaces with background monitoring.</span>
+
+<span class="sd">    This class provides background thread management and a standard structure for device state monitoring. </span>
+<span class="sd">    Each subclass represents a hardware device and runs its own monitoring thread. </span>
+<span class="sd">    The thread periodically calls ``_loadState()`` to poll and update device-specific state information.</span>
+<span class="sd">    The monitoring thread can be stopped by calling the instance&#39;s ``kill()`` method, or all threads can be stopped using the ``killAll()`` class method. </span>
+<span class="sd">    </span>
+<span class="sd">    Subclasses must implement ``_loadState()`` to provide device-specific behavior.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">__list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the hardware interface.</span>
+
+<span class="sd">        Register the device instance and append it to the internal instance list (``__list``).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            interval (float, optional): Time interval (in seconds) between successive state polls. Defaults to 0.1.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to ``QtCore.QThread``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__stopped</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__mutex</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutex</span><span class="p">()</span>
+        <span class="n">HardwareInterface</span><span class="o">.</span><span class="n">__list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HardwareInterface.run">
+<a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.HardwareInterface.run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override ``QtCore.QThread.run()`` to define the background execution loop for a device instance.</span>
+<span class="sd">        </span>
+<span class="sd">        This method is executed automatically when ``start()`` is called, which is typically done in subclasses.</span>
+<span class="sd">        It repeatedly calls ``_loadState()`` at the specified interval until ``kill()`` is called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__stopped</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loadState</span><span class="p">()</span>
+            <span class="n">preciseSleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__interval</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HardwareInterface.kill">
+<a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.HardwareInterface.kill">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">kill</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stop the monitoring thread for this device instance.</span>
+
+<span class="sd">        This method sets the internal stop flag under the mutex so the running thread will exit its loop and terminate cleanly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__mutex</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__stopped</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_loadState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Poll and update the current device state.</span>
+
+<span class="sd">        Subclasses should override this method to implement device-specific polling and state-update logic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="HardwareInterface.killAll">
+<a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.HardwareInterface.killAll">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">killAll</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stop all active monitoring threads for instances of this class.</span>
+
+<span class="sd">        This method calls ``kill()`` on each registered device instance and clears the internal instance list ``__list``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__list</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">__list</span> <span class="o">=</span> <span class="p">[]</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

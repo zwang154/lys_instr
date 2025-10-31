@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lys_instr.PreCorrection &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">lys_instr.PreCorrection</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for lys_instr.PreCorrection</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtCore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">avoidCircularReference</span>
+
+
+<div class="viewcode-block" id="PreCorrector">
+<a class="viewcode-back" href="../../lys_instr_/api_/extensions.html#lys_instr.PreCorrection.PreCorrector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PreCorrector</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Corrector that manages inter-axis dependencies and applies value corrections.</span>
+
+<span class="sd">    This class automatically applies configured correction callables whenever controller axis targets change. </span>
+<span class="sd">    Correction parameters are stored in ``_correctParams``, which maps a target axis name to a callable that computes the corrected value from current master-axis parameters.</span>
+<span class="sd">    The corrector expects controllers passed to the constructor to provide a ``busyStateChanged`` Qt signal and a ``nameList`` iterable of axis names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controllers</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the corrector with the given controllers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            controllers (Iterable): Iterable of controller objects. Each controller must provide a ``busyStateChanged`` Qt signal and a ``nameList`` iterable of its axis names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">controllers</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_busy</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DirectConnection</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">nameList</span><span class="p">})</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">_isBusy_orig</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">_isBusy</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_correctParams</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">controllers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Controller instances.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Mapping of axis name (str) to controller instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">corrections</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configured correction callables.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Mapping of target name to correction callable (typically ``_FunctionCombination``) that computes the corrected value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correctParams</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_busy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">busy</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handle controller busy-state updates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            busy (dict): Mapping of axis name (str) to bool indicating busy state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enabled</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">y</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">corrections</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>  <span class="c1"># y = f(t,x)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Replace busy method of arg</span>
+            <span class="n">flg</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">busy</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">argNames</span><span class="p">(</span><span class="n">excludeFixed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># e.g. arg is t</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_replaceBusyMethod</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="ow">not</span> <span class="n">b</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">b</span><span class="p">:</span>
+                        <span class="n">flg</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># set y if any arg is busy</span>
+            <span class="k">if</span> <span class="n">flg</span><span class="p">:</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">arg</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="n">arg</span><span class="p">]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">argNames</span><span class="p">()</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">busy</span><span class="p">}</span>
+                <span class="n">params</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">arg</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span><span class="o">.</span><span class="n">target</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">argNames</span><span class="p">()</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">busy</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span><span class="p">[</span><span class="n">y</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">y</span><span class="p">:</span> <span class="n">f</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)},</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_replaceBusyMethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">targ</span><span class="p">,</span> <span class="n">dep</span><span class="p">,</span> <span class="n">reset</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override or restore a controller&#39;s ``_isBusy`` method.</span>
+
+<span class="sd">        Replace the ``_isBusy`` attribute of the controller named ``targ`` with a wrapper that marks the target axis busy if it was already busy or if controller ``dep`` is busy. </span>
+<span class="sd">        When ``reset`` is True, restore the original ``_isBusy`` method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            targ (str): Name of the target controller whose busy method will be modified.</span>
+<span class="sd">            dep (str): Name of the dependent controller whose busy state will be included.</span>
+<span class="sd">            reset (bool, optional): If True, restore the original busy method. Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">busy_targ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">targ</span><span class="p">]</span><span class="o">.</span><span class="n">_isBusy</span>
+        <span class="n">busy_dep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">dep</span><span class="p">]</span><span class="o">.</span><span class="n">_isBusy</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">busyFunc</span><span class="p">():</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">busy_targ</span><span class="p">()</span>  <span class="c1"># {..., f: False, ...}</span>
+            <span class="n">dep_busy</span> <span class="o">=</span> <span class="n">busy_dep</span><span class="p">()[</span><span class="n">dep</span><span class="p">]</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">targ</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="n">targ</span><span class="p">]</span> <span class="ow">or</span> <span class="n">dep_busy</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">if</span> <span class="n">reset</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">targ</span><span class="p">]</span><span class="o">.</span><span class="n">_isBusy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">targ</span><span class="p">]</span><span class="o">.</span><span class="n">_isBusy_orig</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="p">[</span><span class="n">targ</span><span class="p">]</span><span class="o">.</span><span class="n">_isBusy</span> <span class="o">=</span> <span class="n">busyFunc</span></div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_FunctionCombination</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Combination of named correction callables into a single correction callable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the combination of correction callables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">scanParams</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the combined correction for the given scan parameters.</span>
+
+<span class="sd">        Invoke each registered correction callable with the provided keyword scan parameters (typically named motor-axis positions, e.g. ``x=..., y=...``).</span>
+<span class="sd">        Correction callables must accept those keyword arguments and return a numeric value.</span>
+<span class="sd">        If ``expression`` is set, invoke each registered correction callable and supply its return value as a local variable to the expression. </span>
+<span class="sd">        If ``expression`` is None or an empty string, use the return value of the first registered correction callable (in insertion order).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **scanParams: Keyword scan parameters forwarded to each correction callable.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float | int: Computed correction (typically the corrected target value for an axis).</span>
+
+<span class="sd">        Caution:</span>
+<span class="sd">            The expression is evaluated with ``eval`` using ``{&quot;__builtins__&quot;: None}``. Only trusted expressions should be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">firstFunc</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+            <span class="n">correctValue</span> <span class="o">=</span> <span class="n">firstFunc</span><span class="p">(</span><span class="o">**</span><span class="n">scanParams</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">localVariables</span> <span class="o">=</span> <span class="p">{</span><span class="n">funcName</span><span class="p">:</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">scanParams</span><span class="p">)</span> <span class="k">for</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="n">correctValue</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_formula</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;__builtins__&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span> <span class="n">localVariables</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">correctValue</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">functions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Correction callables registered in this combination.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, Callable]: Mapping of function names to correction callables.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            Each correction callable must implement ``__call__(**kwargs)`` and ``argNames(excludeFixed: bool) -&gt; list[str]``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Expression string used to combine registered correction callables.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str | None: Expression string that combines registered correction callables&#39; return values, or None if no expression is set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span>
+
+    <span class="nd">@expression</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the expression string used to combine registered correction callables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_formula</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">argNames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">excludeFixed</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the ordered list of unique argument names required by the registered correction callables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            excludeFixed (bool): If True, exclude arguments that the correction callable reports as fixed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Ordered, unique argument names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_funcs</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">argNames</span><span class="p">(</span><span class="n">excludeFixed</span><span class="o">=</span><span class="n">excludeFixed</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_InterpolatedFunction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adapter wrapping an interpolator into a correction callable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolator</span><span class="p">,</span> <span class="n">argNames</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the interpolator wrapper.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            interpolator (callable): An interpolation callable that accepts a 2D sequence of input points and returns an iterable of values.</span>
+<span class="sd">            argNames (Sequence[str]): Ordered list of argument names the interpolator expects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_argNames</span> <span class="o">=</span> <span class="n">argNames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interpolator</span> <span class="o">=</span> <span class="n">interpolator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fixedValues</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the interpolated function for the provided named args.</span>
+
+<span class="sd">        Any arguments present in ``fixedValues`` override values supplied in ``kwargs``. </span>
+<span class="sd">        Missing arguments are passed as ``None`` to the interpolator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            **kwargs: Named argument values to pass to the interpolator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float | int: The interpolator result for the requested point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolator</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">_fixedValues</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">argNames</span><span class="p">()]])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fixedValues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Fixed values of arguments.</span>
+
+<span class="sd">        Use this mapping to specify arguments that should always use a particular value when evaluating the interpolator.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, Any]: Mutable mapping of argument names to fixed values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixedValues</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">argNames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">excludeFixed</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the ordered list of unique argument names required by the registered correction callables.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            excludeFixed (bool): If True, exclude arguments that the correction callable reports as fixed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[str]: Ordered, unique argument names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">excludeFixed</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">arg</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argNames</span> <span class="k">if</span> <span class="n">arg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fixedValues</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argNames</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
