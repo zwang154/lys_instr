@@ -43,10 +43,10 @@ For real hardware, you should implement device-specific communication methods in
 Step-by-Step Demonstration
 --------------------------
 
-Here we illustrate step-by-step construction of ``YourMotor`` for a dummy device (example with axes "x" and "y").
+Here we illustrate step-by-step construction of ``YourMotor`` for a dummy device with axes "x" and "y".
 
-Implement ``YourMotor`` as a subclass of ``MultiMotorInterface`` and attach a per-axis simulator that provides position values.
-(``_ValueInfo`` in ``lys_instr.dummy`` is a helper class that simulates axis behavior.)
+Subclass ``MultiMotorInterface`` to create ``YourMotor``, and attach a simulator instance to each axis to supply position values.
+(The ``_ValueInfo`` helper in ``lys_instr.dummy`` provides such a simulator.)
 The constructor accepts positional axis names via ``*axisNamesAll``, for example, ``YourMotor("x", "y")``.
 
 .. code-block:: python
@@ -59,7 +59,7 @@ The constructor accepts positional axis names via ``*axisNamesAll``, for example
             super().__init__(*axisNamesAll, **kwargs)
 
             from lys_instr.dummy.MultiMotor import _ValueInfo
-            self._simulator = {name: _ValueInfo(10) for name in axisNamesAll}  # motor speed = 10 units/s
+            self._simulator = {name: _ValueInfo(10) for name in axisNamesAll}  # motor speed: 10 units/s
 
             self.start()
 
@@ -75,7 +75,7 @@ Alternatively, you can use a constructor that explicitly accepts two axis name p
             super().__init__(axisName_x, axisName_y, **kwargs)
 
             from lys_instr.dummy.MultiMotor import _ValueInfo
-            self._simulator = {axisName_x: _ValueInfo(10), axisName_y: _ValueInfo(10)}  # motor speed = 10 units/s
+            self._simulator = {axisName_x: _ValueInfo(10), axisName_y: _ValueInfo(10)}  # motor speed: 10 units/s
             
             self.start()
 
@@ -118,7 +118,7 @@ Implement ``_isAlive()`` to check the simulator and return a dictionary mapping 
         def _isAlive(self):
             return {name: not d.error for name, d in self._simulator.items()}
 
-Optionally, implement a settings panel method that returns a *QWidget* for later use by GUI.
+Optionally, implement ``settingsWidget`` to return a *QWidget* for later use by GUI.
 The ``_OptionalPanel`` class in the ``lys_instr.dummy.MultiMotor`` module can readily be used.
 
 .. code-block:: python

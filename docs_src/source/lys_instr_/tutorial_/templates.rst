@@ -240,10 +240,9 @@ Variations
 
 These templates can be readily adapted for a variety of experimental scenarios. For example:
 
-- Add a time axis "t" (using a motor for a delay stage in ultrafast laser experiments) and a switch instance (see Advanced section) to perform pump-probe measurements.
+- Add a time axis (using a motor for a delay stage in ultrafast laser experiments) and a :doc:`switch </lys_instr_/tutorial_/switchGUI>` instance to perform pump-probe measurements.
 
-- Add a precorrector instance (see Advanced section) to configure motor axis dependencies and apply value corrections.
-
+- Add a :doc:`corrector </lys_instr_/tutorial_/preCorrection>` instance to configure motor axis dependencies and cooperative axis motions.
 
 Refer to the Advanced sections for detailed user guides on each component's GUI and for instructions on creating custom GUIs tailored to specific workflows.
 

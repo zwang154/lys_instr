@@ -11,6 +11,8 @@ For real hardware, you should implement device-specific communication methods in
 
 .. code-block:: python
 
+    from lys_instr import MultiDetectorInterface
+
     class YourDetector(MultiDetectorInterface):       # Give a name to your subclass, e.g., ``YourDetector``
 
         def __init__(self, indexShape=(), frameShape=(), exposure=None, **kwargs):
@@ -34,6 +36,16 @@ For real hardware, you should implement device-specific communication methods in
             return ... True if alive, False if not ...
 
         @property
+        def frameShape(self):
+            ... your code to specify the shape of each data frame ...
+            return ... a tuple of integers specifying the shape of each data frame ...
+
+        @property
+        def indexShape(self):
+            ... your code to specify the shape of frame indices ...
+            return ... a tuple of integers specifying the shape of frame indices ...
+
+        @property
         def axes(self):
             ... your code to specify the physical axis values for each dimension ...
             return ... a list of arrays or lists, one for each axis, in the order [index axes..., frame axes...]
@@ -54,17 +66,19 @@ Step-by-Step Demonstration
 
 Here we illustrate step-by-step construction of ``YourDetector`` for a dummy device that provides pre-encoded or synthetic data frames.
 
-Implement ``YourDetector`` by subclassing ``MultiDetectorInterface``.
-The data supply logic is delegated to the ``setData()``, which maintains an internal buffer ``_data`` to store acquired frames.
+Subclass ``MultiDetectorInterface`` to create ``YourDetector``.
+The data-supply logic is delegated to the ``setData()``, which keeps an internal buffer ``_data`` of acquired frames for use by other methods.
 
 .. code-block:: python
+
+    from lys_instr import MultiDetectorInterface
 
     class YourDetector(MultiDetectorInterface):
 
         def __init__(self, indexShape=(), frameShape=(), exposure=None, **kwargs):
             super().__init__(**kwargs)
 
-            self.setData(data, indexShape, frameShape)
+            self.setData(indexShape=indexShape, frameShape=frameShape)
             self.error = False
 
             self.exposure = exposure
@@ -72,6 +86,7 @@ The data supply logic is delegated to the ``setData()``, which maintains an inte
 
         def setData(self, data=None, indexShape=None, frameShape=None):
             if data is None:
+                from lys_instr.dummy.MultiDetector import RandomData
                 self._obj = RandomData(indexShape, frameShape)
             else:
                 self._obj = data
@@ -121,7 +136,8 @@ Implement ``_isAlive()`` to report the connection status of the device, here man
         def _isAlive(self):
             return not self.error
 
-Implement the properties ``frameShape``, ``indexShape``, and ``axes`` to return the corresponding attributes from ``__init__()``.
+Implement ``frameShape``, ``indexShape``, and ``axes`` properties to return the corresponding attributes set in ``__init__()``.
+(In this example, the properties delegate to the dummy-data object ``self._obj`` (a ``RandomData`` instance); you can instead implement them explicitly as needed.)
 
 .. code-block:: python
 
@@ -137,7 +153,7 @@ Implement the properties ``frameShape``, ``indexShape``, and ``axes`` to return 
         def axes(self):
             return self._obj.axes
 
-Optionally, implement a settings panel method that returns a *QWidget* for later use by GUI.
+Optionally, implement ``settingsWidget`` to return a *QWidget* for later use by GUI.
 The ``_OptionalPanel`` class in the ``lys_instr.dummy.MultiDetector`` module can readily be used.
 
 .. code-block:: python
@@ -159,11 +175,11 @@ To verify functionality, instantiate your detector class, for example, ``YourDet
 
     detector = YourDetector(... your parameters ...)
 
-For demonstration, we use the ``YourDetector`` class defined above with ``indexShape=()`` and ``frameShape=(256, 256)``:
+For demonstration, we use the ``YourDetector`` class defined above with ``indexShape=()``, ``frameShape=(256, 256)``, and 0.1 seconds exposure time:
 
 .. code-block:: python
 
-    detector = YourDetector(frameShape=(256, 256))
+    detector = YourDetector(frameShape=(256, 256), exposure=0.1)
 
 This is functionally equivalent to instantiating the provided ``MultiDetectorDummy`` class:
 
@@ -178,6 +194,7 @@ For example:
 
 .. code-block:: python
 
+    import time
+
     data = detector.startAcq(wait=True, output=True)   # Start acquisition of 1 frame
     print(data)     # Returns a dictionary, e.g., {(0,): array([[0.1, 0.2, ...], [...], ...])}
-

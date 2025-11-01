@@ -77,13 +77,13 @@ Prepare the data as a *Wave* object and export it to a NumPy ``.npz`` file as fo
 
     data = [[0.0], [0.1], [0.2]]            # Data for your target axis
     axes = [[0.0], [0.2], [0.4]]            # Corresponding data for your variable axis ("x" for here)
-    w = Wave(data, axes, variables=['x'])   # Specify the variable axis ("x" for here), must be an axis name of the motor
+    w = Wave(data, axes, variables=["x"])   # Specify the variable axis ("x" for here), must be an axis name of the motor
 
-    w.export('YourFileName.npz')
+    w.export("YourFileName.npz")
 
-In the **PreCorr** tab, after adding a target axis "y", right-click on the target and choose "Add new function".
+In the **PreCorr** tab, after adding a target axis "y", right-click on the target and choose **Add new function**.
 
-In the pop-up dialog, click "Select" to import the `.npz` file from your local directory and click "OK" to approve.
+In the pop-up dialog, click **Select** to import the ``.npz`` file from your local directory and click **OK** to approve.
 
 .. image:: /lys_instr_/tutorial_/preCorrection_func_1.png
     :scale: 80%
@@ -92,4 +92,4 @@ Expand the "y" tree item, and you can see the imported data listed under "Func1(
 
 .. image:: /lys_instr_/tutorial_/preCorrection_func_2.png
 
-PreCorrection applies the interpolated x–y relation from the file, so the imported data behaves as the previous function-defined dependency for x values within the file's range (that is, x = 0.0–0.4).
+PreCorrection applies the interpolated x-y relation from the file, so the imported data behaves as the previous function-defined dependency for x values within the file's range (that is, x = 0.0-0.4).

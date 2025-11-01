@@ -30,8 +30,8 @@ Calling ``Window()`` in the *lys* command line launches the GUI subwindow as fol
 .. image:: /lys_instr_/tutorial_/switch_1.png
 
 The dummy switch supports multiple levels: "OFF", "LOW", "MEDIUM", and "HIGH".
-Select the desired state for each switch in the list and click "Apply" to enact the change.
+Select the desired state for each switch in the list and click **Apply** to enact the change.
 The indicator next to each switch shows its connection status—green for connected, red for disconnected or error.
 
-To implement your own switch, create a class that inherits from ``MultiSwitchInterface`` and implements the required methods, 
-similar to the approach described for the :doc:`Motor </lys_instr_/tutorial_/motor>`.
+To implement your own switch, subclass ``MultiSwitchInterface`` and implement the required methods, 
+similar to the approach described for the :doc:`motor </lys_instr_/tutorial_/motor>`.

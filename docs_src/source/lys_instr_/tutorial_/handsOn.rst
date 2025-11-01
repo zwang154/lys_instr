@@ -30,7 +30,7 @@ The **Scan** tab serves as the master control for the workflow, allowing you to 
 
 To set up the workflow:
 
-- On the **Scan** tab, right-click in the blank space and select "Add new scan."
+- On the **Scan** tab, right-click in the blank space and select **Add motor scan**.
 
 - Select the motor axis "E" for scanning (assuming it is connected to the source meter).
 
@@ -45,9 +45,9 @@ To set up the workflow:
 .. image:: /lys_instr_/tutorial_/handsOn_3.png
 
 The workflow is now set up.
-Click "Start" to begin the measurement.
+Click **Start** to begin the measurement.
 
 The voltage values and detector images (filled with random noise) will update to reflect the simulated behavior of the dummy motor and detector.
-In practical use, these dummy devices are replaced with interfaces that communicate with real instruments.
+In practical use, these dummy objects are replaced by concrete implementations that communicate with real hardware.
 
-In the following sections, we will guide you through implementing interfaces for real instruments and building your own customized GUI.
+In the following sections, we will guide you through implementing interfaces for real hardware and building your custom GUI.
