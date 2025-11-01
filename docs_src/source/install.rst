@@ -1,33 +1,50 @@
 Installation
 =============================
 
-System requirements
+System Requirements
 -------------------------
+
 - Python (version >= 3.11).
 
 
-Installation from source
---------------------------------------------------------
+Install lys
+-----------
 
-If you want to install `lys_instr` from source, follow the instructions below.
+Refer to the `lys installation guide <https://lys-devel.github.io/lys/install.html>`_ for instructions on installing *lys*.
 
-1. Update pip::
 
-    pip install --upgrade pip
+Install lys_instr from Source
+-------------------------------
 
-2. Clone lys_instr from GitHub (https://github.com/zwang154/lys_instr)::
+1. Activate the Python environment where *lys* is installed (for example, ``lys_venv``)::
 
-    git clone git@github.com:zwang154/lys_instr.git
+    # When using conda:
+    conda activate lys_venv
 
-3. Install lys by pip. If you want to install lys in development mode, add `-e` option after `pip install`::
+    # When using virtualenv:
+    source lys_venv/bin/activate
+
+    # In cmd:
+    lys_venv\Scripts\activate.bat
+
+2. Update pip inside the environment (``lys_venv``)::
+
+    python -m pip install --upgrade pip
+
+3. Clone *lys_instr* from GitHub::
+
+    git clone https://github.com/zwang154/lys_instr.git
+
+
+4. Install *lys_instr* by pip. If you want to install *lys_instr* in development mode, add `-e` option after `pip install`::
 
     cd lys_instr
     pip install .
 
+5. Choose a working directory and launch *lys* from the activated environment by running::
 
-.. Enabling graphical user interface (GUI)
-.. --------------------------------------------------------
-.. Install *lys* (https://lys-devel.github.io/lys/index.html)
-.. Start lys with lys_instr by the command below. Note that the current directory of the system is used as the working directory of lys::
-..    python -m lys -p lys_instr
+    python -m lys
+
+Note that the current directory of the system is used as the working directory of *lys_instr*.
+
 
