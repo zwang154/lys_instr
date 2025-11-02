@@ -582,7 +582,7 @@ class ScanWidget(QtWidgets.QWidget):
     Provides a list-based GUI for composing a sequence of motor and switch scans, configuring detector/process settings, and starting/stopping scan execution.
     """
 
-    def __init__(self, storage, motors, switches, detectors, numScans=1):
+    def __init__(self, storage, motors, switches, detectors):
         """
         Initialize the Scan widget.
 
@@ -591,14 +591,12 @@ class ScanWidget(QtWidgets.QWidget):
             motors (Iterable[MultiMotorInterface]): Motor controllers available for scanning.
             switches (Iterable[MultiSwitchInterface]): Switch controllers available for scanning.
             detectors (dict): Mapping of detector names to respective detector objects.
-            numScans (int): Initial number of scans.
         """
         super().__init__()
         self._storage = storage
         self._scanners = self._initScanners(motors)
         self._switches = self._initSwitches(switches)
         self._detectors = detectors
-        self._numScans = numScans
         self._initLayout(self._scanners, self._switches, self._detectors)
 
     def _initScanners(self, motors):

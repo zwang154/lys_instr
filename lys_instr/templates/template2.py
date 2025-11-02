@@ -16,7 +16,7 @@ class Temp2DetectorGUI(gui.MultiDetectorGUI):
 
 
 class TemplateWindow(LysSubWindow):
-    def __init__(self, motor=None, detector=None, detectorName="Detector 1", numScans=3):
+    def __init__(self, motor=None, detector=None, detectorName="Detector 1"):
         super().__init__()
         self.setWindowTitle("template2")
         self._storage = DataStorage()
@@ -24,7 +24,6 @@ class TemplateWindow(LysSubWindow):
         self._motor = motor if motor else dummy.MultiMotorDummy("x", "y", "phi")
         self._storage.connect(self._detector)
         self._detectorName = detectorName
-        self._numScans = numScans
         self._initLayout()
         self.setSettingFile("template2.dic")
         self.adjustSize()
@@ -33,7 +32,7 @@ class TemplateWindow(LysSubWindow):
         _storageGUI = gui.DataStorageGUI(self._storage)
         _detectorGUI = Temp2DetectorGUI(self._detector)
         _motorGUI = gui.MultiMotorGUI(self._motor)
-        _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], [], {self._detectorName: self._detector}, numScans=self._numScans)
+        _scanGUI = gui.MultiScan.ScanWidget(self._storage, [self._motor], [], {self._detectorName: self._detector})
 
         self._tab = QtWidgets.QTabWidget()
         self._tab.addTab(_motorGUI, "Motor")
