@@ -1,50 +1,67 @@
 Installation
-=============================
+============
 
 System Requirements
--------------------------
+-------------------
 
 - Python (version >= 3.11).
 
 
-Install lys
------------
-
-Refer to the `lys installation guide <https://lys-devel.github.io/lys/install.html>`_ for instructions on installing *lys*.
-
-
 Install lys_instr from Source
--------------------------------
+-----------------------------
 
-1. Activate the Python environment where *lys* is installed (for example, ``lys_venv``)::
+0. (Only needed if *lys* is not already installed) Create a Python virtual environment for *lys_instr* (for example, ``lys_venv``).
 
-    # When using conda:
-    conda activate lys_venv
+   Using conda:
 
-    # When using virtualenv:
-    source lys_venv/bin/activate
+   .. code-block:: bash
 
-    # In cmd:
-    lys_venv\Scripts\activate.bat
+       conda create -n lys_venv python=3.11 pip -y
 
-2. Update pip inside the environment (``lys_venv``)::
+   Using venv:
 
-    python -m pip install --upgrade pip
+   .. code-block:: bash
+
+       python -m venv lys_venv
+
+1. Activate the created environment or the environment where *lys* is installed:
+
+   Using conda:
+
+   .. code-block:: bash
+
+       conda activate lys_venv
+
+   Using Windows cmd:
+
+   .. code-block:: bash
+
+       lys_venv\Scripts\activate.bat
+
+   Using Linux / macOS / Git Bash:
+
+   .. code-block:: bash
+        
+       source lys_venv/bin/activate
+
+2. Update pip::
+
+    pip install --upgrade pip
 
 3. Clone *lys_instr* from GitHub::
 
     git clone https://github.com/zwang154/lys_instr.git
 
-
-4. Install *lys_instr* by pip. If you want to install *lys_instr* in development mode, add `-e` option after `pip install`::
+4. Install *lys_instr* by pip (for installation in the development mode, use ``pip install -e .``)::
 
     cd lys_instr
     pip install .
 
-5. Choose a working directory and launch *lys* from the activated environment by running::
+5. (Optional but recommended) Create a working directory for *lys_instr* (and *lys*)::
 
+    mkdir your_lys_working_dir
+
+6. Choose a working directory and launch *lys* application from the activated environment by running::
+
+    cd your_lys_working_dir
     python -m lys
-
-Note that the current directory of the system is used as the working directory of *lys_instr*.
-
-
