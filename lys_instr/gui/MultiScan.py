@@ -372,10 +372,14 @@ class _ScanList(QtWidgets.QListWidget):
         """
         menu = QtWidgets.QMenu()
 
-        addMotor = QtWidgets.QAction('Add motor scan', triggered=lambda: self._add(type="motorScan"))
-        addSwitch = QtWidgets.QAction('Add switch scan', triggered=lambda: self._add(type="switchScan"))
-        menu.addAction(addMotor)
-        menu.addAction(addSwitch)
+        if self._motorScanners and len(self._motorScanners) > 0:
+            addMotor = QtWidgets.QAction('Add motor scan', triggered=lambda: self._add(type="motorScan"))
+            menu.addAction(addMotor)
+
+        if self._switchScanners and len(self._switchScanners) > 0:
+            addSwitch = QtWidgets.QAction('Add switch scan', triggered=lambda: self._add(type="switchScan"))
+            menu.addAction(addSwitch)
+
         if len(self.selectedItems()) > 0:
             up = QtWidgets.QAction('Move up', triggered=lambda: self._move(-1))
             down = QtWidgets.QAction('Move down', triggered=lambda: self._move(1))
