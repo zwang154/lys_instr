@@ -7,7 +7,7 @@ class _MotorScanRow(QtWidgets.QWidget):
     """
     Motor-scan row widget.
 
-    Widget for selecting and configuring a scan range for a scanner (motor).
+    Widget for selecting and configuring a scan range for a motor scanner.
     Supports linear ranges and free-expression ranges configured via the GUI.
     """
 
@@ -17,7 +17,7 @@ class _MotorScanRow(QtWidgets.QWidget):
 
         Args:
             title (str): Row title shown in the GUI.
-            motorScanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
+            motorScanners (dict[str, MultiMotorInterface | _Loop]): Motor scanner object (mapping from axis name to respective motor, or mapping from "loop" to the loop dummy).
         """
         super().__init__()
         self._motorScanners = motorScanners
@@ -30,7 +30,7 @@ class _MotorScanRow(QtWidgets.QWidget):
 
         Args:
             title (str): Row title shown in the GUI.
-            scannerNames (Iterable[str]): Names of available scanners (motors) to populate the axis combobox.
+            scannerNames (Iterable[str]): Names of available motor scanners to populate the axis combobox.
         """
         self._title = QtWidgets.QLabel(title)
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
@@ -125,7 +125,7 @@ class _MotorScanRow(QtWidgets.QWidget):
         Scanner corresponding to the currently selected axis.
 
         Returns:
-            object: Scanner (motor) object for the selected axis.
+            object: Scanner object for the selected axis.
         """
         return self._motorScanners[self.scanName]
 
@@ -192,7 +192,7 @@ class _MotorScanRow(QtWidgets.QWidget):
         Load a saved row configuration into the row.
 
         Args:
-            d (dict[str, object]): Mapping produced by the ``save`` method.
+            d (dict[str, object]): Mapping produced by ``save()``.
         """
         self._scanAxis.setCurrentText(d["name"])
         mode =d["mode"]
@@ -208,7 +208,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
     """
     Switch-scan row widget.
 
-    Widget for selecting and configuring a scan over a switch with discrete labels.
+    Widget for selecting and configuring a switch scan over a set of discrete labels.
     Supports iteration over available labels or a user-provided free list.
     """
 
@@ -218,6 +218,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
 
         Args:
             title (str): Row title shown in the GUI.
+            switchScanners (dict[str, MultiSwitchInterface]): Switch scanner object (mapping from axis name to respective switch).
         """
         super().__init__()
         self._switchScanners = switchScanners
@@ -229,7 +230,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
 
         Args:
             title (str): Row title shown in the GUI.
-            scannerNames (Iterable[str]): Names of available scanners (switches) to populate the axis combobox.
+            scannerNames (Iterable[str]): Names of available switch scanners to populate the axis combobox.
         """
         self._title = QtWidgets.QLabel(title)
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
@@ -278,7 +279,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
         Scanner corresponding to the currently selected axis.
 
         Returns:
-            object: Scanner (switch) object for the selected axis.
+            object: Scanner object for the selected axis.
         """
         return self._switchScanners[self.scanName]
 
@@ -303,7 +304,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
         Index of the current switch state within the scan range.
 
         Returns:
-            int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis level).
+            int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis label).
         """
         value = self.scanObj.get()[self.scanName]
         return self.scanRange.index(value)
@@ -331,7 +332,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
         Load a saved row configuration into the row.
 
         Args:
-            d (dict[str, object]): Mapping produced by the ``save`` method.
+            d (dict[str, object]): Mapping produced by ``save()``.
         """
         self._scanAxis.setCurrentText(d["name"])
         self._scanMode.setCurrentText(d["mode"])
@@ -352,8 +353,8 @@ class _ScanList(QtWidgets.QListWidget):
         List widget holding a sequence of scan rows (either motor-scan or switch-scan).
 
         Args:
-            motorScanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
-            switchScanners (dict[str, MultiSwitchInterface]): Mapping from axis name to the scanner (switch) that owns that axis.
+            motorScanners (dict[str, MultiMotorInterface | _Loop]): Motor scanner object (mapping from axis name to respective motor, or mapping from "loop" to the loop dummy).
+            switchScanners (dict[str, MultiSwitchInterface]): Switch scanner object (mapping from axis name to the respective switch).
         """
         super().__init__()
         self._motorScanners = motorScanners
@@ -404,7 +405,7 @@ class _ScanList(QtWidgets.QListWidget):
 
         Args:
             index (int | None): Insertion index; append when ``None``.
-            data (dict | None): Optional row mapping produced by a row's ``save()`` method to load into the new row.
+            data (dict | None): Optional row mapping produced by a row's ``save()`` to load into the new row.
             type (str): Scan row type, either "motorScan" or "switchScan".
         """
         if index == None:
@@ -503,7 +504,7 @@ class _ScanList(QtWidgets.QListWidget):
         Return a mapping representing the current scan list for saving.
 
         Returns:
-            dict[str, dict[str, object]]: Mapping where keys are 'Scan1', 'Scan2', ... and values are the per-row mappings produced by each row's ``save()`` method.
+            dict[str, dict[str, object]]: Mapping where keys are 'Scan1', 'Scan2', ... and values are the per-row mappings produced by each row's ``save()``.
         """
         return {"Scan" + str(i+1): scan.save() for i, scan in enumerate(self._scans)}
     
@@ -512,7 +513,7 @@ class _ScanList(QtWidgets.QListWidget):
         Load a saved scan-list mapping into the widget.
 
         Args:
-            d (dict[str, dict[str, object]]): Mapping produced by :meth:`save` where keys are 'Scan1', 'Scan2', ... and values are the per-row mappings produced by each row's ``save()`` method.
+            d (dict[str, dict[str, object]]): Mapping produced by ``save()`` where keys are 'Scan1', 'Scan2', ... and values are the per-row mappings produced by each row's ``save()``.
         """
         self._clear()
         i = 0
@@ -533,7 +534,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
         Create the file name configuration widget.
 
         Args:
-            scans (Iterable): Iterable of scan row objects used to compose default file names.
+            scans (Iterable[object]): Iterable of scan row objects used to compose default file names.
         """
         super().__init__("Filename")
         self.__initLayout()
@@ -747,7 +748,7 @@ class ScanWidget(QtWidgets.QWidget):
         Populate the provided mapping with the current scan axis names.
 
         Args:
-            scanNamesDict (dict): Mutable mapping that will be updated by this method. The key 'scanNames' is set to a list[str] containing the current scan axis names in order.
+            scanNamesDict (dict): Mutable mapping that will be updated by this method. The key ``'scanNames'`` is set to a list[str] containing the current scan axis names in order.
         """
         scanNamesDict["scanNames"] = [s.scanName for s in self._list]
 
@@ -813,7 +814,7 @@ class _Executor(QtCore.QThread):
 
     def run(self):
         """
-        Run the wrapped process's ``execute()`` method in this thread.
+        Run the wrapped process's ``execute()`` in this thread.
         """
         self.process.execute()
 
@@ -880,10 +881,10 @@ class _ScanProcess(QtCore.QObject):
         Create a scan process for a single axis.
 
         Args:
-            name (str): Axis name used in set() calls.
-            obj (object): Controller exposing set(..., wait=True) and get().
-            values (Iterable): Sequence of values to iterate over (elements are numeric or label strings).
-            process (object): Nested process exposing execute() and stop().
+            name (str): Axis name used in ``set()`` calls.
+            obj (object): Controller exposing ``set(..., wait=True)`` and ``get()``.
+            values (Iterable[float | str]): Sequence of values to iterate over (elements are numeric or label strings).
+            process (object): Nested process exposing ``execute()`` and ``stop()``.
         """
         super().__init__()
         self._name = name
