@@ -3,7 +3,7 @@ import numpy as np
 from lys.Qt import QtWidgets, QtCore, QtGui
 
 
-class _ScanRangeRow(QtWidgets.QWidget):
+class _MotorScanRow(QtWidgets.QWidget):
     """
     Motor-scan row widget.
 
@@ -11,17 +11,17 @@ class _ScanRangeRow(QtWidgets.QWidget):
     Supports linear ranges and free-expression ranges configured via the GUI.
     """
 
-    def __init__(self, title, scanners):
+    def __init__(self, title, motorScanners):
         """
         Create the motor-scan row.
 
         Args:
             title (str): Row title shown in the GUI.
-            scanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
+            motorScanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
         """
         super().__init__()
-        self._scanners = scanners
-        self._initLayout(title, scanners.keys())
+        self._motorScanners = motorScanners
+        self._initLayout(title, motorScanners.keys())
         self._scanMode.currentTextChanged.connect(self._scanModeChanged)
 
     def _initLayout(self, title, scannerNames):
@@ -127,7 +127,7 @@ class _ScanRangeRow(QtWidgets.QWidget):
         Returns:
             object: Scanner (motor) object for the selected axis.
         """
-        return self._scanners[self.scanName]
+        return self._motorScanners[self.scanName]
 
     @property
     def scanName(self):
@@ -204,7 +204,7 @@ class _ScanRangeRow(QtWidgets.QWidget):
             self._numSteps.setValue(values[2])
 
 
-class _ScanSwitchRow(QtWidgets.QWidget):
+class _SwitchScanRow(QtWidgets.QWidget):
     """
     Switch-scan row widget.
 
@@ -212,7 +212,7 @@ class _ScanSwitchRow(QtWidgets.QWidget):
     Supports iteration over available labels or a user-provided free list.
     """
 
-    def __init__(self, title, switches):
+    def __init__(self, title, switchScanners):
         """
         Create the switch-scan row.
 
@@ -220,8 +220,8 @@ class _ScanSwitchRow(QtWidgets.QWidget):
             title (str): Row title shown in the GUI.
         """
         super().__init__()
-        self._switches = switches
-        self._initLayout(title, switches.keys())
+        self._switchScanners = switchScanners
+        self._initLayout(title, switchScanners.keys())
 
     def _initLayout(self, title, scannerNames):
         """
@@ -259,7 +259,7 @@ class _ScanSwitchRow(QtWidgets.QWidget):
         """
         self._freeExpr.setEnabled(text!="Iteration")
         if text == "Iteration" and len(self._freeExpr.text()) == 0:
-            sw = self._switches[self._scanAxis.currentText()]
+            sw = self._switchScanners[self._scanAxis.currentText()]
             self._freeExpr.setText(", ".join(sw.labelNames))
 
     @property
@@ -280,7 +280,7 @@ class _ScanSwitchRow(QtWidgets.QWidget):
         Returns:
             object: Scanner (switch) object for the selected axis.
         """
-        return self._switches[self.scanName]
+        return self._switchScanners[self.scanName]
 
     @property
     def scanRange(self):
@@ -291,7 +291,7 @@ class _ScanSwitchRow(QtWidgets.QWidget):
             list[str]: Sequence of label strings (Iteration mode) or expression strings (Free mode).
         """
         if self._scanMode.currentText() == "Iteration":
-            sw = self._switches[self._scanAxis.currentText()]
+            sw = self._switchScanners[self._scanAxis.currentText()]
             values = sw.labelNames
         elif self._scanMode.currentText() == "Free":
             values = self._freeExpr.text().replace(" ", "").split(",")
@@ -347,17 +347,17 @@ class _ScanList(QtWidgets.QListWidget):
     _path = ".lys/instr/scanlist.dic"
     _savePath = ".lys/instr/scanSaveList.dic"
 
-    def __init__(self, scanner, switches):
+    def __init__(self, motorScanners, switchScanners):
         """
         List widget holding a sequence of scan rows (either motor-scan or switch-scan).
 
         Args:
-            scanner (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
-            switches (dict[str, MultiSwitchInterface]): Mapping from axis name to the scanner (switch) that owns that axis.
+            motorScanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.
+            switchScanners (dict[str, MultiSwitchInterface]): Mapping from axis name to the scanner (switch) that owns that axis.
         """
         super().__init__()
-        self._scanner = scanner
-        self._switches = switches
+        self._motorScanners = motorScanners
+        self._switchScanners = switchScanners
         self._scans = []
         self.customContextMenuRequested.connect(self._buildMenu)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -406,9 +406,9 @@ class _ScanList(QtWidgets.QListWidget):
         if index == None:
             index = len(self._scans)
         if type == "motorScan":
-            scan=_ScanRangeRow("Scan" + str(len(self._scans)+1), self._scanner)
+            scan = _MotorScanRow("Scan" + str(len(self._scans)+1), self._motorScanners)
         else:
-            scan=_ScanSwitchRow("Scan" + str(len(self._scans)+1), self._switches)
+            scan = _SwitchScanRow("Scan" + str(len(self._scans)+1), self._switchScanners)
         if data is not None:
             scan.load(data)
         self._scans.insert(index, scan)
@@ -594,12 +594,12 @@ class ScanWidget(QtWidgets.QWidget):
         """
         super().__init__()
         self._storage = storage
-        self._scanners = self._initScanners(motors)
-        self._switches = self._initSwitches(switches)
+        self._motorScanners = self._initMotorScanners(motors)
+        self._switchScanners = self._initSwitchScanners(switches)
         self._detectors = detectors
-        self._initLayout(self._scanners, self._switches, self._detectors)
+        self._initLayout(self._motorScanners, self._switchScanners, self._detectors)
 
-    def _initScanners(self, motors):
+    def _initMotorScanners(self, motors):
         """
         Create the mapping of scanner names to scanner objects (including a dummy loop).
 
@@ -611,7 +611,7 @@ class ScanWidget(QtWidgets.QWidget):
             scanners.update({axis: motor for axis in motor.nameList})
         return scanners
 
-    def _initSwitches(self, switches):
+    def _initSwitchScanners(self, switches):
         """
         Create the mapping of switch axis names to switch objects.
 
@@ -623,18 +623,18 @@ class ScanWidget(QtWidgets.QWidget):
             scanners.update({axis: sw for axis in sw.nameList})
         return scanners
 
-    def _initLayout(self, scanners, switches, process):
+    def _initLayout(self, motorScanners, switchScanners, process):
         """
         Construct the scan list GUI and control buttons.
 
         Args:
-            scanners (dict[str, object]): Mapping of axis name to scanner objects.
-            switches (dict[str, object]): Mapping of switch axis name to switch objects.
+            motorScanners (dict[str, object]): Mapping of motor-axis name to motor objects.
+            switchScanners (dict[str, object]): Mapping of switch-axis name to switch objects.
             process (dict): Detector/process mapping passed to the detector configuration box.
         """
         label = QtWidgets.QLabel("List of parameters (right click to edit)")
 
-        self._list = _ScanList(scanners, switches)
+        self._list = _ScanList(motorScanners, switchScanners)
         self._nameBox = _FileNameBox(self._list)
 
         processBox = self.__detectorBox(process)

@@ -26,9 +26,9 @@ class PreCorrectorGUI(QtWidgets.QWidget):
         """
         super().__init__()
         self._obj = obj
-        self.__initUI()
+        self._initLayout()
 
-    def __initUI(self):
+    def _initLayout(self):
         """
         Create and arrange widgets for the correction GUI.
         """
@@ -128,9 +128,9 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
         additems = [key for key in self._obj.controllers.keys() if key not in self._obj.corrections.keys()]
         item, ok = QtWidgets.QInputDialog.getItem(self, "Add Correct Params", "Param", additems, editable=False)
         if ok:
-            self._setTerget(item)
+            self._setTarget(item)
 
-    def _setTerget(self, item):
+    def _setTarget(self, item):
         """
         Create and add a correction target.
 
@@ -390,7 +390,7 @@ class _FunctionWidget(QtWidgets.QTreeWidget):
 
         i = 0
         for dic in dics:
-            self._setTerget(dic["terget"])
+            self._setTarget(dic["terget"])
             item = self.topLevelItem(i)
             item.setText(1, str(dic["expression"]))
 
@@ -458,7 +458,7 @@ class _addFuncDialog(QtWidgets.QDialog):
 
         # buttons
         button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(QtWidgets.QPushButton("O K", clicked=self.accept))
+        button_layout.addWidget(QtWidgets.QPushButton("OK", clicked=self.accept))
         button_layout.addWidget(QtWidgets.QPushButton("Cancel", clicked=self.reject))
 
         layout = QtWidgets.QVBoxLayout()
@@ -517,9 +517,9 @@ class _NewFunctionWindow(LysSubWindow):
         self.setWindowTitle("New function")
         self._corrections = {}
         self._cor = corrector
-        self.__initUI()
+        self._initLayout()
 
-    def __initUI(self):
+    def _initLayout(self):
         """
         Create widgets and layout for the subwindow.
         """
@@ -710,7 +710,7 @@ class _MakeFuncDialog(QtWidgets.QDialog):
 
         # buttons
         button_layout = QtWidgets.QHBoxLayout()
-        button_layout.addWidget(QtWidgets.QPushButton("O K", clicked=self.accept))
+        button_layout.addWidget(QtWidgets.QPushButton("OK", clicked=self.accept))
         button_layout.addWidget(QtWidgets.QPushButton("Cancel", clicked=self.reject))
 
         layout = QtWidgets.QVBoxLayout()
