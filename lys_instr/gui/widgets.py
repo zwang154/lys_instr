@@ -88,24 +88,3 @@ class FolderButton(QtWidgets.QPushButton):
             self.clicked.connect(clicked)
         self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
         self.setIconSize(QtCore.QSize(20, 20))
-
-class MemoryButton(QtWidgets.QPushButton):
-    """
-    Checkable bookmark button.
-    """
-
-    _icon = qta.icon("ri.bookmark-2-fill")
-
-    def __init__(self, clicked=None):
-        """
-        Create the memory toggle button.
-
-        Args:
-            clicked (callable, optional): Callable to connect to the button's clicked signal.
-        """
-        super().__init__(self._icon, "")
-        self.setCheckable(True)
-        if clicked is not None:
-            self.clicked.connect(clicked)
-        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
-        self.setIconSize(QtCore.QSize(20, 20))
