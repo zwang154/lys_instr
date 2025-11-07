@@ -59,7 +59,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="detector.html">Detector</a></li>
-<li class="toctree-l3"><a class="reference internal" href="storage.html">Data Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="storage.html">Storage</a></li>
 <li class="toctree-l3"><a class="reference internal" href="extensions.html">Extensions</a></li>
 </ul>
 </li>
@@ -102,19 +102,11 @@
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.MultiController.</span></span><span class="sig-name descname"><span class="pre">MultiControllerInterface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">axisNamesAll</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiControllerInterface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="base.html#lys_instr.Interfaces.HardwareInterface" title="lys_instr.Interfaces.HardwareInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">HardwareInterface</span></code></a></p>
-<p>Abstract interface for multi-axis motor controllers.</p>
+<p>Abstract interface for multi-axis controllers (e.g., motors, switches, or similar).</p>
 <p>This class provides background polling, state management, and Qt signals for axis value and state updates.
 Subclasses must implement device-specific methods: <code class="docutils literal notranslate"><span class="pre">_get()</span></code>, <code class="docutils literal notranslate"><span class="pre">_set()</span></code>, <code class="docutils literal notranslate"><span class="pre">_isBusy()</span></code>, and <code class="docutils literal notranslate"><span class="pre">_isAlive()</span></code>.
-<code class="docutils literal notranslate"><span class="pre">_get()</span></code>, <code class="docutils literal notranslate"><span class="pre">_set()</span></code>, and <code class="docutils literal notranslate"><span class="pre">_isBusy()</span></code> should raise RuntimeError if the device is not responding or if there is a communication error.
-<code class="docutils literal notranslate"><span class="pre">_isAlive()</span></code> should always return the current alive state and should not raise <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> that causes interruption.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>*axisNamesAll</strong> – Names of all axes to manage.</p></li>
-<li><p><strong>**kwargs</strong> – Additional keyword arguments passed to QThread.</p></li>
-</ul>
-</dd>
-</dl>
+<code class="docutils literal notranslate"><span class="pre">_get()</span></code>, <code class="docutils literal notranslate"><span class="pre">_set()</span></code>, and <code class="docutils literal notranslate"><span class="pre">_isBusy()</span></code> should raise <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> on communication errors;
+<code class="docutils literal notranslate"><span class="pre">_isAlive()</span></code> should return the current alive state without raising <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> that interrupts monitoring.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.aliveStateChanged">
 <span class="sig-name descname"><span class="pre">aliveStateChanged</span></span><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.aliveStateChanged" title="Link to this definition"></a></dt>
@@ -130,7 +122,7 @@ Subclasses must implement device-specific methods: <code class="docutils literal
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'dict'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiControllerInterface.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.get" title="Link to this definition"></a></dt>
-<dd><p>Gets the current values of all axes in the specified data type.</p>
+<dd><p>Get the current values of all axes in the specified data type.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>type</strong> (<em>type</em><em>, </em><em>optional</em>) – Output type (<cite>dict</cite>, <cite>list</cite>, or <cite>np.ndarray</cite>). Defaults to <cite>dict</cite>.</p>
@@ -150,7 +142,7 @@ Subclasses must implement device-specific methods: <code class="docutils literal
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.isAlive">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isAlive</span></span><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.isAlive" title="Link to this definition"></a></dt>
-<dd><p>Returns the current alive state of all axes.</p>
+<dd><p>Current alive state of all axes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Mapping of axis names to their alive state.</p>
@@ -164,7 +156,7 @@ Subclasses must implement device-specific methods: <code class="docutils literal
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.isBusy">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isBusy</span></span><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.isBusy" title="Link to this definition"></a></dt>
-<dd><p>Returns the current busy state of all axes.</p>
+<dd><p>Current busy state of all axes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Mapping of axis names to their busy state.</p>
@@ -181,13 +173,13 @@ Subclasses must implement device-specific methods: <code class="docutils literal
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.nameList">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">nameList</span></span><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.nameList" title="Link to this definition"></a></dt>
-<dd><p>Returns the list of axis names.</p>
+<dd><p>List of all axis names.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List of axis names.</p>
+<dd class="field-odd"><p>Axis names in the order they were registered.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>list of str</p>
+<dd class="field-even"><p>list[str]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -195,14 +187,14 @@ Subclasses must implement device-specific methods: <code class="docutils literal
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.set">
 <span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wait</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lock</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiControllerInterface.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.set" title="Link to this definition"></a></dt>
-<dd><p>Sets target values for one or more axes.</p>
-<p>For each axis specified in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>, sets its target value.
-For example, to set x to 1.0 and y to 2.0, call: <code class="docutils literal notranslate"><span class="pre">set(x=1.0,</span> <span class="pre">y=2.0)</span></code>.
-Optionally waits until all axes become idle after setting.</p>
+<dd><p>Set target values for one or more axes.</p>
+<p>For each axis specified in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>, set its target value, e.g., <code class="docutils literal notranslate"><span class="pre">set(x=1.0,</span> <span class="pre">y=2.0)</span></code>.
+Optionally wait until all axes become idle after setting.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>wait</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, block until all axes become idle after setting. Defaults to False.</p></li>
+<li><p><strong>lock</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, acquire the instance mutex while applying targets. Defaults to True.</p></li>
 <li><p><strong>**kwargs</strong> – Axis-value pairs to set, e.g., x=1.0, y=2.0.</p></li>
 </ul>
 </dd>
@@ -215,17 +207,15 @@ Optionally waits until all axes become idle after setting.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.settingsWidget">
 <span class="sig-name descname"><span class="pre">settingsWidget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiControllerInterface.settingsWidget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.settingsWidget" title="Link to this definition"></a></dt>
-<dd><p>Returns a generic settings dialog.</p>
-<p>This method is intended to be overridden in subclasses to provide a device-specific settings UI.</p>
+<dd><p>Return a device-specific settings dialog.</p>
+<p>Subclasses should override this to provide a QDialog for device settings.
+The base implementation returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The settings dialog.</p>
+<dd class="field-odd"><p>Settings dialog, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if not provided by the base class.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>QDialog</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>NotImplementedError</strong> – If the subclass does not implement this method.</p>
+<dd class="field-even"><p>QDialog | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -233,17 +223,17 @@ Optionally waits until all axes become idle after setting.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.stop">
 <span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiControllerInterface.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.stop" title="Link to this definition"></a></dt>
-<dd><p>Stops all axes.</p>
-<p>Calls the instance-specific <code class="docutils literal notranslate"><span class="pre">_stop()</span></code> method to perform the actual stopping logic.</p>
+<dd><p>Stop all axes.</p>
+<p>Call the instance-specific <code class="docutils literal notranslate"><span class="pre">_stop()</span></code> method to perform the actual stopping logic.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.target">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.target" title="Link to this definition"></a></dt>
-<dd><p>Returns the current target values of all axes.</p>
+<dd><p>Current target values of all axes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Mapping of axis names to their target positions.</p>
+<dd class="field-odd"><p>Mapping of axis names to their target values.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>dict[str, float]</p>
@@ -260,13 +250,10 @@ Optionally waits until all axes become idle after setting.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiControllerInterface.waitForReady">
 <span class="sig-name descname"><span class="pre">waitForReady</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiControllerInterface.waitForReady"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiControllerInterface.waitForReady" title="Link to this definition"></a></dt>
-<dd><p>Blocks further interaction until the device is no longer busy.</p>
+<dd><p>Block further interaction until all axes are idle.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True once all axes become idle.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -277,16 +264,29 @@ Optionally waits until all axes become idle after setting.</p>
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiMotorInterface">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.MultiController.</span></span><span class="sig-name descname"><span class="pre">MultiMotorInterface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">axesNames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autoSave</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiMotorInterface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiMotorInterface" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#lys_instr.MultiController.OffsettableMultiMotorInterface" title="lys_instr.MultiController.OffsettableMultiMotorInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">OffsettableMultiMotorInterface</span></code></a></p>
+<p>Multi-axis motor interface.</p>
+<p>Thin subclass of OffsettableMultiMotorInterface kept for semantic clarity and for future device-specific extensions.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiSwitchInterface">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.MultiController.</span></span><span class="sig-name descname"><span class="pre">MultiSwitchInterface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labelNames</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">axisNamesAll</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#MultiSwitchInterface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.MultiSwitchInterface" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#lys_instr.MultiController.MultiControllerInterface" title="lys_instr.MultiController.MultiControllerInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiControllerInterface</span></code></a></p>
+<p>Interface for switch-type multi-axis controllers (referred to as switches for short).</p>
+<p>Convenience subclass for devices where each axis behaves like a switch with discrete label positions.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.MultiController.MultiSwitchInterface.labelNames">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">labelNames</span></span><a class="headerlink" href="#lys_instr.MultiController.MultiSwitchInterface.labelNames" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>List of label names associated with the switch axes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Label names in the order corresponding to axis registration.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -294,20 +294,22 @@ Optionally waits until all axes become idle after setting.</p>
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.MultiController.</span></span><span class="sig-name descname"><span class="pre">OffsettableMultiMotorInterface</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">axesNames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">autoSave</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#OffsettableMultiMotorInterface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#lys_instr.MultiController.MultiControllerInterface" title="lys_instr.MultiController.MultiControllerInterface"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiControllerInterface</span></code></a></p>
-<p>Add offset functionality for MultiMotor.</p>
+<p>Interface for motor-type multi-axis controllers (referred to as motors for short) with offset functionality.</p>
+<p>Convenience subclass for devices where each axis exposes a continuous position value.
+This class adds a per-axis offsets dictionary that is applied to <code class="docutils literal notranslate"><span class="pre">get()</span></code>/<code class="docutils literal notranslate"><span class="pre">set()</span></code> operations and can be persisted to disk.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.get">
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type=&lt;class</span> <span class="pre">'dict'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#OffsettableMultiMotorInterface.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.get" title="Link to this definition"></a></dt>
-<dd><p>Gets the current values of all axes in the specified data type.</p>
+<dd><p>Get current axis values in user coordinates (stored offsets subtracted).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>type</strong> (<em>type</em><em>, </em><em>optional</em>) – Output type (<cite>dict</cite>, <cite>list</cite>, or <cite>np.ndarray</cite>). Defaults to <cite>dict</cite>.</p>
+<dd class="field-odd"><p><strong>type</strong> (<em>type</em><em>, </em><em>optional</em>) – Output container type (dict, list, np.ndarray). Defaults to dict.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Axis values in the requested format.</p>
+<dd class="field-even"><p>Axis values in user coordinates (stored offsets subtracted).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict or list or np.ndarray</p>
+<dd class="field-odd"><p>dict | list | np.ndarray</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>TypeError</strong> – If an unsupported output type is requested.</p>
@@ -318,62 +320,35 @@ Optionally waits until all axes become idle after setting.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.load">
 <span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.lys/lys_instr/motorOffsets'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#OffsettableMultiMotorInterface.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.load" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Load persisted per-axis offsets into memory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – Filesystem path to load offsets from. Defaults to <code class="docutils literal notranslate"><span class="pre">.lys/lys_instr/motorOffsets</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.offset">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">offset</span></span><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.offset" title="Link to this definition"></a></dt>
-<dd><p>Dictionary of offset for respective axes.</p>
+<dd><p>Dictionary mapping axis names to respective offsets.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.offsetChanged">
 <span class="sig-name descname"><span class="pre">offsetChanged</span></span><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.offsetChanged" title="Link to this definition"></a></dt>
-<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
-<p>types is normally a sequence of individual types.  Each type is either a
-type object or a string that is the name of a C++ type.  Alternatively
-each type could itself be a sequence of types each describing a different
-overloaded signal.
-name is the optional C++ name of the signal.  If it is not specified then
-the name of the class attribute that is bound to the signal is used.
-revision is the optional revision of the signal that is exported to QML.
-If it is not specified then 0 is used.
-arguments is the optional sequence of the names of the signal’s arguments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyqtSignal(<a href="#id1"><span class="problematic" id="id2">*</span></a>types, name</p>
-</dd>
-<dt class="field-even">Type<span class="colon">:</span></dt>
-<dd class="field-even"><p>str = …, revision</p>
-</dd>
-</dl>
+<dd><p>Signal emitted when any axis offset value changes.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.offsetDict">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">offsetDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">axesNames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#OffsettableMultiMotorInterface.offsetDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.offsetDict" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<p>Dictionary subclass that stores per-axis offsets and emits a signal when any value changes.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.offsetDict.valueChanged">
 <span class="sig-name descname"><span class="pre">valueChanged</span></span><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.offsetDict.valueChanged" title="Link to this definition"></a></dt>
-<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
-<p>types is normally a sequence of individual types.  Each type is either a
-type object or a string that is the name of a C++ type.  Alternatively
-each type could itself be a sequence of types each describing a different
-overloaded signal.
-name is the optional C++ name of the signal.  If it is not specified then
-the name of the class attribute that is bound to the signal is used.
-revision is the optional revision of the signal that is exported to QML.
-If it is not specified then 0 is used.
-arguments is the optional sequence of the names of the signal’s arguments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pyqtSignal(<a href="#id3"><span class="problematic" id="id4">*</span></a>types, name</p>
-</dd>
-<dt class="field-even">Type<span class="colon">:</span></dt>
-<dd class="field-even"><p>str = …, revision</p>
-</dd>
-</dl>
+<dd><p>Signal emitted when any axis offset value changes.</p>
 </dd></dl>
 
 </dd></dl>
@@ -381,24 +356,26 @@ arguments is the optional sequence of the names of the signal’s arguments.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.lys/lys_instr/motorOffsets'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#OffsettableMultiMotorInterface.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.save" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Persist per-axis offsets to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – Filesystem path to save offsets to. Defaults to <code class="docutils literal notranslate"><span class="pre">.lys/lys_instr/motorOffsets</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.MultiController.OffsettableMultiMotorInterface.set">
 <span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiController.html#OffsettableMultiMotorInterface.set"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiController.OffsettableMultiMotorInterface.set" title="Link to this definition"></a></dt>
-<dd><p>Sets target values for one or more axes.</p>
-<p>For each axis specified in <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>, sets its target value.
-For example, to set x to 1.0 and y to 2.0, call: <code class="docutils literal notranslate"><span class="pre">set(x=1.0,</span> <span class="pre">y=2.0)</span></code>.
-Optionally waits until all axes become idle after setting.</p>
+<dd><p>Set target values for axes in user coordinates (stored offsets subtracted).</p>
+<p>Adjust each provided value by adding the corresponding per-axis offset before delegating to the parent implementation.
+For example, calling <code class="docutils literal notranslate"><span class="pre">set(x=1.0)</span></code> will result in the value <code class="docutils literal notranslate"><span class="pre">1.0</span> <span class="pre">+</span> <span class="pre">self.offset.get('x',</span> <span class="pre">0)</span></code> being sent to the underlying controller.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>wait</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, block until all axes become idle after setting. Defaults to False.</p></li>
-<li><p><strong>**kwargs</strong> – Axis-value pairs to set, e.g., x=1.0, y=2.0.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>**kwargs</strong> (<em>float</em>) – Axis-value pairs in user coordinates.</p>
 </dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If any provided axis name is invalid.</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -410,11 +387,22 @@ Optionally waits until all axes become idle after setting.</p>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.gui.MultiMotor.</span></span><span class="sig-name descname"><span class="pre">MultiMotorGUI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisNamesSettable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisNamesJoggable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisNamesOffsettable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memoryPath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/gui/MultiMotor.html#MultiMotorGUI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.gui.MultiMotor.MultiMotorGUI" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
 <p>GUI widget for controlling and monitoring a multi-axis motor.</p>
-<p>Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.</p>
+<p>Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.
+Accepts a <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code> instance or a sequence of such instances.
+Listens to their <code class="docutils literal notranslate"><span class="pre">busyStateChanged</span></code> and <code class="docutils literal notranslate"><span class="pre">aliveStateChanged</span></code> signals to update the GUI.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.gui.MultiMotor.MultiMotorGUI.controllers">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">controllers</span></span><a class="headerlink" href="#lys_instr.gui.MultiMotor.MultiMotorGUI.controllers" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Mapping of axis names to respective controllers (motors).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mapping of axis names to controllers (later controllers overwrite earlier ones when axis names collide).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, <a class="reference internal" href="#lys_instr.MultiController.MultiMotorInterface" title="lys_instr.MultiController.MultiMotorInterface">MultiMotorInterface</a>]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -423,11 +411,22 @@ Optionally waits until all axes become idle after setting.</p>
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.gui.MultiSwitch.</span></span><span class="sig-name descname"><span class="pre">MultiSwitchGUI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisNamesSettable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/gui/MultiSwitch.html#MultiSwitchGUI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.gui.MultiSwitch.MultiSwitchGUI" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
 <p>GUI widget for controlling and monitoring a multi-axis switch.</p>
-<p>Provides controls for setting and displaying ON/OFF states for multiple axes.</p>
+<p>Provides controls for setting and displaying switch states for multiple axes.
+Accepts a <code class="docutils literal notranslate"><span class="pre">MultiControllerInterface</span></code> instance or a sequence of such instances.
+Listens to their <code class="docutils literal notranslate"><span class="pre">busyStateChanged</span></code> and <code class="docutils literal notranslate"><span class="pre">aliveStateChanged</span></code> signals to update the GUI.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.gui.MultiSwitch.MultiSwitchGUI.controllers">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">controllers</span></span><a class="headerlink" href="#lys_instr.gui.MultiSwitch.MultiSwitchGUI.controllers" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Mapping of axis names to respective controllers (switches).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mapping of axis names to controllers (later controllers overwrite earlier ones when axis names collide).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, <a class="reference internal" href="#lys_instr.MultiController.MultiSwitchInterface" title="lys_instr.MultiController.MultiSwitchInterface">MultiSwitchInterface</a>]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 

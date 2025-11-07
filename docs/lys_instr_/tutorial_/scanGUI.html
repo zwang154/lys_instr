@@ -19,7 +19,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Axis Calibration and Dependency" href="preCorrection.html" />
+    <link rel="next" title="Axis Dependency" href="preCorrection.html" />
     <link rel="prev" title="Storage GUI" href="storageGUI.html" /> 
 </head>
 
@@ -59,7 +59,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#incorporating-switches-into-scan">Incorporating Switches into Scan</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Calibration and Dependency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Dependency</a></li>
 </ul>
 </li>
 </ul>
@@ -146,11 +146,11 @@ Add the above code to <code class="docutils literal notranslate"><span class="pr
 <img alt="../../_images/scan_1.png" src="../../_images/scan_1.png" />
 <p>To configure the scan, open the <strong>Scan</strong> tab:</p>
 <img alt="../../_images/scan_2.png" src="../../_images/scan_2.png" />
-<p>The “Process” box displays the base or lowest-level process, which by default is the detector’s acquisition process.
+<p>The <strong>Process</strong> box displays the base or lowest-level process, which by default is the detector’s acquisition process.
 (See the Advanced section for details on customizing the base process.)
 Here, the dummy detector is selected and we will set the exposure time to 0.1 second.</p>
-<p>Scan loops are configured in the “List of parameters” box.
-Right-click the blank space and select “Add new scan” to add the first scan loop, which repeats the base process.</p>
+<p>Scan loops are configured in the <strong>List of parameters</strong> box.
+Right-click the blank space and select <strong>Add motor scan</strong> to add the first scan loop, which repeats the base process.</p>
 <img alt="../../_images/scan_3.png" src="../../_images/scan_3.png" />
 <p>“Loop” in the first column indicates a pure repetition of the base process without varying any parameter.
 Then, only the “Number of Steps” needs to be defined.
@@ -161,7 +161,7 @@ Then, only the “Number of Steps” needs to be defined.
 For here, we choose the “y” axis for a linear scan from 0 with a step of 0.1 for 10 steps.</p>
 <p>Alternatively, in “Free” mode, you can input a Python expression—such as a list of specific values, or a NumPy array like <code class="docutils literal notranslate"><span class="pre">np.arange(0,</span> <span class="pre">1,</span> <span class="pre">0.1)</span></code>—in the “Expression” field.</p>
 <img alt="../../_images/scan_5.png" src="../../_images/scan_5.png" />
-<p>We can add a second scan loop that repeats the first scan loop by right-clicking the blank space again and selecting “Add new scan.”
+<p>We can add a second scan loop that repeats the first scan loop by right-clicking the blank space again and selecting <strong>Add motor scan.</strong>
 Similarly, we choose the “x” axis for a linear scan from 0 with a step of 0.1 for 10 steps.</p>
 <img alt="../../_images/scan_6.png" src="../../_images/scan_6.png" />
 <p>This configuration performs a nested scan, acquiring data over a 10×10 2D grid by scanning the y-axis at each x-axis position.</p>
@@ -245,7 +245,7 @@ For example:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="storageGUI.html" class="btn btn-neutral float-left" title="Storage GUI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="preCorrection.html" class="btn btn-neutral float-right" title="Axis Calibration and Dependency" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="preCorrection.html" class="btn btn-neutral float-right" title="Axis Dependency" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

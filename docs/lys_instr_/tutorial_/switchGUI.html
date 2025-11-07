@@ -56,7 +56,7 @@
 <li class="toctree-l3"><a class="reference internal" href="detectorGUI.html">Detector GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="storageGUI.html">Storage GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="scanGUI.html">Scan GUI</a></li>
-<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Calibration and Dependency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Dependency</a></li>
 </ul>
 </li>
 </ul>
@@ -114,10 +114,10 @@
 <p>Calling <code class="docutils literal notranslate"><span class="pre">Window()</span></code> in the <em>lys</em> command line launches the GUI subwindow as follows:</p>
 <img alt="../../_images/switch_1.png" src="../../_images/switch_1.png" />
 <p>The dummy switch supports multiple levels: “OFF”, “LOW”, “MEDIUM”, and “HIGH”.
-Select the desired state for each switch in the list and click “Apply” to enact the change.
+Select the desired state for each switch in the list and click <strong>Apply</strong> to enact the change.
 The indicator next to each switch shows its connection status—green for connected, red for disconnected or error.</p>
-<p>To implement your own switch, create a class that inherits from <code class="docutils literal notranslate"><span class="pre">MultiSwitchInterface</span></code> and implements the required methods,
-similar to the approach described for the <a class="reference internal" href="motor.html"><span class="doc">Motor</span></a>.</p>
+<p>To implement your own switch, subclass <code class="docutils literal notranslate"><span class="pre">MultiSwitchInterface</span></code> and implement the required methods,
+similar to the approach described for the <a class="reference internal" href="motor.html"><span class="doc">motor</span></a>.</p>
 </section>
 </section>
 

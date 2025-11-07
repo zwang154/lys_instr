@@ -30,17 +30,17 @@ Calling ``Window()`` in the *lys* command line launches the GUI subwindow as fol
 .. image:: /lys_instr_/tutorial_/detector_1.png
 
 
-You can change the exposure time using the spin box or by direct input, then click "Acquire" for a single shot, "Stream" for continuous acquisition, or "Stop" to halt the process.
+You can change the exposure time using the spin box or by direct input, then click **Acquire** for a single shot, **Stream** for continuous acquisition, or **Stop** to halt the process.
 
 The indicator at the bottom left shows the connection status—green for a successful connection, and red for a disconnected or error state.
 
-Clicking the "Settings" button opens a dialog.
+Clicking the **Settings** button opens a dialog.
 
 .. image:: /lys_instr_/tutorial_/detector_2.png
     :scale: 80%
 
 Within the dialog, you can use the spin box next to "Repeat" to set the number of frames per acquisition and the spin box next to "Update every" to change the display refresh rate.
-You can also click the "Update" button at any time to refresh the display manually.
+You can also click the **Update** button at any time to refresh the display manually.
 
 
 
@@ -90,7 +90,7 @@ Manually Configuring GUI Display
 The above display layout can also be configured manually using the **MultiCut** tab:
 On the **Main** tab in the **MultiCut** tab:
 
-0. (Clear the template) On the **Main** tab, right-click the "data1" and "data2" items (created by the default template) and select "Remove" to delete them.
+0. (Clear the template) On the **Main** tab, right-click the **data1** and **data2** items (created by the default template) and select **Remove** to delete them.
 
 .. image:: /lys_instr_/tutorial_/detectorGUI_1.png
 

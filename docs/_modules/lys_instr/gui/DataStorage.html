@@ -82,7 +82,20 @@
 <div class="viewcode-block" id="DataStorageGUI">
 <a class="viewcode-back" href="../../../lys_instr_/api_/storage.html#lys_instr.gui.DataStorage.DataStorageGUI">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DataStorageGUI</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GUI widget for configuring data storage options.</span>
+
+<span class="sd">    Provide controls to select base folder, data folder, file name, numbering, and enable/disable saving.</span>
+<span class="sd">    Update the storage backend and show a saving-status indicator.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the storage GUI and bind it to the storage object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj (DataStorage): The storage backend object (must provide ``base``, ``folder``, ``name``, ``getNumber()`` and the ``savingStateChanged`` signal).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_settingPath</span> <span class="o">=</span> <span class="kc">False</span>
@@ -94,6 +107,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">savingStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_savingStateChanged</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create and arrange the widgets for the storage configuration panel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Widgets for data saving</span>
         <span class="n">browse</span> <span class="o">=</span> <span class="n">FolderButton</span><span class="p">(</span><span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_browse</span><span class="p">)</span>
         <span class="n">browse</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Preferred</span><span class="p">)</span>
@@ -108,7 +124,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_savedIndicator</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_savingState</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;[Status] Waiting&quot;</span><span class="p">)</span>
-        <span class="c1"># self._dataShapeText = QtWidgets.QLabel(&quot;Data Shape: (None)&quot;)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_numberedCheck</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;Numbered&quot;</span><span class="p">,</span> <span class="n">checked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">objectName</span><span class="o">=</span><span class="s2">&quot;DataStorage_numbered&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_enabledCheck</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QCheckBox</span><span class="p">(</span><span class="s2">&quot;Enabled&quot;</span><span class="p">,</span> <span class="n">checked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">objectName</span><span class="o">=</span><span class="s2">&quot;DataStorage_enabled&quot;</span><span class="p">)</span>
@@ -144,6 +159,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">mainLayout</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_pathChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handle changes to path-related widgets and propagate them to the storage object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settingPath</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -168,11 +186,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_settingPath</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_browse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Open a dialog to choose the base folder and update the Base field.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">baseStr</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QFileDialog</span><span class="o">.</span><span class="n">getExistingDirectory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Select base folder&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">baseStr</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_base</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">baseStr</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_savingStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">saving</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the GUI to reflect the current saving state.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            saving (bool): True when saving is in progress, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">saving</span><span class="p">:</span>
             <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[Status] </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> files reserved, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">_threads</span><span class="p">)</span><span class="si">}</span><span class="s2"> files being saved.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_savingState</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>

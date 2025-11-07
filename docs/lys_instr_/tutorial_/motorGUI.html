@@ -58,7 +58,7 @@
 <li class="toctree-l3"><a class="reference internal" href="detectorGUI.html">Detector GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="storageGUI.html">Storage GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="scanGUI.html">Scan GUI</a></li>
-<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Calibration and Dependency</a></li>
+<li class="toctree-l3"><a class="reference internal" href="preCorrection.html">Axis Dependency</a></li>
 </ul>
 </li>
 </ul>
@@ -115,16 +115,15 @@
 </div>
 <p>Calling <code class="docutils literal notranslate"><span class="pre">Window()</span></code> in the <em>lys</em> command line launches the GUI subwindow as follows:</p>
 <img alt="../../_images/motor_1.png" src="../../_images/motor_1.png" />
-<p>You can input target positions for each axis and click the ‘Go’ button to start motion, the ‘Stop’ button to halt motion, or set the step size and use the arrow buttons to jog each axis.</p>
+<p>You can input target positions for each axis and click the <strong>Go</strong> button to start motion, the <strong>Stop</strong> button to halt motion, or set the step size and use the arrow buttons to jog each axis.</p>
 <p>The indicator next to each axis shows its connection status—green for a successful connection, and red for a disconnected or error state.</p>
-<p>Clicking the “Settings” button opens a dialog.</p>
+<p>Clicking the <strong>Settings</strong> button opens a dialog.</p>
 <a class="reference internal image-reference" href="../../_images/motor_2.png"><img alt="../../_images/motor_2.png" src="../../_images/motor_2.png" style="width: 279.2px; height: 144.0px;" />
 </a>
 <p>Within the dialog, you can offset each axis.
-Clicking the “Offset” button defines the current value of the axis as zero and records the offset value in the box to the left.
-Clicking the “Unset” button removes the offset and restores the true values.
-The “Now At” and “Move To” fields in the main window are automatically updated to reflect the current offset.</p>
-<p>See also <span class="xref std std-doc">Motor Options</span> for details on customizing the motor GUI.</p>
+Clicking the <strong>Offset</strong> button defines the current value of the axis as zero and records the offset value in the box to the left.
+Clicking the <strong>Unset</strong> button removes the offset and restores the true values.
+The <strong>Now at</strong> and <strong>Move to</strong> fields in the main window are automatically updated to reflect the current offset.</p>
 </section>
 <section id="customizing-set-jog-and-offset">
 <h2>Customizing Set, Jog, and Offset<a class="headerlink" href="#customizing-set-jog-and-offset" title="Link to this heading"></a></h2>
@@ -147,17 +146,17 @@ For example:</p>
 </div>
 <p>The resulting GUI window appears as follows. Now, only the “x” axis can be jogged, and only the “x” and “y” axes can be set:</p>
 <img alt="../../_images/motor_3.png" src="../../_images/motor_3.png" />
-<p>In the “Settings” dialog, only the “x” and “z” axes are available for offset control:</p>
+<p>In the <strong>Settings</strong> dialog, only the “x” and “z” axes are available for offset control:</p>
 <a class="reference internal image-reference" href="../../_images/motor_4.png"><img alt="../../_images/motor_4.png" src="../../_images/motor_4.png" style="width: 279.2px; height: 172.0px;" />
 </a>
-<p>The “Offset” button sets the current position value of the axis to zero and records the offset value in the box to the left.
-The “Unset” button removes the offset for the axis and restores its true position value.</p>
+<p>The <strong>Offset</strong> button sets the current position value of the axis to zero and records the offset value in the box to the left.
+The <strong>Unset</strong> button removes the offset for the axis and restores its true position value.</p>
 </section>
 <section id="using-bookmarks">
 <h2>Using Bookmarks<a class="headerlink" href="#using-bookmarks" title="Link to this heading"></a></h2>
 <p>To enable bookmark management, when you create the motor GUI:</p>
 <ul class="simple">
-<li><p>Set <code class="docutils literal notranslate"><span class="pre">memory</span></code> to “bottom” or “right” to choose the memory panel position.</p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">memory</span></code> to <code class="docutils literal notranslate"><span class="pre">&quot;bottom&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;right&quot;</span></code> to choose the memory panel position.</p></li>
 <li><p>Provide a file name or full path for <code class="docutils literal notranslate"><span class="pre">memoryPath</span></code>.</p></li>
 </ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">LysSubWindow</span>
@@ -180,7 +179,7 @@ The “Unset” button removes the offset for the axis and restores its true pos
 <p>Clicking <strong>Save</strong> adds a bookmark for the current values of all axes to the list.
 You can optionally add a description using the memo input field.
 When the first bookmark is added, a file with the specified name is automatically created to store the bookmarks.
-If only a file name is provided for <code class="docutils literal notranslate"><span class="pre">memoryPath</span></code>, the default path is “.lys\.lys_instr\YourMemoryFileName.lst”.</p>
+If only a file name is provided for <code class="docutils literal notranslate"><span class="pre">memoryPath</span></code>, the default path is <code class="docutils literal notranslate"><span class="pre">.lys/.lys_instr/YourMemoryFileName.lst</span></code>.</p>
 <p>To restore a position, select a bookmark from the list and click <strong>Load</strong>.
 To remove a bookmark, select it and click <strong>Delete</strong>.</p>
 <p>Bookmarks always store the absolute values of each axis, so the offsetting logic does not affect them.</p>

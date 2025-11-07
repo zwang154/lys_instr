@@ -93,7 +93,7 @@ that is, control a camera to capture images after setting the source meter to sp
 Let’s first take a quick look at a minimal template.
 By the end of this tutorial, you will be able to create similar custom GUIs.</p>
 <p>Launch <em>lys</em>, enter the following code in the command line, and press <strong>Enter</strong>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.tutorial</span><span class="w"> </span><span class="kn">import</span> <span class="n">template0</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.templates</span><span class="w"> </span><span class="kn">import</span> <span class="n">template0</span>
 <span class="n">template0</span><span class="o">.</span><span class="n">Window</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -106,7 +106,7 @@ The <strong>Storage</strong> panel at the top left corresponds to a <em>storage<
 <img alt="../../_images/handsOn_2.png" src="../../_images/handsOn_2.png" />
 <p>To set up the workflow:</p>
 <ul class="simple">
-<li><p>On the <strong>Scan</strong> tab, right-click in the blank space and select “Add new scan.”</p></li>
+<li><p>On the <strong>Scan</strong> tab, right-click in the blank space and select <strong>Add motor scan</strong>.</p></li>
 <li><p>Select the motor axis “E” for scanning (assuming it is connected to the source meter).</p></li>
 <li><p>Define the scan range (for example, from 0 V with a step of 1 V for 10 steps).</p></li>
 <li><p>Choose the detector “MultiDetectorDummy” (assuming it is connected to the camera).</p></li>
@@ -115,10 +115,10 @@ The <strong>Storage</strong> panel at the top left corresponds to a <em>storage<
 </ul>
 <img alt="../../_images/handsOn_3.png" src="../../_images/handsOn_3.png" />
 <p>The workflow is now set up.
-Click “Start” to begin the measurement.</p>
+Click <strong>Start</strong> to begin the measurement.</p>
 <p>The voltage values and detector images (filled with random noise) will update to reflect the simulated behavior of the dummy motor and detector.
-In practical use, these dummy devices are replaced with interfaces that communicate with real instruments.</p>
-<p>In the following sections, we will guide you through implementing interfaces for real instruments and building your own customized GUI.</p>
+In practical use, these dummy objects are replaced by concrete implementations that communicate with real hardware.</p>
+<p>In the following sections, we will guide you through implementing interfaces for real hardware and building your custom GUI.</p>
 </section>
 
 

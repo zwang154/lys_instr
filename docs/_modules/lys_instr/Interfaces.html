@@ -82,17 +82,13 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorator to ensure thread-safe execution of a method using a QMutex.</span>
 
-<span class="sd">    Acquires the instance&#39;s ``_mutex`` before executing the decorated method, ensuring that only one thread can execute the method at a time.</span>
+<span class="sd">    This decorator acquires the instance&#39;s ``_mutex`` before executing the decorated method, ensuring that only one thread can execute the method at a time.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    func : callable</span>
-<span class="sd">        The method to be decorated.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        func (callable): The method to be decorated.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    callable</span>
-<span class="sd">        The wrapped method with mutex locking.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        callable: The wrapped method with mutex locking.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span><span class="p">):</span>
@@ -107,28 +103,25 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract base class for hardware interfaces with background monitoring.</span>
 
-<span class="sd">    This class provides background thread management and a standard structure for device state monitoring.</span>
-<span class="sd">    Each subclass represents a hardware device and runs its own monitoring thread.</span>
+<span class="sd">    This class provides background thread management and a standard structure for device state monitoring. </span>
+<span class="sd">    Each subclass represents a hardware device and runs its own monitoring thread. </span>
 <span class="sd">    The thread periodically calls ``_loadState()`` to poll and update device-specific state information.</span>
-<span class="sd">    The monitoring thread can be stopped by calling the instance&#39;s ``kill()`` method, or all threads can be stopped using the ``killAll()`` class method.</span>
-
-<span class="sd">    ``_loadState()`` must be implemented in subclasses to provide device-specific behavior.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    interval : float, optional</span>
-<span class="sd">        Time interval (in seconds) between successive state polls. Default is 0.1.</span>
-<span class="sd">    **kwargs</span>
-<span class="sd">        Additional keyword arguments passed to ``QtCore.QThread``.</span>
+<span class="sd">    The monitoring thread can be stopped by calling the instance&#39;s ``kill()`` method, or all threads can be stopped using the ``killAll()`` class method. </span>
+<span class="sd">    </span>
+<span class="sd">    Subclasses must implement ``_loadState()`` to provide device-specific behavior.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">__list</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the hardware interface.</span>
-<span class="sd">        </span>
-<span class="sd">        It registers the device instance and appends the instance to the internal instance ``__list``.</span>
+<span class="sd">        Initialize the hardware interface.</span>
+
+<span class="sd">        Register the device instance and append it to the internal instance list (``__list``).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            interval (float, optional): Time interval (in seconds) between successive state polls. Defaults to 0.1.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to ``QtCore.QThread``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__interval</span> <span class="o">=</span> <span class="n">interval</span>
@@ -140,7 +133,7 @@
 <a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.HardwareInterface.run">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Overrides ``QtCore.QThread.run()`` to define the background execution loop for a device instance.</span>
+<span class="sd">        Override ``QtCore.QThread.run()`` to define the background execution loop for a device instance.</span>
 <span class="sd">        </span>
 <span class="sd">        This method is executed automatically when ``start()`` is called, which is typically done in subclasses.</span>
 <span class="sd">        It repeatedly calls ``_loadState()`` at the specified interval until ``kill()`` is called.</span>
@@ -156,7 +149,9 @@
 <a class="viewcode-back" href="../../lys_instr_/api_/base.html#lys_instr.Interfaces.HardwareInterface.kill">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">kill</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stops the monitoring thread for this device instance.</span>
+<span class="sd">        Stop the monitoring thread for this device instance.</span>
+
+<span class="sd">        This method sets the internal stop flag under the mutex so the running thread will exit its loop and terminate cleanly.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__mutex</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__stopped</span> <span class="o">=</span> <span class="kc">True</span></div>
@@ -164,9 +159,9 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_loadState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Polls and updates the current device state.</span>
+<span class="sd">        Poll and update the current device state.</span>
 
-<span class="sd">        This method is intended to be overridden in subclasses.</span>
+<span class="sd">        Subclasses should override this method to implement device-specific polling and state-update logic.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
@@ -175,9 +170,9 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">killAll</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stops all active monitoring threads for devices instantiated from this class</span>
-<span class="sd">         </span>
-<span class="sd">        It calls the ``kill()`` method on each device instance on the internal instance ``__list`` and clears the list.</span>
+<span class="sd">        Stop all active monitoring threads for instances of this class.</span>
+
+<span class="sd">        This method calls ``kill()`` on each registered device instance and clears the internal instance list ``__list``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__list</span><span class="p">:</span>
             <span class="n">h</span><span class="o">.</span><span class="n">kill</span><span class="p">()</span>

@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Utilities" href="utilities.html" />
-    <link rel="prev" title="Data Storage" href="storage.html" /> 
+    <link rel="prev" title="Storage" href="storage.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,7 +51,7 @@
 <li class="toctree-l3"><a class="reference internal" href="base.html">Base Classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="detector.html">Detector</a></li>
-<li class="toctree-l3"><a class="reference internal" href="storage.html">Data Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="storage.html">Storage</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Extensions</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#lys_instr.PreCorrection.PreCorrector"><code class="docutils literal notranslate"><span class="pre">PreCorrector</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#lys_instr.gui.PreCorrection.PreCorrectorGUI"><code class="docutils literal notranslate"><span class="pre">PreCorrectorGUI</span></code></a></li>
@@ -98,15 +98,37 @@
 <dt class="sig sig-object py" id="lys_instr.PreCorrection.PreCorrector">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.PreCorrection.</span></span><span class="sig-name descname"><span class="pre">PreCorrector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">controllers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/PreCorrection.html#PreCorrector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.PreCorrection.PreCorrector" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<p>Corrector that manages inter-axis dependencies and applies value corrections.</p>
+<p>This class automatically applies configured correction callables whenever controller axis targets change.
+Correction parameters are stored in <code class="docutils literal notranslate"><span class="pre">_correctParams</span></code>, which maps a target axis name to a callable that computes the corrected value from current master-axis parameters.
+The corrector expects controllers passed to the constructor to provide a <code class="docutils literal notranslate"><span class="pre">busyStateChanged</span></code> Qt signal and a <code class="docutils literal notranslate"><span class="pre">nameList</span></code> iterable of axis names (typically motors).</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.PreCorrection.PreCorrector.controllers">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">controllers</span></span><a class="headerlink" href="#lys_instr.PreCorrection.PreCorrector.controllers" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Controller instances.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mapping of axis name (str) to controller instance.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="lys_instr.PreCorrection.PreCorrector.corrections">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corrections</span></span><a class="headerlink" href="#lys_instr.PreCorrection.PreCorrector.corrections" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Configured correction callables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mapping of target name to correction callable (typically <code class="docutils literal notranslate"><span class="pre">_FunctionCombination</span></code>) that computes the corrected value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -114,6 +136,8 @@
 <dt class="sig sig-object py" id="lys_instr.gui.PreCorrection.PreCorrectorGUI">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">lys_instr.gui.PreCorrection.</span></span><span class="sig-name descname"><span class="pre">PreCorrectorGUI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/gui/PreCorrection.html#PreCorrectorGUI"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.gui.PreCorrection.PreCorrectorGUI" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+<p>Correction GUI subwindow.</p>
+<p>Provides a tree view for editing correction targets (motor-axes) and their correction functions, and a control to create new ones.</p>
 </dd></dl>
 
 </section>
@@ -122,7 +146,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="storage.html" class="btn btn-neutral float-left" title="Data Storage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="storage.html" class="btn btn-neutral float-left" title="Storage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="utilities.html" class="btn btn-neutral float-right" title="Utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

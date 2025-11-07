@@ -55,7 +55,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="detector.html">Detector</a></li>
-<li class="toctree-l3"><a class="reference internal" href="storage.html">Data Storage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="storage.html">Storage</a></li>
 <li class="toctree-l3"><a class="reference internal" href="extensions.html">Extensions</a></li>
 </ul>
 </li>
@@ -103,32 +103,25 @@
 Each subclass represents a hardware device and runs its own monitoring thread.
 The thread periodically calls <code class="docutils literal notranslate"><span class="pre">_loadState()</span></code> to poll and update device-specific state information.
 The monitoring thread can be stopped by calling the instance’s <code class="docutils literal notranslate"><span class="pre">kill()</span></code> method, or all threads can be stopped using the <code class="docutils literal notranslate"><span class="pre">killAll()</span></code> class method.</p>
-<p><code class="docutils literal notranslate"><span class="pre">_loadState()</span></code> must be implemented in subclasses to provide device-specific behavior.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>interval</strong> (<em>float</em><em>, </em><em>optional</em>) – Time interval (in seconds) between successive state polls. Default is 0.1.</p></li>
-<li><p><strong>**kwargs</strong> – Additional keyword arguments passed to <code class="docutils literal notranslate"><span class="pre">QtCore.QThread</span></code>.</p></li>
-</ul>
-</dd>
-</dl>
+<p>Subclasses must implement <code class="docutils literal notranslate"><span class="pre">_loadState()</span></code> to provide device-specific behavior.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.Interfaces.HardwareInterface.kill">
 <span class="sig-name descname"><span class="pre">kill</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/Interfaces.html#HardwareInterface.kill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.Interfaces.HardwareInterface.kill" title="Link to this definition"></a></dt>
-<dd><p>Stops the monitoring thread for this device instance.</p>
+<dd><p>Stop the monitoring thread for this device instance.</p>
+<p>This method sets the internal stop flag under the mutex so the running thread will exit its loop and terminate cleanly.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.Interfaces.HardwareInterface.killAll">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">killAll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/Interfaces.html#HardwareInterface.killAll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.Interfaces.HardwareInterface.killAll" title="Link to this definition"></a></dt>
-<dd><p>Stops all active monitoring threads for devices instantiated from this class</p>
-<p>It calls the <code class="docutils literal notranslate"><span class="pre">kill()</span></code> method on each device instance on the internal instance <code class="docutils literal notranslate"><span class="pre">__list</span></code> and clears the list.</p>
+<dd><p>Stop all active monitoring threads for instances of this class.</p>
+<p>This method calls <code class="docutils literal notranslate"><span class="pre">kill()</span></code> on each registered device instance and clears the internal instance list <code class="docutils literal notranslate"><span class="pre">__list</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.Interfaces.HardwareInterface.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/Interfaces.html#HardwareInterface.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.Interfaces.HardwareInterface.run" title="Link to this definition"></a></dt>
-<dd><p>Overrides <code class="docutils literal notranslate"><span class="pre">QtCore.QThread.run()</span></code> to define the background execution loop for a device instance.</p>
+<dd><p>Override <code class="docutils literal notranslate"><span class="pre">QtCore.QThread.run()</span></code> to define the background execution loop for a device instance.</p>
 <p>This method is executed automatically when <code class="docutils literal notranslate"><span class="pre">start()</span></code> is called, which is typically done in subclasses.
 It repeatedly calls <code class="docutils literal notranslate"><span class="pre">_loadState()</span></code> at the specified interval until <code class="docutils literal notranslate"><span class="pre">kill()</span></code> is called.</p>
 </dd></dl>
@@ -139,7 +132,7 @@ It repeatedly calls <code class="docutils literal notranslate"><span class="pre"
 <dt class="sig sig-object py" id="lys_instr.Interfaces.lock">
 <span class="sig-prename descclassname"><span class="pre">lys_instr.Interfaces.</span></span><span class="sig-name descname"><span class="pre">lock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/Interfaces.html#lock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.Interfaces.lock" title="Link to this definition"></a></dt>
 <dd><p>Decorator to ensure thread-safe execution of a method using a QMutex.</p>
-<p>Acquires the instance’s <code class="docutils literal notranslate"><span class="pre">_mutex</span></code> before executing the decorated method, ensuring that only one thread can execute the method at a time.</p>
+<p>This decorator acquires the instance’s <code class="docutils literal notranslate"><span class="pre">_mutex</span></code> before executing the decorated method, ensuring that only one thread can execute the method at a time.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>func</strong> (<em>callable</em>) – The method to be decorated.</p>

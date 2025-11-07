@@ -86,19 +86,23 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Dummy implementation of ``MultiDetectorInterface``.</span>
 
-<span class="sd">    This class simulates a detector controller for indexed/arrayed data acquisition and error injection for testing purposes.</span>
+<span class="sd">    This class simulates a detector that Produces indexed frames from a supplied data source or by generating random frames.</span>
+<span class="sd">    Acquisition runs in a background loop (started by ``start()`` in ``__init__``) and populates an internal buffer.</span>
+<span class="sd">    Signals ``updated``, ``dataAcquired``, and ``aliveStateChanged``, defined in ``MultiDetectorInterface``, are emitted as appropriate.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indexShape</span><span class="o">=</span><span class="p">(),</span> <span class="n">frameShape</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">exposure</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the dummy multi-detector with the given parameters.</span>
+<span class="sd">        Initialize the dummy detector and start acquisition.</span>
+
+<span class="sd">        Call ``start()`` to begin the acquisition thread.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            data (DummyDataInterface): The data to be used as dummy. If not specified, random data will be used based on indexShape and frameShape.</span>
-<span class="sd">            indexShape (tuple of int): Shape of the index grid for random data. This argument will be ignored when data is not None.</span>
-<span class="sd">            frameShape (tuple of int): Shape of each data frame for random data. This argument will be ignored when data is not None.</span>
-<span class="sd">            exposure (float, optional): Time per frame in seconds.</span>
-<span class="sd">            **kwargs: Additional keyword arguments passed to the parent class.</span>
+<span class="sd">            data (Optional[DummyDataInterface]): Data source; if ``None``, random frames are generated.</span>
+<span class="sd">            indexShape (Tuple[int, ...]): Shape of the index grid for generated data. Ignored if ``data`` is not None.</span>
+<span class="sd">            frameShape (Tuple[int, ...]): Shape of each data frame for generated data. Ignored if ``data`` is not None.</span>
+<span class="sd">            exposure (float): Time in seconds to wait per frame (frame exposure).</span>
+<span class="sd">            **kwargs: Additional keyword arguments forwarded to the parent initializer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">indexShape</span><span class="p">,</span> <span class="n">frameShape</span><span class="p">)</span>
@@ -108,9 +112,11 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs the acquisition thread associated with the ``MultiDetectorInterface``, simulating indexed/arrayed data frame acquisition.</span>
+<span class="sd">        Run the background acquisition loop that simulates frame acquisition.</span>
 
-<span class="sd">        This method generates random data frames at the specified frame time, updates the acquired indices, and emits an update signal after each frame is acquired.</span>
+<span class="sd">        For each iteration, walk the data source (``self._obj``) to acquire frames, sleep per frame according to exposure time (``self.exposure``),</span>
+<span class="sd">        store acquired frames into the internal buffer (``self._data``), and emit the notification signal (``updated``) after each frame.</span>
+<span class="sd">        Return early if the stop request flag (``self._shouldStop``) is set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_shouldStop</span> <span class="o">=</span> <span class="kc">False</span>
         
@@ -126,16 +132,18 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stops the acquisition thread.</span>
+<span class="sd">        Request the acquisition loop to stop.</span>
+
+<span class="sd">        Set an internal stop request flag so the background thread will exit at the next check.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_shouldStop</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves and clears the acquired data.</span>
+<span class="sd">        Retrieve and clear the accumulated data buffer.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            dict: A copy of the acquired data, indexed by frame indices.</span>
+<span class="sd">            dict: Shallow copy of acquired frames keyed by index tuples.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
@@ -143,40 +151,40 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets the alive state of the simulated detector.</span>
+<span class="sd">        Return the alive state of the simulated detector.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            bool: True if the detector is alive, False if it is dead.</span>
+<span class="sd">            bool: True if the detector is alive, False otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">frameShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Shape of each data frame acquired by the detector.</span>
+<span class="sd">        Shape of a single acquired data frame.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple of int: The shape of each data frame.</span>
+<span class="sd">            tuple[int, ...]: Frame dimensions (height, width, ...) as provided by the data source.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">frameShape</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">indexShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Shape of the index grid for data acquisition.</span>
+<span class="sd">        Shape of the index grid.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple of int: The shape of the index grid.</span>
+<span class="sd">            tuple[int, ...]: Dimensions of the index grid used to iterate over frames.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">indexShape</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Coordinate axes for each dimension of the data.</span>
+<span class="sd">        Axis coordinates for the full data.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list[numpy.ndarray]: Coordinate axes for each dimension of the data.</span>
+<span class="sd">            List[numpy.ndarray]: Coordinate arrays corresponding to each axis of the index grid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">axes</span>
 
@@ -184,10 +192,10 @@
 <a class="viewcode-back" href="../../../lys_instr_/api_/dummyDetector.html#lys_instr.dummy.MultiDetector.MultiDetectorDummy.settingsWidget">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a QWidget for optional settings.</span>
+<span class="sd">        Create and return an optional settings QWidget.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            QtWidgets.QWidget: The optional settings panel.</span>
+<span class="sd">            QtWidgets.QWidget: The settings panel widget.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_OptionalPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
@@ -195,6 +203,14 @@
 <div class="viewcode-block" id="MultiDetectorDummy.setData">
 <a class="viewcode-back" href="../../../lys_instr_/api_/dummyDetector.html#lys_instr.dummy.MultiDetector.MultiDetectorDummy.setData">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indexShape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">frameShape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configure the dummy data source.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (Optional[DummyDataInterface]): Data source. If ``None``, a random-data generator (``RandomData``) is created.</span>
+<span class="sd">            indexShape (Optional[Tuple[int, ...]]): Index-grid shape used by the random-data generator.</span>
+<span class="sd">            frameShape (Optional[Tuple[int, ...]]): Frame shape used by the random-data generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">RandomData</span><span class="p">(</span><span class="n">indexShape</span><span class="p">,</span> <span class="n">frameShape</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -206,17 +222,17 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_OptionalPanel</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Optional settings panel for ``MultiDetectorDummy``.</span>
+<span class="sd">    Optional settings panel.</span>
 
-<span class="sd">    Provides a button to toggle the simulated detector&#39;s alive state.</span>
+<span class="sd">    Provides GUI to toggle the simulated detector&#39;s alive state and to choose dummy data sources.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the optional settings panel with a reference to the backend object.</span>
+<span class="sd">        Initialize the settings panel.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            obj: The backend detector object.</span>
+<span class="sd">            obj (MultiDetectorInterface): Backend detector object using the panel.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Settings&quot;</span><span class="p">)</span>
@@ -225,7 +241,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes and arranges the widgets in the optional settings panel.</span>
+<span class="sd">        Build and arrange the panel&#39;s widgets.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_switch</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Change&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_toggleAlive</span><span class="p">)</span>
         <span class="n">aliveLayout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QHBoxLayout</span><span class="p">()</span>
@@ -246,7 +262,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_toggleAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Toggles the alive state of the backend detector and emits relevant signals.</span>
+<span class="sd">        Toggle the backend detector&#39;s alive state and emit notification signals.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">backend</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span>
         <span class="n">backend</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">backend</span><span class="o">.</span><span class="n">error</span>

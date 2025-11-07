@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Axis Calibration and Dependency &mdash; lys_instr  documentation</title>
+  <title>Axis Dependency &mdash; lys_instr  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
@@ -53,9 +53,9 @@
 <li class="toctree-l3"><a class="reference internal" href="detectorGUI.html">Detector GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="storageGUI.html">Storage GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="scanGUI.html">Scan GUI</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Axis Calibration and Dependency</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#axis-calibration">Axis Calibration</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#axis-dependency">Axis Dependency</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Axis Dependency</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#by-functions">By Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#by-data">By Data</a></li>
 </ul>
 </li>
 </ul>
@@ -81,7 +81,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
-      <li class="breadcrumb-item active">Axis Calibration and Dependency</li>
+      <li class="breadcrumb-item active">Axis Dependency</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/lys_instr_/tutorial_/preCorrection.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -91,19 +91,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="axis-calibration-and-dependency">
-<h1>Axis Calibration and Dependency<a class="headerlink" href="#axis-calibration-and-dependency" title="Link to this heading"></a></h1>
-<section id="axis-calibration">
-<h2>Axis Calibration<a class="headerlink" href="#axis-calibration" title="Link to this heading"></a></h2>
-<p>In some cases, motor axis values require calibration.
-The <code class="docutils literal notranslate"><span class="pre">PreCorrection</span></code> utility enables axis calibration using user-defined correction functions or data.</p>
-<p>Suppose the motor axis “x” requires calibration, and the relationship between the raw position and the corrected position is given by a set of data points.
-These data can be stored in a NumPy <code class="docutils literal notranslate"><span class="pre">.npz</span></code> file with the following structure:</p>
-</section>
-<section id="axis-dependency">
-<h2>Axis Dependency<a class="headerlink" href="#axis-dependency" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">PreCorrection</span></code> also supports defining dependencies among axes.
-Suppose the position of “y” must always follow a fixed function of “x”, for example, <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">x/2</span></code> while only “x” is directly controlled.</p>
+  <section id="axis-dependency">
+<h1>Axis Dependency<a class="headerlink" href="#axis-dependency" title="Link to this heading"></a></h1>
+<section id="by-functions">
+<h2>By Functions<a class="headerlink" href="#by-functions" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">PreCorrection</span></code> utility allows defining dependencies between axes.</p>
+<p>Suppose the stop point of “y” always needs to follow that of “x” as a fixed function, for example, <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">x/2</span></code> while only “x” is directly controlled.</p>
 <p>A simple GUI combining a motor and a corrector can be constructed as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">LysSubWindow</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span>
@@ -141,11 +134,33 @@ Suppose the position of “y” must always follow a fixed function of “x”, 
 <img alt="../../_images/preCorrection_1.png" src="../../_images/preCorrection_1.png" />
 <img alt="../../_images/preCorrection_2.png" src="../../_images/preCorrection_2.png" />
 <p>In the <strong>PreCorr</strong> tab, right-click on the tree space and select “Add Target” to add a target axis, i.e., “y”.
-Then, right-click on the target “y” and select “Add Variable”, choosing “x” as the dependency axis.
+Then, right-click on the target “y” and select “Add new Variable”, choosing “x” as the variable axis.
+You can add multiple variables if needed.
 Next, double-click on the expression space of target “y” to enter <code class="docutils literal notranslate"><span class="pre">x/2</span></code>.</p>
 <img alt="../../_images/preCorrection_3.png" src="../../_images/preCorrection_3.png" />
 <p>Now, when you enter a target position for “x” in the <strong>Motor</strong> tab and click <strong>Go</strong>, the motor will move “x” to the specified position and “y” will automatically be set to half of “x”.</p>
 <img alt="../../_images/preCorrection_4.png" src="../../_images/preCorrection_4.png" />
+</section>
+<section id="by-data">
+<h2>By Data<a class="headerlink" href="#by-data" title="Link to this heading"></a></h2>
+<p>Such axis dependency can also be defined using user-provided data.</p>
+<p>Prepare the data as a <em>Wave</em> object and export it to a NumPy <code class="docutils literal notranslate"><span class="pre">.npz</span></code> file as follows (see the lys documentation for <em>Wave</em> details):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys</span><span class="w"> </span><span class="kn">import</span> <span class="n">Wave</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">]]</span>            <span class="c1"># Data for your target axis</span>
+<span class="n">axes</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">]]</span>            <span class="c1"># Corresponding data for your variable axis (&quot;x&quot; for here)</span>
+<span class="n">w</span> <span class="o">=</span> <span class="n">Wave</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">])</span>   <span class="c1"># Specify the variable axis (&quot;x&quot; for here), must be an axis name of the motor</span>
+
+<span class="n">w</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;YourFileName.npz&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In the <strong>PreCorr</strong> tab, after adding a target axis “y”, right-click on the target and choose <strong>Add new function</strong>.</p>
+<p>In the pop-up dialog, click <strong>Select</strong> to import the <code class="docutils literal notranslate"><span class="pre">.npz</span></code> file from your local directory and click <strong>OK</strong> to approve.</p>
+<a class="reference internal image-reference" href="../../_images/preCorrection_func_1.png"><img alt="../../_images/preCorrection_func_1.png" src="../../_images/preCorrection_func_1.png" style="width: 212.0px; height: 120.80000000000001px;" />
+</a>
+<p>Expand the “y” tree item, and you can see the imported data listed under “Func1(x)” if the import was successful.</p>
+<img alt="../../_images/preCorrection_func_2.png" src="../../_images/preCorrection_func_2.png" />
+<p>PreCorrection applies the interpolated x-y relation from the file, so the imported data behaves as the previous function-defined dependency for x values within the file’s range (that is, x = 0.0-0.4).</p>
 </section>
 </section>
 

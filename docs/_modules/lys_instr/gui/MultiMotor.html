@@ -74,6 +74,7 @@
   <h1>Source code for lys_instr.gui.MultiMotor</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">qtawesome</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">qta</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span><span class="p">,</span> <span class="n">QtCore</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorInterface</span>
@@ -89,19 +90,21 @@
 <span class="sd">    GUI widget for controlling and monitoring a multi-axis motor.</span>
 
 <span class="sd">    Provides controls for moving, jogging, offsetting, and saving/loading positions for multiple axes.</span>
+<span class="sd">    Accepts a ``MultiMotorInterface`` instance or a sequence of such instances. </span>
+<span class="sd">    Listens to their ``busyStateChanged`` and ``aliveStateChanged`` signals to update the GUI.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">axisNamesSettable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesJoggable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">axisNamesOffsettable</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">memory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">memoryPath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the MultiMotorGUI widget.</span>
+<span class="sd">        Initialize the motor GUI.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            obj: The motor&#39;s features object to control.</span>
-<span class="sd">            axisNamesSettable (iterable, optional): Names of axes that can be set. Defaults to all axes.</span>
-<span class="sd">            axisNamesJoggable (iterable, optional): Names of axes that can be jogged. Defaults to all axes.</span>
-<span class="sd">            axisNamesOffsettable (iterable, optional): Names of axes that can be offset. Defaults to all axes.</span>
-<span class="sd">            memory (&#39;bottom&#39;, &#39;right&#39;, or None): Position of the memory widget.</span>
-<span class="sd">            memoryPath (str): Name of the memory file. </span>
+<span class="sd">            obj (MultiMotorInterface | Sequence[MultiMotorInterface]): A single controller (motor) or a sequence of such objects.</span>
+<span class="sd">            axisNamesSettable (Iterable[str] | None): Names of axes that can be set. Defaults to all axes.</span>
+<span class="sd">            axisNamesJoggable (Iterable[str] | None): Names of axes that can be jogged. Defaults to all axes.</span>
+<span class="sd">            axisNamesOffsettable (Iterable[str] | None): Names of axes that support offsets. Defaults to all axes.</span>
+<span class="sd">            memory (str | None): Position of the memory widget; one of ``&#39;bottom&#39;``, ``&#39;right&#39;`` or ``None``.</span>
+<span class="sd">            memoryPath (str | None): Path or name of the memory file used by the ``ControllerMemory`` widget.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -120,11 +123,23 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">controllers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mapping of axis names to respective controllers (motors).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, MultiMotorInterface]: Mapping of axis names to controllers (later controllers overwrite earlier ones when axis names collide).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">obj</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objs</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settable</span><span class="p">,</span> <span class="n">joggable</span><span class="p">,</span> <span class="n">memory</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the GUI layout and widgets for the multi-motor control panel.</span>
+<span class="sd">        Create and arrange the widgets for the control panel.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            settable (Iterable[str]): Names of axes that are settable from the GUI.</span>
+<span class="sd">            joggable (Iterable[str]): Names of axes that are joggable from the GUI.</span>
+<span class="sd">            memory (str | None): See constructor.</span>
+<span class="sd">            path (str | None): Memory path passed to ``ControllerMemory``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_items</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">_MotorRowLayout</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">controllers</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
@@ -163,7 +178,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_setMoveToValue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets target positions for axes based on user input in the GUI.</span>
+<span class="sd">        Apply GUI-entered target positions to connected controllers (motors).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">targetAll</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objs</span><span class="p">:</span>
@@ -173,12 +188,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_busyStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the GUI based on the busy state of the axes.</span>
-
-<span class="sd">        Disables jog buttons, nowAt spin boxes, and moveTo line edits for axes that are busy, and enables them for axes that are idle.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            busy (dict): Mapping of axis names to their busy state (bool).</span>
+<span class="sd">        Update the GUI enabled state based on axis busy flags.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">anyBusy</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">any</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">busy</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">values</span><span class="p">()]))</span>
         <span class="n">allAlive</span> <span class="o">=</span> <span class="nb">all</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">alive</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
@@ -189,12 +199,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_aliveStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Updates the GUI controls based on the alive state of the axes.</span>
-
-<span class="sd">        Disable jog buttons, nowAt spin box and moveTo line edits when dead and enable them when alive.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            alive (dict): Mapping of axis names to alive state (bool).</span>
+<span class="sd">        Update the GUI enabled state based on axis alive flags.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">anyBusy</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">any</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">busy</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">values</span><span class="p">()]))</span>
         <span class="n">allAlive</span> <span class="o">=</span> <span class="nb">all</span><span class="p">([</span><span class="n">item</span><span class="o">.</span><span class="n">alive</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_items</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
@@ -202,29 +207,58 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_interrupt</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">anyBusy</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stop all active motions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objs</span><span class="p">:</span>
             <span class="n">obj</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_showSettings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">settingsWindow</span> <span class="o">=</span> <span class="n">_SettingsDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsettable</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Show the settings dialog.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">settingsWindow</span> <span class="o">=</span> <span class="n">_SettingsDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_objs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_offsettable</span><span class="p">)</span>
         <span class="n">settingsWindow</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
 
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_MotorRowLayout</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper to manage the widgets and state for a single motor-axis row.</span>
+
+<span class="sd">    Each instance creates the label, current-value display, move-to input and jog controls for one axis.</span>
+<span class="sd">    It listens to the controller&#39;s (motor&#39;s) signals to keep the row in sync.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the motor-row helper.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj (MultiMotorInterface): Controller (motor) owning this axis.</span>
+<span class="sd">            label (str): Axis name used for labels and lookups.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">label</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__initLayout</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__initValues</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">valueChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_valueChanged</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_busyChanged</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_aliveChanged</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="s1">&#39;offset&#39;</span><span class="p">,</span> <span class="p">{}):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">offsetChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_updateMoveTo</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">__initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create widgets for the axis row.</span>
+
+<span class="sd">        Constructs the label, current-value display, move-to editor and jog controls for the axis but leaves layout placement to the ``addTo`` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_label</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_label</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
 
@@ -234,7 +268,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setButtonSymbols</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDoubleSpinBox</span><span class="o">.</span><span class="n">NoButtons</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setDecimals</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;background-color: #f0f0f0;&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLineEdit</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QPushButton</span><span class="p">(</span><span class="n">qta</span><span class="o">.</span><span class="n">icon</span><span class="p">(</span><span class="s2">&quot;ri.arrow-left-fill&quot;</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">clicked</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nega</span><span class="p">)</span>
@@ -245,7 +278,27 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">=</span> <span class="n">AliveIndicator</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">__initValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the displayed value from the controller (motor).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_updateState</span><span class="p">()</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Axis </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="si">}</span><span class="s2"> is not alive during initialization of MultiMotorGUI.&quot;</span><span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">addTo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">settable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">joggable</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Insert the row&#39;s widgets into a grid layout.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            grid (QGridLayout): Grid to populate.</span>
+<span class="sd">            i (int): Row index (0-based) within the grid header region.</span>
+<span class="sd">            settable (bool): Whether to include the Move-To editor.</span>
+<span class="sd">            joggable (bool): Whether to include jog buttons.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alive</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
         <span class="n">grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_label</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -257,37 +310,72 @@
                 <span class="n">grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_valueChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the displayed current level when the controller (motor) emits a new value.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value (dict): Mapping of axis names to numeric values emitted by the controller&#39;s ``valueChanged`` signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_busyChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">busy</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the row&#39;s busy flag and refresh widget enablement.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            busy (dict): Mapping of axis names to busy states emitted by the controller&#39;s ``busyStateChanged`` signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">in</span> <span class="n">busy</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="o">=</span> <span class="n">busy</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_updateState</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_aliveChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alive</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the row&#39;s alive flag and refresh widget enablement.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alive (dict): Mapping of axis names to alive states emitted by the controller&#39;s ``aliveStateChanged`` signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">in</span> <span class="n">alive</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="n">alive</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_updateState</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_updateState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable or disable widgets according to current busy/alive flags.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_now</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_jogNega</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_jogPosi</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">busy</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">alive</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the numeric value entered in the Move-To editor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float | None: Parsed float value or ``None`` if the field is empty or cannot be parsed as a float.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="o">.</span><span class="n">text</span><span class="p">())</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateMoveTo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the Move-To editor from the controller&#39;s (motor&#39;s) target/offset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tar</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tar</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">offset</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_moveTo</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_nega</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Handles negative jog button press for an axis.</span>
+<span class="sd">        Handle negative jog button press for an axis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
@@ -295,7 +383,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_posi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Handles positive jog button press for an axis.</span>
+<span class="sd">        Handle positive jog button press for an axis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jogStep</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
@@ -303,13 +391,29 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_SettingsDialog</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">offsettable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dialog for settings.</span>
+
+<span class="sd">    Provides a tabbed interface for general and optional settings of a device.</span>
+<span class="sd">    Emits an ``updated`` signal when offsets are changed in the general settings panel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">objs</span><span class="p">,</span> <span class="n">offsettable</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the motor settings dialog with general and optional tabs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent (QWidget): Parent widget (the main ``MultiMotorGUI`` instance).</span>
+<span class="sd">            objs (Sequence[MultiMotorInterface]): Controllers (motors) used to populate optional per-controller tabs.</span>
+<span class="sd">            offsettable (Iterable[str]): Names of axes that support offsets (passed to the general panel).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Motor Settings&quot;</span><span class="p">)</span>
 
         <span class="n">tabWidget</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QTabWidget</span><span class="p">()</span>
         <span class="n">tabWidget</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="n">_GeneralPanel</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">controllers</span><span class="p">,</span> <span class="n">offsettable</span><span class="p">),</span> <span class="s2">&quot;General&quot;</span><span class="p">)</span>
-        <span class="c1">#tabWidget.addTab(obj.settingsWidget(), &quot;Optional&quot;)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">objs</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">tabWidget</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">settingsWidget</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;Optional </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">layout</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QVBoxLayout</span><span class="p">()</span>
         <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">tabWidget</span><span class="p">)</span>
@@ -318,19 +422,26 @@
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_GeneralPanel</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Settings panel for a multi-axis motor device.</span>
+<span class="sd">    General settings panel for the device.</span>
 
-<span class="sd">    Allows viewing and toggling the alive/dead status and managing offsets for each axis.</span>
+<span class="sd">    Provides controls for viewing and editing per-axis offsets. </span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controllers</span><span class="p">,</span> <span class="n">offsettable</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the general settings panel.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            controllers (dict[str, MultiMotorInterface]): Mapping of axis names to controllers (motors) used to query offsets and save state.</span>
+<span class="sd">            offsettable (Iterable[str]): Names of axes that support offsets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_controllers</span> <span class="o">=</span> <span class="n">controllers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="n">controllers</span><span class="p">,</span> <span class="n">offsettable</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">controllers</span><span class="p">,</span> <span class="n">offsettable</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates and initializes all GUI components of the settings dialog, and connects signals to their respective slots.</span>
+<span class="sd">        Create GUI components of the dialog and connect signals to respective slots.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Create offset panel</span>
         <span class="n">offsettable</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">controllers</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">offsettable</span><span class="p">}</span>
@@ -363,7 +474,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_offsetAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sets the offset for a specific axis to its current value.</span>
+<span class="sd">        Set the offset for a specific axis to its current value.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The axis name.</span>
@@ -376,7 +487,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_unsetAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Clears the offset for a specific axis.</span>
+<span class="sd">        Clear the offset for a specific axis.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): The axis name.</span>

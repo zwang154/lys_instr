@@ -79,7 +79,18 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy.MultiMotor</span><span class="w"> </span><span class="kn">import</span> <span class="n">_OptionalPanel</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_LevelInfo</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">QObject</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Container that holds the current simulated switch level, a pending level target, and an error flag for a switch axis.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (str): Initial level of the switch axis.</span>
+<span class="sd">            interval (float): Time for the switching to complete in seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="n">state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="kc">None</span>
@@ -87,10 +98,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set a target for the switch axis.</span>
+
+<span class="sd">        Store the requested target and start timing used to determine whether the target is reached.</span>
+<span class="sd">        The target level is applied after the configured interval elapses.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state (str): Target level to switch to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="o">=</span> <span class="n">state</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_timing</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the level of the switch axis after the configured time interval.</span>
+
+<span class="sd">        Determine the switch level based on elapsed time since ``set`` was called and the configured switch interval.</span>
+<span class="sd">        Clear the target when it is reached.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interval</span><span class="p">:</span>
@@ -99,40 +125,105 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current simulated level of the switch axis.</span>
+
+<span class="sd">        This property updates internal state before returning.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Current level of the switch axis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">busy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Current simulated busy state of the switch axis.</span>
+
+<span class="sd">        This property updates internal state before returning.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the switching is in progress, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    
+
 
 <div class="viewcode-block" id="MultiSwitchDummy">
 <a class="viewcode-back" href="../../../lys_instr_/api_/dummyMotor.html#lys_instr.dummy.MultiSwitch.MultiSwitchDummy">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultiSwitchDummy</span><span class="p">(</span><span class="n">MultiSwitchInterface</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dummy implementation of ``MultiSwitchInterface``.</span>
+
+<span class="sd">    This class simulates a multi-axis switch, including axis levels, busy/alive state management, and per-axis error injection for testing purposes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="n">levelNames</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;OFF&#39;</span><span class="p">,</span> <span class="s1">&#39;LOW&#39;</span><span class="p">,</span> <span class="s1">&#39;MEDIUM&#39;</span><span class="p">,</span> <span class="s1">&#39;HIGH&#39;</span><span class="p">],</span> <span class="n">interval</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the dummy multi-axis switch.</span>
+
+<span class="sd">        Call ``start()`` to begin the background polling thread.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *axisNamesAll: Names of axes to simulate.</span>
+<span class="sd">            levelNames (list[str]): Ordered level names used by the switch.</span>
+<span class="sd">            interval (float): Time for the switching to complete in seconds.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the parent class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">levelNames</span><span class="p">,</span> <span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">_LevelInfo</span><span class="p">(</span><span class="n">levelNames</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">interval</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nameList</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set target levels for the specified axes.</span>
+
+<span class="sd">        Only axes present in ``target`` are updated; other axes are left unchanged.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            target (dict[str, str]): Mapping of axis names to respective target levels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
                 <span class="n">d</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get current levels for all axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, str]: Mapping of axis names to respective current levels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">state</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
     
     <span class="k">def</span><span class="w"> </span><span class="nf">_isBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return busy state for all axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to busy states.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">busy</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return alive state for all axes.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to alive flags.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">error</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
 <div class="viewcode-block" id="MultiSwitchDummy.settingsWidget">
 <a class="viewcode-back" href="../../../lys_instr_/api_/dummyMotor.html#lys_instr.dummy.MultiSwitch.MultiSwitchDummy.settingsWidget">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create and return an optional settings widget.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            QtWidgets.QWidget: The settings panel widget.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">_OptionalPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
 

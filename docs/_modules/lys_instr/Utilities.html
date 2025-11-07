@@ -81,10 +81,10 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sleep for the specified interval (in seconds) with improved temporal precision.</span>
 
-<span class="sd">    Avoids overshooting the requested sleep time by busy-waiting for the last ~0.5 ms.</span>
+<span class="sd">    Avoid overshooting the requested sleep time by busy-waiting for the last ~0.5 ms.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        sleepTime (float): The total time to sleep, in seconds.</span>
+<span class="sd">        sleepTime (float): Total time to sleep, in seconds. Non-positive values return immediately.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">wakeTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">+</span> <span class="n">sleepTime</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>

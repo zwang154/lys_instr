@@ -93,10 +93,10 @@
 <dt class="sig sig-object py" id="lys_instr.Utilities.preciseSleep">
 <span class="sig-prename descclassname"><span class="pre">lys_instr.Utilities.</span></span><span class="sig-name descname"><span class="pre">preciseSleep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sleepTime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/Utilities.html#preciseSleep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.Utilities.preciseSleep" title="Link to this definition"></a></dt>
 <dd><p>Sleep for the specified interval (in seconds) with improved temporal precision.</p>
-<p>Avoids overshooting the requested sleep time by busy-waiting for the last ~0.5 ms.</p>
+<p>Avoid overshooting the requested sleep time by busy-waiting for the last ~0.5 ms.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>sleepTime</strong> (<em>float</em>) – The total time to sleep, in seconds.</p>
+<dd class="field-odd"><p><strong>sleepTime</strong> (<em>float</em>) – Total time to sleep, in seconds. Non-positive values return immediately.</p>
 </dd>
 </dl>
 </dd></dl>

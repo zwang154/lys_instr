@@ -85,15 +85,16 @@
 <span class="sd">    Runs the detector&#39;s acquisition loop as a worker thread and emits signals when new data is acquired.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1">#: Signal (dict) emitted when new data is acquired.</span>
     <span class="n">dataAcquired</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;emitted when new data is acquired.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the acquisition thread for the detector.</span>
+<span class="sd">        Initialize the acquisition thread for a detector.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            detector (DetectorInterface): The detector instance to run acquisition for.</span>
+<span class="sd">            iter (int, optional): Number of acquisition iterations for this thread. Defaults to 1.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detector</span> <span class="o">=</span> <span class="n">detector</span>
@@ -102,7 +103,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs the detector&#39;s acquisition loop.</span>
+<span class="sd">        Run the detector&#39;s acquisition loop.</span>
 
 <span class="sd">        Overrides the ``run()`` method of QThread and is called when the worker thread is started.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -111,7 +112,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_onUpdated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Emits the ``dataAcquired`` signal with the latest acquired data.</span>
+<span class="sd">        Emit the ``dataAcquired`` signal with the latest acquired data.</span>
 
 <span class="sd">        Called in response to the detector&#39;s ``updated`` signal.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -127,27 +128,30 @@
 <span class="sd">    This class provides background polling, threaded (worker) acquisition, and Qt signal management for detector state and data updates.</span>
 <span class="sd">    Subclasses must implement device-specific methods: ``_get()``, ``_stop()``, and ``_isAlive()``.</span>
 <span class="sd">    ``_get()`` and ``_stop()`` should raise ``RuntimeError`` if the device is not responding or a communication error occurs.</span>
-<span class="sd">    ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that causes interruption.</span>
-<span class="sd">    The ``updated`` signal should be emitted by the acquisition thread to inform when new data is acquired.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        exposure(float or None): The initial exposure time. If the device does not support the exposure time, None should be set.</span>
-<span class="sd">        **kwargs: Additional keyword arguments passed to QThread.</span>
+<span class="sd">    ``_isAlive()`` should always return the current alive state and should not raise ``RuntimeError`` that interrupts monitoring.</span>
+<span class="sd">    The ``updated`` signal is emitted by the acquisition thread when new data is available.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="c1">#: Signal (bool) emitted when alive state changes.</span>
     <span class="n">aliveStateChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Emitted when alive state changes.&quot;&quot;&quot;</span>
 
+    <span class="c1">#: Signal (bool) emitted when busy state changes.</span>
     <span class="n">busyStateChanged</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Emitted when busy state changes.&quot;&quot;&quot;</span>
 
+    <span class="c1">#: Signal (dict) emitted when data is acquired.</span>
     <span class="n">dataAcquired</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;emitted when data is acquired.&quot;&quot;&quot;</span>
 
+    <span class="c1">#: Signal emitted by the acquisition thread when new data is acquired.</span>
     <span class="n">updated</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;emitted by the acquisition thread when new data is acquired.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exposure</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the interface.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            exposure (float or None): Initial exposure time.</span>
+<span class="sd">            **kwargs: Additional keyword arguments passed to the base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_exposure</span> <span class="o">=</span> <span class="n">exposure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutex</span><span class="p">()</span>
@@ -155,9 +159,9 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_loadState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Polls the device and updates its state.</span>
+<span class="sd">        Poll the device and update its state.</span>
 
-<span class="sd">        Emits the ``aliveStateChanged`` signal if the alive state has changed.</span>
+<span class="sd">        Emit the ``aliveStateChanged`` signal if the alive state has changed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_alive&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_alive</span> <span class="o">=</span> <span class="kc">True</span>
@@ -171,9 +175,9 @@
 <a class="viewcode-back" href="../../lys_instr_/api_/detector.html#lys_instr.MultiDetector.DetectorInterface.startAcq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">startAcq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Starts acquisition in an acquisition thread.</span>
+<span class="sd">        Start acquisition in an acquisition thread.</span>
 
-<span class="sd">        If both `wait` and `output` are True, the method blocks until acquisition is complete and returns the acquired data.</span>
+<span class="sd">        If both `wait` and `output` are True, the method blocks until acquisition completes and returns the acquired data.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            iter (int): Number of iterations.</span>
@@ -181,7 +185,7 @@
 <span class="sd">            output (bool, optional): If True, returns acquired data as a dictionary. Defaults to False.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            dict[tuple, np.ndarray] or None: Acquired data if output is True, otherwise None.</span>
+<span class="sd">            dict[tuple, np.ndarray] | None: Acquired data that maps index tuples to frames when ``output`` is True; otherwise ``None``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Detector is busy. Cannot start new acquisition.&quot;</span><span class="p">)</span>
@@ -197,20 +201,21 @@
             <span class="n">buffer</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">update</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">DirectConnection</span><span class="p">)</span>
 
+        <span class="n">thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">waitForReady</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+                <span class="n">thread</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">buffer</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">buffer</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_onAcqFinished</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Cleans up after acquisition is finished.</span>
+<span class="sd">        Clean up after acquisition is finished.</span>
 
-<span class="sd">        Resets the acquisition thread reference, updates the busy state, and emits the ``busyStateChanged`` signal to notify listeners.</span>
+<span class="sd">        Reset the acquisition thread reference, update the busy state, and emit the ``busyStateChanged`` signal.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QMutexLocker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mutex</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span> <span class="o">=</span> <span class="kc">False</span>
@@ -221,13 +226,10 @@
 <a class="viewcode-back" href="../../lys_instr_/api_/detector.html#lys_instr.MultiDetector.DetectorInterface.waitForReady">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">waitForReady</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Blocks further interaction until the device is no longer busy.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            interval (float, optional): Polling interval in seconds. Defaults to 0.1.</span>
+<span class="sd">        Block further interaction until the device is no longer busy.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            bool: True once all axes become idle.</span>
+<span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">loop</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">QEventLoop</span><span class="p">()</span>
 
@@ -246,7 +248,7 @@
 <a class="viewcode-back" href="../../lys_instr_/api_/detector.html#lys_instr.MultiDetector.DetectorInterface.stop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stops the acquisition and emits the latest acquired data.</span>
+<span class="sd">        Stop the acquisition and emit the latest acquired data.</span>
 
 <span class="sd">        This method waits for the acquisition worker thread to finish if it is running.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -261,11 +263,10 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">exposure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return the exposure time.</span>
-<span class="sd">        If the detector does not support the exposure time, None will be returned.</span>
+<span class="sd">        Exposure time.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            float or None: The exposure time</span>
+<span class="sd">            float | None: The exposure time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exposure</span>
     
@@ -275,14 +276,14 @@
 <span class="sd">        Set the exposure time.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            value(float): The exporesure time to be set.</span>
+<span class="sd">            value (float | None): Exposure time to set, or ``None`` to indicate unsupported.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_exposure</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">isBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns whether the detector is currently busy.</span>
+<span class="sd">        Current busy state of the detector.</span>
 
 <span class="sd">        This property reflects the internal busy flag, which is True during acquisition.</span>
 
@@ -294,7 +295,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the current alive state of the detector.</span>
+<span class="sd">        Current alive state of the detector.</span>
 
 <span class="sd">        This property should be implemented in subclasses to provide device-specific logic.</span>
 
@@ -308,7 +309,7 @@
 <span class="sd">        Should be implemented in subclasses to provide device-specific logic for getting acquired data.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            dict[tuple, np.ndarray]: Mapping of indices to their data frames.</span>
+<span class="sd">            dict[tuple, np.ndarray]: Mapping of index tuples to their data frames.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
@@ -349,37 +350,35 @@
 <a class="viewcode-back" href="../../lys_instr_/api_/detector.html#lys_instr.MultiDetector.DetectorInterface.settingsWidget">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a generic settings dialog.</span>
+<span class="sd">        Return a device-specific settings dialog.</span>
 
-<span class="sd">        This method is intended to be overridden in subclasses to provide a device-specific settings UI.</span>
+<span class="sd">        Subclasses should override this to provide a QDialog for device settings.</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            QDialog: The settings dialog.</span>
-<span class="sd">        </span>
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method.&quot;</span><span class="p">)</span></div>
 </div>
 
-    
+
 
 <div class="viewcode-block" id="MultiDetectorInterface">
 <a class="viewcode-back" href="../../lys_instr_/api_/detector.html#lys_instr.MultiDetector.MultiDetectorInterface">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultiDetectorInterface</span><span class="p">(</span><span class="n">DetectorInterface</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract interface for multi-detector devices.</span>
+<span class="sd">    Abstract interface for multi-dimensional detector devices.</span>
 
-<span class="sd">    This class extends DetectorInterface to support detectors that acquire multi-dimensional data frames.</span>
-<span class="sd">    Subclasses should implement device-specific logic for data acquisition and shape reporting.</span>
+<span class="sd">    This class extends ``DetectorInterface`` to support detectors that acquire data with multi-dimensional indices.</span>
+<span class="sd">    Subclasses should implement device-specific acquisition and property reporting logic.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The axes for the full data.</span>
+<span class="sd">        Axis coordinates for the full data.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            list of numpy.ndarray: The axes for the full data.</span>
+<span class="sd">            list[numpy.ndarray]: Coordinate arrays corresponding to each axis of the index grid.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this property.</span>
@@ -389,7 +388,7 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">frameDim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The number of dimensions for a single frame of data.</span>
+<span class="sd">        Number of dimensions for a single frame of data.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            int: Number of dimensions for a single frame.</span>
@@ -399,20 +398,20 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">indexDim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The number of dimensions for indexing acquired data frames.</span>
+<span class="sd">        Dimension of the index grid.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            int: Number of dimensions for indexing acquired data.</span>
+<span class="sd">            int: Dimension of the index grid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indexShape</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">frameShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The shape of a single frame.</span>
+<span class="sd">        Shape of a single frame.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: Shape of a single frame.</span>
+<span class="sd">            tuple[int, ...]: Dimensions of a single frame.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this property.</span>
@@ -422,10 +421,10 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">indexShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The shape of the single frame.</span>
+<span class="sd">        Shape of the index tuples.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: Shape of the indices.</span>
+<span class="sd">            tuple[int, ...]: Shape of the index tuples.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this property.</span>
@@ -435,10 +434,10 @@
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dataShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The shape of the acquired data.</span>
+<span class="sd">        Shape of the full data.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: Shape of the acquired data.</span>
+<span class="sd">            tuple[int, ...]: Combined shape of the full dataset.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">indexShape</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">frameShape</span><span class="p">])</span></div>
 

@@ -84,16 +84,28 @@
 <a class="viewcode-back" href="../../../lys_instr_/api_/detector.html#lys_instr.gui.MultiDetector.MultiDetectorGUI">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultiDetectorGUI</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    GUI for MultiDetectorInterface.</span>
-<span class="sd">    Only for implementation in lys.</span>
+<span class="sd">    GUI widget providing acquisition controls and a ``multicut`` display for a multi-dimensional detector.</span>
+
+<span class="sd">    Accepts a ``MultiDetectorInterface`` instance supplying data and signals.</span>
+<span class="sd">    Listens to the detector&#39;s ``busyStateChanged``, ``aliveStateChanged``, and ``dataAcquired`` signals to update the GUI.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the detector GUI.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obj (MultiDetectorInterface): Detector instance supplying data and signals.</span>
+<span class="sd">            wait (bool): If True, block until acquisition completes when using one-shot acquire.</span>
+<span class="sd">            interval (int | None): Number of frames between display updates, or ``None`` to disable periodic updates.</span>
+<span class="sd">            iter (int): Number of acquisition iterations to run in acquire mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;wait&quot;</span><span class="p">:</span> <span class="n">wait</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">:</span> <span class="n">interval</span><span class="p">,</span> <span class="s2">&quot;iter&quot;</span><span class="p">:</span> <span class="nb">iter</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_frameCount</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Signals from the detector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_setButtonState</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">aliveStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_setButtonState</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataAcquired</span><span class="p">)</span>
@@ -102,6 +114,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create and arrange the widgets for acquisition control and data display.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Data display widget</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mcut</span> <span class="o">=</span> <span class="n">multicut</span><span class="p">(</span><span class="n">Wave</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">dataShape</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">axes</span><span class="p">),</span> <span class="n">returnInstance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">subWindow</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mcut</span><span class="o">.</span><span class="n">widget</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Expanding</span><span class="p">,</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Expanding</span><span class="p">)</span>
@@ -149,16 +164,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">mainLayout</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update the ``multicut`` display during acquisition.</span>
+
+<span class="sd">        Called periodically or on frame batches.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_frameCount</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_mcut</span><span class="o">.</span><span class="n">cui</span><span class="o">.</span><span class="n">updateRawWave</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">axes</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_dataAcquired</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handle incoming acquired data frame.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict[tuple, numpy.ndarray] | None): Mapping of index tuples to acquired frames; ``None`` or empty mappings are ignored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_frameCount</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_frameCount</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">d</span> <span class="o">=</span> <span class="n">Wave</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">dataShape</span><span class="p">),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">axes</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_mcut</span><span class="o">.</span><span class="n">cui</span><span class="o">.</span><span class="n">setRawWave</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-                
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_mcut</span><span class="o">.</span><span class="n">cui</span><span class="o">.</span><span class="n">updateRawWave</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_frameCount</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -172,16 +198,31 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_onAcqFinished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>  <span class="c1"># Not busy anymore</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reset internal acquisition state when acquisition finishes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            b (bool): Busy flag emitted by the controller; when False the acquisition has finished and the frame counter is cleared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_frameCount</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_onAcquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;acquire&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start acquisition in the given mode.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode (str): &quot;acquire&quot; for a finite run or &quot;stream&quot; for continuous streaming (iter = -1).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;acquire&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">startAcq</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">&quot;wait&quot;</span><span class="p">],</span> <span class="nb">iter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">&quot;iter&quot;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">startAcq</span><span class="p">(</span><span class="nb">iter</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_setButtonState</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enable or disable acquisition control buttons according to detector state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">isAlive</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_acquire</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_stream</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
@@ -196,6 +237,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_showSettings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Show the settings dialog.</span>
+
+<span class="sd">        Connect the dialog&#39;s ``updated`` signal (emitted when the user applies changes) to refresh the display.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">settingsWindow</span> <span class="o">=</span> <span class="n">_SettingsDialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">)</span>
         <span class="n">settingsWindow</span><span class="o">.</span><span class="n">updated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">)</span>
         <span class="n">settingsWindow</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
@@ -203,9 +249,19 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_SettingsDialog</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QDialog</span><span class="p">):</span>
+
+    <span class="c1">#: Signal emitted when acquisition parameters are updated.</span>
     <span class="n">updated</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the detector settings dialog with general and optional tabs.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent (QWidget): Parent widget (the main ``MultiDetectorGUI`` instance).</span>
+<span class="sd">            obj (MultiDetectorInterface): Detector used to populate optional tabs.</span>
+<span class="sd">            params (dict): Acquisition parameters that the general panel edits (``interval``, ``iter``, etc.).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Detector Settings&quot;</span><span class="p">)</span>
 
@@ -219,9 +275,18 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_GeneralPanel</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+
+    <span class="c1">#: Signal emitted when acquisition parameters are updated.</span>
     <span class="n">updated</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">updated</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the general settings panel.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            params (dict): Acquisition parameters.</span>
+<span class="sd">            updated (callable | None): Optional callback to connect to this panel&#39;s ``updated`` signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">params</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__initLayout</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">])</span>
@@ -229,6 +294,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">updated</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create GUI components of the dialog and connect signals to respective slots.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QSpinBox</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_iter</span><span class="o">.</span><span class="n">setRange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">**</span><span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
@@ -257,6 +325,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_changeInterval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Synchronize scheduled-update GUI to acquisition parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scheduledUpdateCheck</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">[</span><span class="s2">&quot;interval&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_updateInterval</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>

@@ -63,12 +63,12 @@ To configure the scan, open the **Scan** tab:
 
 .. image:: /lys_instr_/tutorial_/scan_2.png
 
-The "Process" box displays the base or lowest-level process, which by default is the detector's acquisition process.
+The **Process** box displays the base or lowest-level process, which by default is the detector's acquisition process.
 (See the Advanced section for details on customizing the base process.)
 Here, the dummy detector is selected and we will set the exposure time to 0.1 second.
 
-Scan loops are configured in the "List of parameters" box.
-Right-click the blank space and select "Add new scan" to add the first scan loop, which repeats the base process.
+Scan loops are configured in the **List of parameters** box.
+Right-click the blank space and select **Add motor scan** to add the first scan loop, which repeats the base process.
 
 .. image:: /lys_instr_/tutorial_/scan_3.png
 
@@ -87,7 +87,7 @@ Alternatively, in "Free" mode, you can input a Python expression—such as a lis
 
 .. image:: /lys_instr_/tutorial_/scan_5.png
 
-We can add a second scan loop that repeats the first scan loop by right-clicking the blank space again and selecting "Add new scan."
+We can add a second scan loop that repeats the first scan loop by right-clicking the blank space again and selecting **Add motor scan.**
 Similarly, we choose the "x" axis for a linear scan from 0 with a step of 0.1 for 10 steps.
 
 .. image:: /lys_instr_/tutorial_/scan_6.png

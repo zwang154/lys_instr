@@ -51,6 +51,7 @@
 <li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Detector</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#creating-a-detector-instance">Creating a Detector Instance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-by-step-demonstration">Step-by-Step Demonstration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#checking-operations">Checking Operations</a></li>
 </ul>
 </li>
@@ -95,10 +96,13 @@
 <h2>Creating a Detector Instance<a class="headerlink" href="#creating-a-detector-instance" title="Link to this heading"></a></h2>
 <p>A detector instance is created by subclassing <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code>, which provides essential features for a multi-dimensional detector.</p>
 <p>For real hardware, you should implement device-specific communication methods in your subclass as follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">YourDetector</span><span class="p">(</span><span class="n">MultiDetectorInterface</span><span class="p">):</span>       <span class="c1"># Give a name to your subclass, e.g., ``YourDetector``</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDetectorInterface</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">YourDetector</span><span class="p">(</span><span class="n">MultiDetectorInterface</span><span class="p">):</span>       <span class="c1"># Give a name to your subclass, e.g., ``YourDetector``</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexShape</span><span class="o">=</span><span class="p">(),</span> <span class="n">frameShape</span><span class="o">=</span><span class="p">(),</span> <span class="n">exposure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">establish</span> <span class="n">connection</span> <span class="ow">and</span> <span class="n">initialize</span> <span class="n">the</span> <span class="n">instruments</span> <span class="o">...</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">exposure</span> <span class="o">=</span> <span class="n">exposure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
@@ -117,6 +121,16 @@
         <span class="k">return</span> <span class="o">...</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">alive</span><span class="p">,</span> <span class="kc">False</span> <span class="k">if</span> <span class="ow">not</span> <span class="o">...</span>
 
     <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">frameShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">specify</span> <span class="n">the</span> <span class="n">shape</span> <span class="n">of</span> <span class="n">each</span> <span class="n">data</span> <span class="n">frame</span> <span class="o">...</span>
+        <span class="k">return</span> <span class="o">...</span> <span class="n">a</span> <span class="nb">tuple</span> <span class="n">of</span> <span class="n">integers</span> <span class="n">specifying</span> <span class="n">the</span> <span class="n">shape</span> <span class="n">of</span> <span class="n">each</span> <span class="n">data</span> <span class="n">frame</span> <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">indexShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">specify</span> <span class="n">the</span> <span class="n">shape</span> <span class="n">of</span> <span class="n">frame</span> <span class="n">indices</span> <span class="o">...</span>
+        <span class="k">return</span> <span class="o">...</span> <span class="n">a</span> <span class="nb">tuple</span> <span class="n">of</span> <span class="n">integers</span> <span class="n">specifying</span> <span class="n">the</span> <span class="n">shape</span> <span class="n">of</span> <span class="n">frame</span> <span class="n">indices</span> <span class="o">...</span>
+
+    <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">specify</span> <span class="n">the</span> <span class="n">physical</span> <span class="n">axis</span> <span class="n">values</span> <span class="k">for</span> <span class="n">each</span> <span class="n">dimension</span> <span class="o">...</span>
         <span class="k">return</span> <span class="o">...</span> <span class="n">a</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">arrays</span> <span class="ow">or</span> <span class="n">lists</span><span class="p">,</span> <span class="n">one</span> <span class="k">for</span> <span class="n">each</span> <span class="n">axis</span><span class="p">,</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">order</span> <span class="p">[</span><span class="n">index</span> <span class="n">axes</span><span class="o">...</span><span class="p">,</span> <span class="n">frame</span> <span class="n">axes</span><span class="o">...</span><span class="p">]</span>
@@ -129,22 +143,115 @@
 If no indexing is needed, simply omit <code class="docutils literal notranslate"><span class="pre">indexShape</span></code> or set <code class="docutils literal notranslate"><span class="pre">indexShape=()</span></code> (that is, a single frame per run).</p>
 <p>See <a class="reference internal" href="detectorGUI.html"><span class="doc">Detector GUI</span></a> for displaying non-two-dimensional frames.</p>
 </section>
+<section id="step-by-step-demonstration">
+<h2>Step-by-Step Demonstration<a class="headerlink" href="#step-by-step-demonstration" title="Link to this heading"></a></h2>
+<p>Here we illustrate step-by-step construction of <code class="docutils literal notranslate"><span class="pre">YourDetector</span></code> for a dummy device that provides pre-encoded or synthetic data frames.</p>
+<p>Subclass <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code> to create <code class="docutils literal notranslate"><span class="pre">YourDetector</span></code>.
+The data-supply logic is delegated to the <code class="docutils literal notranslate"><span class="pre">setData()</span></code>, which keeps an internal buffer <code class="docutils literal notranslate"><span class="pre">_data</span></code> of acquired frames for use by other methods.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDetectorInterface</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">YourDetector</span><span class="p">(</span><span class="n">MultiDetectorInterface</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexShape</span><span class="o">=</span><span class="p">(),</span> <span class="n">frameShape</span><span class="o">=</span><span class="p">(),</span> <span class="n">exposure</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setData</span><span class="p">(</span><span class="n">indexShape</span><span class="o">=</span><span class="n">indexShape</span><span class="p">,</span> <span class="n">frameShape</span><span class="o">=</span><span class="n">frameShape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposure</span> <span class="o">=</span> <span class="n">exposure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setData</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indexShape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">frameShape</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy.MultiDetector</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomData</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">RandomData</span><span class="p">(</span><span class="n">indexShape</span><span class="p">,</span> <span class="n">frameShape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{}</span>
+</pre></div>
+</div>
+<p>By default, <code class="docutils literal notranslate"><span class="pre">setData()</span></code> generates random noise with the specified <code class="docutils literal notranslate"><span class="pre">indexShape</span></code> and <code class="docutils literal notranslate"><span class="pre">frameShape</span></code>.
+It can also load pre-encoded frames via the GUI by user selection.
+For real hardware, the details of the dummy data generation logic can be ignored.</p>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_run()</span></code> to sequentially fetch or generate frames, populate <code class="docutils literal notranslate"><span class="pre">_data</span></code> for respective indices, emit <code class="docutils literal notranslate"><span class="pre">updated</span></code> signal after each frame, and check <code class="docutils literal notranslate"><span class="pre">_shouldStop</span></code> to allow cancellation.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_shouldStop</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">!=</span> <span class="nb">iter</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shouldStop</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exposure</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">nframes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_stop()</span></code> to request acquisition cancellation by setting a flag checked by <code class="docutils literal notranslate"><span class="pre">_run()</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_shouldStop</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_get()</span></code> to return the acquired frames in <code class="docutils literal notranslate"><span class="pre">_data</span></code> and clear the buffer afterward.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">data</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_isAlive()</span></code> to report the connection status of the device, here managed by an internal <code class="docutils literal notranslate"><span class="pre">error</span></code> flag.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">error</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">frameShape</span></code>, <code class="docutils literal notranslate"><span class="pre">indexShape</span></code>, and <code class="docutils literal notranslate"><span class="pre">axes</span></code> properties to return the corresponding attributes set in <code class="docutils literal notranslate"><span class="pre">__init__()</span></code>.
+(In this example, the properties delegate to the dummy-data object <code class="docutils literal notranslate"><span class="pre">self._obj</span></code> (a <code class="docutils literal notranslate"><span class="pre">RandomData</span></code> instance); you can instead implement them explicitly as needed.)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">frameShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">frameShape</span>
+
+<span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">indexShape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">indexShape</span>
+
+<span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">axes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_obj</span><span class="o">.</span><span class="n">axes</span>
+</pre></div>
+</div>
+<p>Optionally, implement <code class="docutils literal notranslate"><span class="pre">settingsWidget</span></code> to return a <em>QWidget</em> for later use by GUI.
+The <code class="docutils literal notranslate"><span class="pre">_OptionalPanel</span></code> class in the <code class="docutils literal notranslate"><span class="pre">lys_instr.dummy.MultiDetector</span></code> module can readily be used.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy.MultiDetector</span><span class="w"> </span><span class="kn">import</span> <span class="n">_OptionalPanel</span>
+    <span class="k">return</span> <span class="n">_OptionalPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The class constructed above is actually the <code class="docutils literal notranslate"><span class="pre">MultiDetectorDummy</span></code> class provided in the <code class="docutils literal notranslate"><span class="pre">lys_instr.dummy</span></code> module.</p>
+</section>
 <section id="checking-operations">
 <h2>Checking Operations<a class="headerlink" href="#checking-operations" title="Link to this heading"></a></h2>
-<p>To verify functionality, use your own detector class (for example, <code class="docutils literal notranslate"><span class="pre">YourDetector</span></code>).</p>
+<p>To verify functionality, instantiate your detector class, for example, <code class="docutils literal notranslate"><span class="pre">YourDetector</span></code>.
+(Import it if defined in a separate module.)</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">detector</span> <span class="o">=</span> <span class="n">YourDetector</span><span class="p">(</span><span class="o">...</span> <span class="n">your</span> <span class="n">parameters</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>For demonstration, we use the dummy detector <code class="docutils literal notranslate"><span class="pre">MultiDetectorDummy</span></code> with <code class="docutils literal notranslate"><span class="pre">indexShape=()</span></code> and <code class="docutils literal notranslate"><span class="pre">frameShape=(256,</span> <span class="pre">256)</span></code> to simulate detector behavior without real hardware.</p>
+<p>For demonstration, we use the <code class="docutils literal notranslate"><span class="pre">YourDetector</span></code> class defined above with <code class="docutils literal notranslate"><span class="pre">indexShape=()</span></code>, <code class="docutils literal notranslate"><span class="pre">frameShape=(256,</span> <span class="pre">256)</span></code>, and 0.1 seconds exposure time:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">detector</span> <span class="o">=</span> <span class="n">YourDetector</span><span class="p">(</span><span class="n">frameShape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">exposure</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is functionally equivalent to instantiating the provided <code class="docutils literal notranslate"><span class="pre">MultiDetectorDummy</span></code> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">dummy</span>
 
 <span class="n">detector</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">MultiDetectorDummy</span><span class="p">(</span><span class="n">frameShape</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
 </pre></div>
 </div>
-<p>You can use the <code class="docutils literal notranslate"><span class="pre">startAcq()</span></code>, <code class="docutils literal notranslate"><span class="pre">stop()</span></code>, <code class="docutils literal notranslate"><span class="pre">isBusy()</span></code>, and <code class="docutils literal notranslate"><span class="pre">isAlive()</span></code> methods provided by <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code> to confirm that the detector is functioning correctly.
+<p>Now, you can use the <code class="docutils literal notranslate"><span class="pre">startAcq()</span></code>, <code class="docutils literal notranslate"><span class="pre">stop()</span></code>, <code class="docutils literal notranslate"><span class="pre">isBusy()</span></code>, and <code class="docutils literal notranslate"><span class="pre">isAlive()</span></code> methods provided by <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code> to confirm that the detector is functioning correctly.
 For example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">startAcq</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># Start acquisition of 1 frame</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>     <span class="c1"># Returns a dictionary, e.g., {0: array([[0.1, 0.2, ...], [...], ...])}</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">startAcq</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>   <span class="c1"># Start acquisition of 1 frame</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>     <span class="c1"># Returns a dictionary, e.g., {(0,): array([[0.1, 0.2, ...], [...], ...])}</span>
 </pre></div>
 </div>
 </section>

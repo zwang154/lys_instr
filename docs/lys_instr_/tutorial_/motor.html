@@ -50,6 +50,7 @@
 <li class="toctree-l3"><a class="reference internal" href="handsOn.html">A Simple Hands-On Example</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Motor</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#creating-a-motor-instance">Creating a Motor Instance</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-by-step-demonstration">Step-by-Step Demonstration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#checking-operations">Checking Operations</a></li>
 </ul>
 </li>
@@ -95,15 +96,18 @@
 <h2>Creating a Motor Instance<a class="headerlink" href="#creating-a-motor-instance" title="Link to this heading"></a></h2>
 <p>A motor instance is created by subclassing <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code>, which provides essential features for a generic multi-axis motor.</p>
 <p>For real hardware, you should implement device-specific communication methods in your subclass as follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">YourMotor</span><span class="p">(</span><span class="n">MultiMotorInterface</span><span class="p">):</span>       <span class="c1"># Give a name to your subclass, e.g., ``YourMotor``</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorInterface</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">YourMotor</span><span class="p">(</span><span class="n">MultiMotorInterface</span><span class="p">):</span>       <span class="c1"># Give a name to your subclass, e.g., ``YourMotor``</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">establish</span> <span class="n">connection</span> <span class="ow">and</span> <span class="n">initialize</span> <span class="n">the</span> <span class="n">instruments</span> <span class="o">...</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">target</span><span class="p">):</span>
         <span class="c1"># target (dict): Axis names as keys and target positions as values.</span>
-        <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">tell</span> <span class="n">the</span> <span class="n">instruments</span> <span class="n">to</span> <span class="n">move</span> <span class="n">to</span> <span class="n">the</span> <span class="n">target</span> <span class="n">positions</span> <span class="o">...</span>
+        <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">tell</span> <span class="n">the</span> <span class="n">instruments</span> <span class="n">to</span> <span class="n">move</span> <span class="n">to</span> <span class="n">the</span> <span class="n">target</span> <span class="n">positions</span> <span class="k">for</span> <span class="n">specified</span> <span class="n">axes</span> <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="o">...</span> <span class="n">your</span> <span class="n">code</span> <span class="n">to</span> <span class="n">read</span> <span class="n">the</span> <span class="n">current</span> <span class="n">positions</span> <span class="n">of</span> <span class="nb">all</span> <span class="n">axes</span> <span class="kn">from</span><span class="w"> </span><span class="nn">the</span> <span class="n">instruments</span> <span class="o">...</span>
@@ -122,19 +126,95 @@
 </pre></div>
 </div>
 </section>
+<section id="step-by-step-demonstration">
+<h2>Step-by-Step Demonstration<a class="headerlink" href="#step-by-step-demonstration" title="Link to this heading"></a></h2>
+<p>Here we illustrate step-by-step construction of <code class="docutils literal notranslate"><span class="pre">YourMotor</span></code> for a dummy device with axes “x” and “y”.</p>
+<p>Subclass <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code> to create <code class="docutils literal notranslate"><span class="pre">YourMotor</span></code>, and attach a simulator instance to each axis to supply position values.
+(The <code class="docutils literal notranslate"><span class="pre">_ValueInfo</span></code> helper in <code class="docutils literal notranslate"><span class="pre">lys_instr.dummy</span></code> provides such a simulator.)
+The constructor accepts positional axis names via <code class="docutils literal notranslate"><span class="pre">*axisNamesAll</span></code>, for example, <code class="docutils literal notranslate"><span class="pre">YourMotor(&quot;x&quot;,</span> <span class="pre">&quot;y&quot;)</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorInterface</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">YourMotor</span><span class="p">(</span><span class="n">MultiMotorInterface</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">axisNamesAll</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy.MultiMotor</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ValueInfo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">_ValueInfo</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">axisNamesAll</span><span class="p">}</span>  <span class="c1"># motor speed: 10 units/s</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Alternatively, you can use a constructor that explicitly accepts two axis name parameters, for example, <code class="docutils literal notranslate"><span class="pre">axisName_x</span></code> and <code class="docutils literal notranslate"><span class="pre">axisName_y</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorInterface</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">YourMotor</span><span class="p">(</span><span class="n">MultiMotorInterface</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axisName_x</span><span class="p">,</span> <span class="n">axisName_y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">axisName_x</span><span class="p">,</span> <span class="n">axisName_y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy.MultiMotor</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ValueInfo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span> <span class="o">=</span> <span class="p">{</span><span class="n">axisName_x</span><span class="p">:</span> <span class="n">_ValueInfo</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">axisName_y</span><span class="p">:</span> <span class="n">_ValueInfo</span><span class="p">(</span><span class="mi">10</span><span class="p">)}</span>  <span class="c1"># motor speed: 10 units/s</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_set()</span></code> to assign target positions for specified axes (this starts movement in the simulator).
+<code class="docutils literal notranslate"><span class="pre">_set()</span></code> accepts keyword arguments mapping axis names to numeric targets.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">target</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_get()</span></code> to read the position of each simulator axis and return a dictionary mapping axis names to their current positions.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">position</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_stop()</span></code> to halt all axis motion by calling each axis’s <code class="docutils literal notranslate"><span class="pre">stop()</span></code> method.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_isBusy()</span></code> to check the simulator and return a dictionary mapping axis names to booleans indicating whether each axis is currently moving.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_isBusy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">busy</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+<p>Implement <code class="docutils literal notranslate"><span class="pre">_isAlive()</span></code> to check the simulator and return a dictionary mapping axis names to booleans indicating whether each axis is connected and functioning.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">error</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_simulator</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+<p>Optionally, implement <code class="docutils literal notranslate"><span class="pre">settingsWidget</span></code> to return a <em>QWidget</em> for later use by GUI.
+The <code class="docutils literal notranslate"><span class="pre">_OptionalPanel</span></code> class in the <code class="docutils literal notranslate"><span class="pre">lys_instr.dummy.MultiMotor</span></code> module can readily be used.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy.MultiMotor</span><span class="w"> </span><span class="kn">import</span> <span class="n">_OptionalPanel</span>
+    <span class="k">return</span> <span class="n">_OptionalPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The class constructed above is actually the <code class="docutils literal notranslate"><span class="pre">MultiMotorDummy</span></code> class provided in the <code class="docutils literal notranslate"><span class="pre">lys_instr.dummy</span></code> module.</p>
+</section>
 <section id="checking-operations">
 <h2>Checking Operations<a class="headerlink" href="#checking-operations" title="Link to this heading"></a></h2>
-<p>To verify functionality, use your own motor class (for example, <code class="docutils literal notranslate"><span class="pre">YourMotor</span></code>).</p>
+<p>To verify functionality, instantiate your motor class, for example, <code class="docutils literal notranslate"><span class="pre">YourMotor</span></code>.
+(Import it if defined in a separate module.)</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">motor</span> <span class="o">=</span> <span class="n">YourMotor</span><span class="p">(</span><span class="o">...</span> <span class="n">your</span> <span class="n">parameters</span> <span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>For demonstration, we use the dummy motor <code class="docutils literal notranslate"><span class="pre">MultiMotorDummy</span></code> with two axes, “x” and “y”, to simulate motor behavior without real hardware.</p>
+<p>For demonstration, we use the <code class="docutils literal notranslate"><span class="pre">YourMotor</span></code> class defined above with two axes, “x” and “y”:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">motor</span> <span class="o">=</span> <span class="n">YourMotor</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is functionally equivalent to instantiating the provided <code class="docutils literal notranslate"><span class="pre">MultiMotorDummy</span></code> class:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">dummy</span>
 
 <span class="n">motor</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">MultiMotorDummy</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>You can use the <code class="docutils literal notranslate"><span class="pre">set()</span></code>, <code class="docutils literal notranslate"><span class="pre">get()</span></code>, <code class="docutils literal notranslate"><span class="pre">stop()</span></code>, <code class="docutils literal notranslate"><span class="pre">isBusy()</span></code>, and <code class="docutils literal notranslate"><span class="pre">isAlive()</span></code> methods provided by <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code> to confirm that the motor is functioning correctly.
+<p>Now, you can use the <code class="docutils literal notranslate"><span class="pre">set()</span></code>, <code class="docutils literal notranslate"><span class="pre">get()</span></code>, <code class="docutils literal notranslate"><span class="pre">stop()</span></code>, <code class="docutils literal notranslate"><span class="pre">isBusy()</span></code>, and <code class="docutils literal notranslate"><span class="pre">isAlive()</span></code> methods provided by <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code> to confirm that the motor is functioning correctly.
 For example:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">motor</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>    <span class="c1"># You can also set a single axis: motor.set(x=1.0)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">motor</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>         <span class="c1"># Returns current positions, e.g. {&#39;x&#39;: 0.18, &#39;y&#39;: 0.18}</span>
