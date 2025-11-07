@@ -1,25 +1,21 @@
-.. lys_instr documentation master file, created by
-   sphinx-quickstart on Thu Jun 19 17:37:00 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 lys_instr documentation
 =========================
 
-*lys_instr* is a Python package for building flexible GUIs to automate scientific measurements. 
+*lys_instr* is a Python package for automating scientific measurements.
 
-It enables users to quickly create custom interfaces for coordinating multiple devices and managing measurement workflows, with minimal coding required.
+It enables users to quickly create custom GUIs for coordinating multiple instruments and managing measurement workflows with minimal coding required.
 
 .. image:: /lys_instr_/tutorial_/scan_1.png
 
 
-What can you do with *lys_instr* ?
+What can you do with lys_instr?
 ----------------------------------
 
-Most scientific measurements follow a *move-and-detect* pattern—parameters are adjusted via motors or digital controls (*move*) and data are collected through detectors (*detect*).
-A measurement sequence that combines *move* and *detect* is known as a *scan*; a complete workflow may involve multiple nested *scans*.
+Most scientific measurements follow a *control-and-detect* pattern—parameters are changed via physical or digital controls (the *control* step) and data are recorded by detectors (the *detect* step).
+A measurement sequence that combines *control* and *detect* is called a *scan*; a complete workflow may consist of nested *scans*.
 *lys_instr* helps you construct, control, and automate such workflows efficiently.
-In principle, you only need to provide minimal code for device-specific communication—the package takes care of everything else.
+In principle, you only need to provide minimal code for device-specific communication—the package handles the rest.
 
 
 Key functionalities of *lys_instr*:
@@ -28,7 +24,7 @@ Key functionalities of *lys_instr*:
 
 - Real-time data visualization and automatic data storage
 
-- Efficient management of nested workflows
+- Efficient management of nested, multi-dimensional workflows
 
 
 Standout features of *lys_instr*:
@@ -37,10 +33,10 @@ Standout features of *lys_instr*:
 
 - Modular and extensible: easy to reconfigure measurement workflows directly in the GUI
 
-- Seamless integration with data analysis tools: *lys* (https://github.com/lys-devel/lys)
+- Seamless integration with `lys <https://github.com/lys-devel/lys>`_ for analysis and visualization
 
 
-We recommend following the :doc:`Getting Started </tutorial>` guide to become familiar with this package and referring to the examples there for various use cases.
+Start with the :doc:`Tutorial </tutorial>` guide for a short walkthrough and practical examples that demonstrate common use cases.
 
 
 .. toctree::
