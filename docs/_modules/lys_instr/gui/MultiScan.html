@@ -77,25 +77,25 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">lys.Qt</span><span class="w"> </span><span class="kn">import</span> <span class="n">QtWidgets</span><span class="p">,</span> <span class="n">QtCore</span><span class="p">,</span> <span class="n">QtGui</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_ScanRangeRow</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_MotorScanRow</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Motor-scan row widget.</span>
 
-<span class="sd">    Widget for selecting and configuring a scan range for a scanner (motor).</span>
+<span class="sd">    Widget for selecting and configuring a scan range for a motor scanner.</span>
 <span class="sd">    Supports linear ranges and free-expression ranges configured via the GUI.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">scanners</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">motorScanners</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create the motor-scan row.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str): Row title shown in the GUI.</span>
-<span class="sd">            scanners (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.</span>
+<span class="sd">            motorScanners (dict[str, MultiMotorInterface | _Loop]): Motor scanner object (mapping from axis name to respective motor, or mapping from &quot;loop&quot; to the loop dummy).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanners</span> <span class="o">=</span> <span class="n">scanners</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">scanners</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span> <span class="o">=</span> <span class="n">motorScanners</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">motorScanners</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scanMode</span><span class="o">.</span><span class="n">currentTextChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanModeChanged</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">scannerNames</span><span class="p">):</span>
@@ -104,7 +104,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str): Row title shown in the GUI.</span>
-<span class="sd">            scannerNames (Iterable[str]): Names of available scanners (motors) to populate the axis combobox.</span>
+<span class="sd">            scannerNames (Iterable[str]): Names of available motor scanners to populate the axis combobox.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QComboBox</span><span class="p">(</span><span class="n">objectName</span><span class="o">=</span><span class="s2">&quot;ScanRange_scanAxis_&quot;</span> <span class="o">+</span> <span class="n">title</span><span class="p">)</span>
@@ -199,9 +199,9 @@
 <span class="sd">        Scanner corresponding to the currently selected axis.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            object: Scanner (motor) object for the selected axis.</span>
+<span class="sd">            object: Scanner object for the selected axis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanners</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scanName</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scanName</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scanName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -266,7 +266,7 @@
 <span class="sd">        Load a saved row configuration into the row.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            d (dict[str, object]): Mapping produced by the ``save`` method.</span>
+<span class="sd">            d (dict[str, object]): Mapping produced by ``save()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
         <span class="n">mode</span> <span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span>
@@ -278,24 +278,25 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_numSteps</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
 
 
-<span class="k">class</span><span class="w"> </span><span class="nc">_ScanSwitchRow</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_SwitchScanRow</span><span class="p">(</span><span class="n">QtWidgets</span><span class="o">.</span><span class="n">QWidget</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Switch-scan row widget.</span>
 
-<span class="sd">    Widget for selecting and configuring a scan over a switch with discrete labels.</span>
+<span class="sd">    Widget for selecting and configuring a switch scan over a set of discrete labels.</span>
 <span class="sd">    Supports iteration over available labels or a user-provided free list.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">switches</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">switchScanners</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create the switch-scan row.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str): Row title shown in the GUI.</span>
+<span class="sd">            switchScanners (dict[str, MultiSwitchInterface]): Switch scanner object (mapping from axis name to respective switch).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span> <span class="o">=</span> <span class="n">switches</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">switches</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span> <span class="o">=</span> <span class="n">switchScanners</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">switchScanners</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">scannerNames</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -303,7 +304,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str): Row title shown in the GUI.</span>
-<span class="sd">            scannerNames (Iterable[str]): Names of available scanners (switches) to populate the axis combobox.</span>
+<span class="sd">            scannerNames (Iterable[str]): Names of available switch scanners to populate the axis combobox.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_title</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QComboBox</span><span class="p">(</span><span class="n">objectName</span><span class="o">=</span><span class="s2">&quot;ScanRange_scanAxis_&quot;</span> <span class="o">+</span> <span class="n">title</span><span class="p">)</span>
@@ -333,7 +334,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_freeExpr</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">text</span><span class="o">!=</span><span class="s2">&quot;Iteration&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">text</span> <span class="o">==</span> <span class="s2">&quot;Iteration&quot;</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_freeExpr</span><span class="o">.</span><span class="n">text</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span><span class="o">.</span><span class="n">currentText</span><span class="p">()]</span>
+            <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span><span class="o">.</span><span class="n">currentText</span><span class="p">()]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_freeExpr</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sw</span><span class="o">.</span><span class="n">labelNames</span><span class="p">))</span>
 
     <span class="nd">@property</span>
@@ -352,9 +353,9 @@
 <span class="sd">        Scanner corresponding to the currently selected axis.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            object: Scanner (switch) object for the selected axis.</span>
+<span class="sd">            object: Scanner object for the selected axis.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scanName</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scanName</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">scanRange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -365,7 +366,7 @@
 <span class="sd">            list[str]: Sequence of label strings (Iteration mode) or expression strings (Free mode).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanMode</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Iteration&quot;</span><span class="p">:</span>
-            <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span><span class="o">.</span><span class="n">currentText</span><span class="p">()]</span>
+            <span class="n">sw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span><span class="o">.</span><span class="n">currentText</span><span class="p">()]</span>
             <span class="n">values</span> <span class="o">=</span> <span class="n">sw</span><span class="o">.</span><span class="n">labelNames</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanMode</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Free&quot;</span><span class="p">:</span>
             <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_freeExpr</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
@@ -377,7 +378,7 @@
 <span class="sd">        Index of the current switch state within the scan range.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis level).</span>
+<span class="sd">            int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis label).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanObj</span><span class="o">.</span><span class="n">get</span><span class="p">()[</span><span class="bp">self</span><span class="o">.</span><span class="n">scanName</span><span class="p">]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scanRange</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -405,7 +406,7 @@
 <span class="sd">        Load a saved row configuration into the row.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            d (dict[str, object]): Mapping produced by the ``save`` method.</span>
+<span class="sd">            d (dict[str, object]): Mapping produced by ``save()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scanAxis</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scanMode</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">])</span>
@@ -421,17 +422,17 @@
     <span class="n">_path</span> <span class="o">=</span> <span class="s2">&quot;.lys/instr/scanlist.dic&quot;</span>
     <span class="n">_savePath</span> <span class="o">=</span> <span class="s2">&quot;.lys/instr/scanSaveList.dic&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scanner</span><span class="p">,</span> <span class="n">switches</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">motorScanners</span><span class="p">,</span> <span class="n">switchScanners</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        List widget holding a sequence of scan rows (either motor-scan or switch-scan).</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            scanner (dict[str, MultiMotorInterface | _Loop]): Mapping from axis name to the scanner (motor) that owns that axis or to the loop dummy.</span>
-<span class="sd">            switches (dict[str, MultiSwitchInterface]): Mapping from axis name to the scanner (switch) that owns that axis.</span>
+<span class="sd">            motorScanners (dict[str, MultiMotorInterface | _Loop]): Motor scanner object (mapping from axis name to respective motor, or mapping from &quot;loop&quot; to the loop dummy).</span>
+<span class="sd">            switchScanners (dict[str, MultiSwitchInterface]): Switch scanner object (mapping from axis name to the respective switch).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span> <span class="o">=</span> <span class="n">scanner</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span> <span class="o">=</span> <span class="n">switches</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span> <span class="o">=</span> <span class="n">motorScanners</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span> <span class="o">=</span> <span class="n">switchScanners</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scans</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">customContextMenuRequested</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_buildMenu</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setContextMenuPolicy</span><span class="p">(</span><span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">CustomContextMenu</span><span class="p">)</span>
@@ -446,10 +447,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">menu</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QMenu</span><span class="p">()</span>
 
-        <span class="n">addMotor</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Add motor scan&#39;</span><span class="p">,</span> <span class="n">triggered</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;motorScan&quot;</span><span class="p">))</span>
-        <span class="n">addSwitch</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Add switch scan&#39;</span><span class="p">,</span> <span class="n">triggered</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;switchScan&quot;</span><span class="p">))</span>
-        <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">addMotor</span><span class="p">)</span>
-        <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">addSwitch</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">addMotor</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Add motor scan&#39;</span><span class="p">,</span> <span class="n">triggered</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;motorScan&quot;</span><span class="p">))</span>
+            <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">addMotor</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">addSwitch</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Add switch scan&#39;</span><span class="p">,</span> <span class="n">triggered</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;switchScan&quot;</span><span class="p">))</span>
+            <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="n">addSwitch</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selectedItems</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">up</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Move up&#39;</span><span class="p">,</span> <span class="n">triggered</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
             <span class="n">down</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QAction</span><span class="p">(</span><span class="s1">&#39;Move down&#39;</span><span class="p">,</span> <span class="n">triggered</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_move</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
@@ -474,15 +479,15 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            index (int | None): Insertion index; append when ``None``.</span>
-<span class="sd">            data (dict | None): Optional row mapping produced by a row&#39;s ``save()`` method to load into the new row.</span>
+<span class="sd">            data (dict | None): Optional row mapping produced by a row&#39;s ``save()`` to load into the new row.</span>
 <span class="sd">            type (str): Scan row type, either &quot;motorScan&quot; or &quot;switchScan&quot;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">type</span> <span class="o">==</span> <span class="s2">&quot;motorScan&quot;</span><span class="p">:</span>
-            <span class="n">scan</span><span class="o">=</span><span class="n">_ScanRangeRow</span><span class="p">(</span><span class="s2">&quot;Scan&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scanner</span><span class="p">)</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="n">_MotorScanRow</span><span class="p">(</span><span class="s2">&quot;Scan&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">scan</span><span class="o">=</span><span class="n">_ScanSwitchRow</span><span class="p">(</span><span class="s2">&quot;Scan&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span><span class="p">)</span>
+            <span class="n">scan</span> <span class="o">=</span> <span class="n">_SwitchScanRow</span><span class="p">(</span><span class="s2">&quot;Scan&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">scan</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">scan</span><span class="p">)</span>
@@ -573,7 +578,7 @@
 <span class="sd">        Return a mapping representing the current scan list for saving.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            dict[str, dict[str, object]]: Mapping where keys are &#39;Scan1&#39;, &#39;Scan2&#39;, ... and values are the per-row mappings produced by each row&#39;s ``save()`` method.</span>
+<span class="sd">            dict[str, dict[str, object]]: Mapping where keys are &#39;Scan1&#39;, &#39;Scan2&#39;, ... and values are the per-row mappings produced by each row&#39;s ``save()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;Scan&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span> <span class="n">scan</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">scan</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scans</span><span class="p">)}</span>
     
@@ -582,7 +587,7 @@
 <span class="sd">        Load a saved scan-list mapping into the widget.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            d (dict[str, dict[str, object]]): Mapping produced by :meth:`save` where keys are &#39;Scan1&#39;, &#39;Scan2&#39;, ... and values are the per-row mappings produced by each row&#39;s ``save()`` method.</span>
+<span class="sd">            d (dict[str, dict[str, object]]): Mapping produced by ``save()`` where keys are &#39;Scan1&#39;, &#39;Scan2&#39;, ... and values are the per-row mappings produced by each row&#39;s ``save()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_clear</span><span class="p">()</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
@@ -603,7 +608,7 @@
 <span class="sd">        Create the file name configuration widget.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            scans (Iterable): Iterable of scan row objects used to compose default file names.</span>
+<span class="sd">            scans (Iterable[object]): Iterable of scan row objects used to compose default file names.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;Filename&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__initLayout</span><span class="p">()</span>
@@ -658,7 +663,7 @@
 <span class="sd">    Provides a list-based GUI for composing a sequence of motor and switch scans, configuring detector/process settings, and starting/stopping scan execution.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">motors</span><span class="p">,</span> <span class="n">switches</span><span class="p">,</span> <span class="n">detectors</span><span class="p">,</span> <span class="n">numScans</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storage</span><span class="p">,</span> <span class="n">motors</span><span class="p">,</span> <span class="n">switches</span><span class="p">,</span> <span class="n">detectors</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the Scan widget.</span>
 
@@ -667,17 +672,15 @@
 <span class="sd">            motors (Iterable[MultiMotorInterface]): Motor controllers available for scanning.</span>
 <span class="sd">            switches (Iterable[MultiSwitchInterface]): Switch controllers available for scanning.</span>
 <span class="sd">            detectors (dict): Mapping of detector names to respective detector objects.</span>
-<span class="sd">            numScans (int): Initial number of scans.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="o">=</span> <span class="n">storage</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_scanners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initScanners</span><span class="p">(</span><span class="n">motors</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initSwitches</span><span class="p">(</span><span class="n">switches</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initMotorScanners</span><span class="p">(</span><span class="n">motors</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initSwitchScanners</span><span class="p">(</span><span class="n">switches</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detectors</span> <span class="o">=</span> <span class="n">detectors</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_numScans</span> <span class="o">=</span> <span class="n">numScans</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scanners</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switches</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detectors</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_motorScanners</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_switchScanners</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detectors</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_initScanners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">motors</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initMotorScanners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">motors</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create the mapping of scanner names to scanner objects (including a dummy loop).</span>
 
@@ -689,7 +692,7 @@
             <span class="n">scanners</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">axis</span><span class="p">:</span> <span class="n">motor</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">motor</span><span class="o">.</span><span class="n">nameList</span><span class="p">})</span>
         <span class="k">return</span> <span class="n">scanners</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_initSwitches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">switches</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initSwitchScanners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">switches</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create the mapping of switch axis names to switch objects.</span>
 
@@ -701,18 +704,18 @@
             <span class="n">scanners</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">axis</span><span class="p">:</span> <span class="n">sw</span> <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="n">sw</span><span class="o">.</span><span class="n">nameList</span><span class="p">})</span>
         <span class="k">return</span> <span class="n">scanners</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scanners</span><span class="p">,</span> <span class="n">switches</span><span class="p">,</span> <span class="n">process</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">motorScanners</span><span class="p">,</span> <span class="n">switchScanners</span><span class="p">,</span> <span class="n">process</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct the scan list GUI and control buttons.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            scanners (dict[str, object]): Mapping of axis name to scanner objects.</span>
-<span class="sd">            switches (dict[str, object]): Mapping of switch axis name to switch objects.</span>
+<span class="sd">            motorScanners (dict[str, object]): Mapping of motor-axis name to motor objects.</span>
+<span class="sd">            switchScanners (dict[str, object]): Mapping of switch-axis name to switch objects.</span>
 <span class="sd">            process (dict): Detector/process mapping passed to the detector configuration box.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">label</span> <span class="o">=</span> <span class="n">QtWidgets</span><span class="o">.</span><span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;List of parameters (right click to edit)&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_list</span> <span class="o">=</span> <span class="n">_ScanList</span><span class="p">(</span><span class="n">scanners</span><span class="p">,</span> <span class="n">switches</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_list</span> <span class="o">=</span> <span class="n">_ScanList</span><span class="p">(</span><span class="n">motorScanners</span><span class="p">,</span> <span class="n">switchScanners</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nameBox</span> <span class="o">=</span> <span class="n">_FileNameBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_list</span><span class="p">)</span>
 
         <span class="n">processBox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__detectorBox</span><span class="p">(</span><span class="n">process</span><span class="p">)</span>
@@ -821,7 +824,7 @@
 <span class="sd">        Populate the provided mapping with the current scan axis names.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            scanNamesDict (dict): Mutable mapping that will be updated by this method. The key &#39;scanNames&#39; is set to a list[str] containing the current scan axis names in order.</span>
+<span class="sd">            scanNamesDict (dict): Mutable mapping that will be updated by this method. The key ``&#39;scanNames&#39;`` is set to a list[str] containing the current scan axis names in order.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">scanNamesDict</span><span class="p">[</span><span class="s2">&quot;scanNames&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">scanName</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_list</span><span class="p">]</span></div>
 
@@ -888,7 +891,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Run the wrapped process&#39;s ``execute()`` method in this thread.</span>
+<span class="sd">        Run the wrapped process&#39;s ``execute()`` in this thread.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
 
@@ -955,10 +958,10 @@
 <span class="sd">        Create a scan process for a single axis.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): Axis name used in set() calls.</span>
-<span class="sd">            obj (object): Controller exposing set(..., wait=True) and get().</span>
-<span class="sd">            values (Iterable): Sequence of values to iterate over (elements are numeric or label strings).</span>
-<span class="sd">            process (object): Nested process exposing execute() and stop().</span>
+<span class="sd">            name (str): Axis name used in ``set()`` calls.</span>
+<span class="sd">            obj (object): Controller exposing ``set(..., wait=True)`` and ``get()``.</span>
+<span class="sd">            values (Iterable[float | str]): Sequence of values to iterate over (elements are numeric or label strings).</span>
+<span class="sd">            process (object): Nested process exposing ``execute()`` and ``stop()``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>

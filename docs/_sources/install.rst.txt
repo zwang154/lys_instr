@@ -10,15 +10,15 @@ System Requirements
 Install lys_instr from Source
 -----------------------------
 
-0. (Only needed if *lys* is not already installed) Create a Python virtual environment for *lys_instr* (for example, ``lys_venv``).
+0. (Only needed if *lys* isn't already installed) Create a Python virtual environment for *lys_instr* (e.g., ``lys_venv``).
 
-   Using conda:
+   If you use conda:
 
    .. code-block:: bash
 
        conda create -n lys_venv python=3.11 pip -y
 
-   Using venv:
+   If you use venv:
 
    .. code-block:: bash
 
@@ -32,13 +32,19 @@ Install lys_instr from Source
 
        conda activate lys_venv
 
-   Using Windows cmd:
+   Using Windows (cmd.exe):
 
    .. code-block:: bash
 
        lys_venv\Scripts\activate.bat
 
-   Using Linux / macOS / Git Bash:
+   Using Windows (PowerShell):
+
+   .. code-block:: bash
+
+       lys_venv\Scripts\Activate.ps1
+
+   Using Linux / Git Bash:
 
    .. code-block:: bash
         
@@ -46,22 +52,32 @@ Install lys_instr from Source
 
 2. Update pip::
 
-    pip install --upgrade pip
+    python -m pip install --upgrade pip
 
 3. Clone *lys_instr* from GitHub::
 
     git clone https://github.com/zwang154/lys_instr.git
 
-4. Install *lys_instr* by pip (for installation in the development mode, use ``pip install -e .``)::
+4. Install *lys_instr*:
 
-    cd lys_instr
-    pip install .
+   .. code-block:: bash
 
-5. (Optional but recommended) Create a working directory for *lys_instr* (and *lys*)::
+       cd lys_instr
+       pip install .
+
+   Or, for development (editable) mode, use:
+
+   .. code-block:: bash
+
+       pip install -e .
+
+5. (Optional but recommended) Create a working directory for *lys_instr* (e.g., ``your_lys_working_dir``)::
 
     mkdir your_lys_working_dir
 
-6. Choose a working directory and launch *lys* application from the activated environment by running::
+6. Choose a working directory and launch *lys* from the activated environment::
 
     cd your_lys_working_dir
     python -m lys
+
+*lys_instr* is now ready to use within the *lys* platform.
