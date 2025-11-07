@@ -27,7 +27,7 @@ affiliations:
  - name: Department of Applied Physics, The University of Tokyo, Japan
    index: 3
    ror: 057zh3y96
-date: 14 October 2025
+date: 14 November 2025
 bibliography: paper.bib
 ---
 
