@@ -53,7 +53,7 @@ class MultiDetectorGUI(QtWidgets.QWidget):
                 self._obj.exposure = value
             expTime = QtWidgets.QDoubleSpinBox()
             expTime.setValue(self._obj.exposure)
-            expTime.setRange(0, np.infty)
+            expTime.setRange(0, np.inf)
             expTime.setDecimals(5)
             expTime.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
             expTime.valueChanged.connect(setExposure)

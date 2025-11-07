@@ -4,7 +4,7 @@ Check out for the [documentation](https://zwang154.github.io/lys_instr/index.htm
 
 ## Installation
 
-See the [install documentation](https://zwang154.github.io/lys_instr/install.html). System requirements are also found in this page.
+See the [Installation](https://zwang154.github.io/lys_instr/install.html). System requirements are also found in this page.
 
 ## Contributing
 
