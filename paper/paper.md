@@ -81,7 +81,7 @@ With `lys_instr`, users can easily construct a GUI like the one shown in \autore
 
 # Acknowledgements
 
-We acknowledge valuable comments from Takahiro Shimojima and Kyoko Ishizaka. This work was partially supported by Grant-in-Aid for Scientific Research (KAKENHI) (Grant No.25K00057) JST PRESTO Grant No.JPMJPR24JA.
+We acknowledge valuable comments from Takahiro Shimojima and Kyoko Ishizaka. This work was partially supported by Grant-in-Aid for Scientific Research (KAKENHI) Grants No. 21K13889 and No. 25K00057, and JST PRESTO Grant No. JPMJPR24JA.
 
 
 
