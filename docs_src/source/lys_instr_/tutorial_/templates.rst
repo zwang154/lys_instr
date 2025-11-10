@@ -115,10 +115,12 @@ Add the above code to ``proc.py`` in *lys*, and call this ``Window()`` from the 
 
 .. image:: /lys_instr_/tutorial_/template2_1.png
 
-In the **Detector** panel, the upper plot displays the updated dataset as a 2D array, while the lower plot shows the live spectrum from the most recent frame.
-The image above shows the results after completing a full 36-frame acquisition by clicking the "Start" button with no scan loops configured.
+In the **Detector** panel, the upper plot displays the live-updated dataset as a 2D array and the lower one shows the live spectrum from the most recent frame.
+The snapshot above shows the results after a complete 36-frame acquisition (started with **Start** button and no scan loops configured).
+The grayscale of the upper plot has been adjusted for better visibility: double-click the plot area to open the **Graph** tab on the right, open the **Images** tab under it, select the data item (here ``wave3``), and set the ``Min`` and ``Max`` values.
+(For more on customizing plots, see the *lys* documentation.)
 
-As before, you can enable spatial mapping by adding scan loops for the "x" and "y" axes in the Scan tab.
+As before, you can enable spatial mapping by adding scan loops for the "x" and "y" axes in the **Scan** tab.
 
 
 
@@ -225,7 +227,7 @@ Add the above code to ``proc.py`` in *lys*, and call ``Window()`` from the *lys*
 In the **Detector** panel, the left image displays the mean 2D array at each pixel, and the right image shows the mean of frames selected from the left image.
 You can interactively select a region in the left image to update the right image (see *lys* documentation for details on high-dimensional data visualization and analysis).
 
-Clicking the "Start" button with no scan loops configured acquires the complete 8×8 dataset in a single run.
+Clicking the **Start** button with no scan loops configured acquires the complete 8×8 dataset in a single run.
 
 As in previous examples, you can add motor axes for scanning in the **Scan** tab.
 For instance, you can perform 4D-STEM measurements at each step while sweeping the electric field applied to the sample.
