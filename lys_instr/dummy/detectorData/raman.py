@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from .interface import DummyDataInterface
+from importlib import resources
 
 
 class RamanData(DummyDataInterface):
@@ -22,13 +23,8 @@ class RamanData(DummyDataInterface):
             FileNotFoundError: If the sample data file is missing.
             NotImplementedError: If an unsupported ``scanLevel`` is passed.
         """
-        here = os.path.dirname(__file__)
-        path = os.path.normpath(os.path.join(here, '..', '..', 'resources', 'sampleRamanData.npy'))
-
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"sampleRamanData.npy not found at {path}. Put the file in lys_instr/resources/")
-        
-        sample = np.load(path)
+        with resources.files('lys_instr').joinpath('resources').joinpath('sampleRamanData.npy').open('rb') as fh:
+            sample = np.load(fh)
         self._data = sample[:, :, :, 1, :]
         self._axes = [np.linspace(0, 360, self._data.shape[-2], endpoint=False), sample[0, 0, 0, 0, :]][-1 - scanLevel:]
         if scanLevel == 1:

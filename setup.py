@@ -18,4 +18,6 @@ setup(
     author="Ziqian Wang",
     author_email="zwang154@alumni.jh.edu",
     install_requires=open('requirements.txt').read().splitlines(),
+    include_package_data=True,
+    package_data={'lys_instr': ['resources/*']},
 )
