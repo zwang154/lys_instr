@@ -1,6 +1,5 @@
 import unittest
 import time
-import numpy as np
 from PyQt5 import QtTest
 
 from lys.Qt import QtCore
@@ -49,7 +48,7 @@ class TestMultiMotorDummy(unittest.TestCase):
         motor = MultiMotorDummy('x', 'y')
         motor.set(x=1, y=2)
         
-        QtTest.QTest.qWait(100)
+        QtTest.QTest.qWait(1)
         motor.stop()
         val1 = motor.get()
         self.assertTrue(all(v < t for v, t in zip(val1.values(), [1, 2])), "Axis values should be less than targets after stop.")
