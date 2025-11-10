@@ -55,6 +55,7 @@ In the **Scan** tab, configure the scan by selecting the motor axis "phi", setti
 
 .. image:: /lys_instr_/tutorial_/template1_2.png
 
+Clicking the **Start** button begins the scan, acquiring spectra at each polarizer angle.
 
 A straightforward extension is to add more motor axes for scanning, using the same template.
 For example, adding the "x" and "y" axes allows you to move the sample stage and perform spatial mapping of the spectra.
@@ -72,7 +73,7 @@ In the **Scan** tab, add scan loops for the "x" and "y" axes below "phi" to conf
 .. image:: /lys_instr_/tutorial_/template1_3.png
 
 This setup performs a nested scan, acquiring data over an 8×9 grid by scanning the y-axis at each x-axis position, for 36 phi values.
-The image above shows the first spectra acquired at the start of the scan.
+The snapshot above shows the first spectra acquired at the start of the scan.
 
 
 
@@ -93,9 +94,9 @@ To use this template, provide your own motor and detector instances:
         from lys_instr.templates.template2 import TemplateWindow  # Import from template2
         return TemplateWindow(motor, detector, detectorName)
 
-For demonstration, we use the same example setup as above.
+For demonstration, we run the same experiment as before.
 
-Suppose the detector is configured to acquire 36 frames in a single run, with hardware managing both polarizer rotation and frame acquisition.
+Now suppose the detector is configured to acquire 36 frames in a single run, with hardware managing both polarizer rotation and frame acquisition.
 During acquisition, each spectrum is sent to the GUI as a 1D frame, labeled by its index (from 0 to 35).
 
 .. code-block:: python
@@ -116,9 +117,14 @@ Add the above code to ``proc.py`` in *lys*, and call this ``Window()`` from the 
 .. image:: /lys_instr_/tutorial_/template2_1.png
 
 In the **Detector** panel, the upper plot displays the live-updated dataset as a 2D array and the lower one shows the live spectrum from the most recent frame.
-The snapshot above shows the results after a complete 36-frame acquisition (started with **Start** button and no scan loops configured).
-The grayscale of the upper plot has been adjusted for better visibility: double-click the plot area to open the **Graph** tab on the right, open the **Images** tab under it, select the data item (here ``wave3``), and set the ``Min`` and ``Max`` values.
-(For more on customizing plots, see the *lys* documentation.)
+
+Clicking the **Start** button with no scan loops configured begins a single 36-frame acquisition.
+
+A live snapshot during acquisition is shown below. 
+The grayscale of the upper plot can be adjusted during acquisition: double-click the plot area to open the **Graph** tab, 
+open the **Images** tab under it, select the data item, and set the "Min" and "Max" values (see *lys* documentation for details on plot customization).
+
+.. image:: /lys_instr_/tutorial_/template2_2.png
 
 As before, you can enable spatial mapping by adding scan loops for the "x" and "y" axes in the **Scan** tab.
 
@@ -171,10 +177,11 @@ Add the above code to ``proc.py`` in *lys*, and call this ``Window()`` from the 
 .. image:: /lys_instr_/tutorial_/template3_1.png
 
 In the **Scan** tab, add scan loops for the "x" and "y" axes to configure the mapping.
+For example, the setup below performs a nested scan, capturing images over a 10×10 grid by scanning the x-axis at each y-axis position.
 
 .. image:: /lys_instr_/tutorial_/template3_2.png
 
-This setup performs a nested scan, capturing images over a 10×10 grid by scanning the x-axis at each y-axis position.
+Clicking the **Start** button begins the scan, acquiring images at each grid point.
 
 
 
@@ -229,7 +236,7 @@ You can interactively select a region in the left image to update the right imag
 
 Clicking the **Start** button with no scan loops configured acquires the complete 8×8 dataset in a single run.
 
-As in previous examples, you can add motor axes for scanning in the **Scan** tab.
+As before, you can add motor axes for scanning in the **Scan** tab.
 For instance, you can perform 4D-STEM measurements at each step while sweeping the electric field applied to the sample.
 Suppose the motor axis "E" controls the electric field:
 
