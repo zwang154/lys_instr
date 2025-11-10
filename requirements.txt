@@ -1,2 +1,2 @@
-lys-python >= 0.3.4
+lys-python >= 0.3.6
 qtawesome >= 1.4.0
