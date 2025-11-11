@@ -26,7 +26,7 @@ class RamanData(DummyDataInterface):
         with resources.files('lys_instr').joinpath('resources').joinpath('sampleRamanData.npy').open('rb') as fh:
             sample = np.load(fh)
 
-        self._data = np.stack([np.repeat(sample[:, :, 1, :], 3, axis=0)] * 8, axis=0)
+        self._data = np.tile(np.repeat(sample[:, :, 1, :], 3, axis=0), (8, 1, 1, 1))
         self._axes = [np.linspace(0, 360, self._data.shape[-2], endpoint=False), sample[0, 0, 0, :]][-1 - scanLevel:]
         if scanLevel == 1:
             self._indexShape = (self._data.shape[-2],)
@@ -34,8 +34,7 @@ class RamanData(DummyDataInterface):
             self._indexShape = ()
         else:
             raise NotImplementedError("scanLevel must be 0 or 1")
-        
-        self._n = 0
+        self._count = 0
 
     @classmethod
     def name(cls):
@@ -107,9 +106,11 @@ class RamanData(DummyDataInterface):
         Raises:
             StopIteration: When no more frames are available.
         """
-        self._n += 1
-        if self._n - 1 == np.prod(self._indexShape):
+        if self._n >= np.prod(self._indexShape):
             raise StopIteration()
-        idx = np.unravel_index(self._n - 1, self._indexShape)
-        frame = self._data.reshape(-1, self._data.shape[-1])[self._n - 1]
+        idx = np.unravel_index(self._n, self._indexShape)
+        frame = self._data.reshape(-1, self._data.shape[-1])[self._count]
+        self._n += 1
+        self._count += 1
+        self._count %= self._data.shape[0] * self._data.shape[1]
         return idx, frame
