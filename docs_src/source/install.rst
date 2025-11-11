@@ -10,7 +10,7 @@ System Requirements
 Install lys_instr from Source
 -----------------------------
 
-0. (Only needed if *lys* isn't already installed) Create a Python virtual environment for *lys_instr* (e.g., ``lys_venv``).
+1. Create a Python virtual environment for *lys_instr* (e.g., ``lys_venv``).
 
    If you use conda:
 
@@ -24,7 +24,7 @@ Install lys_instr from Source
 
        python -m venv lys_venv
 
-1. Activate the created environment or the environment where *lys* is installed:
+2. Activate the created environment:
 
    Using conda:
 
@@ -38,46 +38,35 @@ Install lys_instr from Source
 
        lys_venv\Scripts\activate.bat
 
-   Using Windows (PowerShell):
-
-   .. code-block:: bash
-
-       lys_venv\Scripts\Activate.ps1
-
-   Using Linux / Git Bash:
+   Using Linux:
 
    .. code-block:: bash
         
        source lys_venv/bin/activate
 
-2. Update pip::
+3. Update pip::
 
     python -m pip install --upgrade pip
 
-3. Clone *lys_instr* from GitHub::
+4. Change to the folder where you want to store the project and then clone the repository::
 
     git clone https://github.com/zwang154/lys_instr.git
 
-4. Install *lys_instr*:
+5. Install *lys_instr*:
 
    .. code-block:: bash
 
        cd lys_instr
        pip install .
 
-   Or, for development (editable) mode, use:
+   Or, for editable mode, use:
 
    .. code-block:: bash
 
        pip install -e .
 
-5. (Optional but recommended) Create a working directory for *lys_instr* (e.g., ``your_lys_working_dir``)::
+6. Go to the directory you want to use as your workspace and then launch *lys*::
 
-    mkdir your_lys_working_dir
-
-6. Choose a working directory and launch *lys* from the activated environment::
-
-    cd your_lys_working_dir
     python -m lys
 
 *lys_instr* is now ready to use within the *lys* platform.
