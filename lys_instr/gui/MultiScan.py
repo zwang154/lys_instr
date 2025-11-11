@@ -11,6 +11,9 @@ class _MotorScanRow(QtWidgets.QWidget):
     Supports linear ranges and free-expression ranges configured via the GUI.
     """
 
+    # signal emitted when the scan axis selection changes
+    changed = QtCore.pyqtSignal()
+
     def __init__(self, title, motorScanners):
         """
         Create the motor-scan row.
@@ -92,6 +95,7 @@ class _MotorScanRow(QtWidgets.QWidget):
         self._from.setEnabled(b)
         self._step.setEnabled(b)
         self._freeExpr.setEnabled(b)
+        self.changed.emit()
 
     def _scanModeChanged(self, text):
         """
@@ -212,6 +216,9 @@ class _SwitchScanRow(QtWidgets.QWidget):
     Supports iteration over available labels or a user-provided free list.
     """
 
+    # signal emitted when the scan axis selection changes
+    changed = QtCore.pyqtSignal()
+
     def __init__(self, title, switchScanners):
         """
         Create the switch-scan row.
@@ -235,6 +242,7 @@ class _SwitchScanRow(QtWidgets.QWidget):
         self._title = QtWidgets.QLabel(title)
         self._scanAxis = QtWidgets.QComboBox(objectName="ScanRange_scanAxis_" + title)
         self._scanAxis.addItems(scannerNames)
+        self._scanAxis.currentTextChanged.connect(lambda: self.changed.emit())
         self._scanMode = QtWidgets.QComboBox(objectName="ScanRange_scanMode_" + title)
         self._scanMode.addItems(["Iteration", "Free"])
         self._scanMode.currentTextChanged.connect(self._scanModeChanged)
@@ -345,6 +353,10 @@ class _ScanList(QtWidgets.QListWidget):
 
     Holds a sequence of motor and switch scan-row widgets and provides operations to add, remove, reorder, copy/paste, and save/load the configured scan list.
     """
+    
+    # signal emitted when the scan list changes
+    changed = QtCore.pyqtSignal()
+
     _path = ".lys/instr/scanlist.dic"
     _savePath = ".lys/instr/scanSaveList.dic"
 
@@ -416,6 +428,8 @@ class _ScanList(QtWidgets.QListWidget):
             scan = _SwitchScanRow("Scan" + str(len(self._scans)+1), self._switchScanners)
         if data is not None:
             scan.load(data)
+
+        scan.changed.connect(self._refresh)
         self._scans.insert(index, scan)
 
         item = QtWidgets.QListWidgetItem()
@@ -489,6 +503,8 @@ class _ScanList(QtWidgets.QListWidget):
         os.makedirs(os.path.dirname(self._savePath),exist_ok=True)
         with open(self._savePath, "w") as f:
             f.write(str(self.save()))
+        
+        self.changed.emit()
 
     def __iter__(self):
         return self._scans.__iter__()
@@ -539,6 +555,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
         super().__init__("Filename")
         self.__initLayout()
         self._scans = scans
+        self._scans.changed.connect(self._changed)
 
     def __initLayout(self):
         """
@@ -566,9 +583,23 @@ class _FileNameBox(QtWidgets.QGroupBox):
         """
         self._name.setEnabled(not self._check.isChecked())
         if self._check.isChecked():
-            strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]              
-            self._name.setText("/".join(strings))
+            self._updateDefaultName()
 
+    def _changed(self):
+        """
+        Slot called when the underlying scan list changes. 
+        Recompute the default filename only when the Default checkbox is checked.
+        """
+        if self._check.isChecked():
+            self._updateDefaultName()
+
+    def _updateDefaultName(self):
+        """
+        Compose and set the default filename from the current scans.
+        """
+        strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]              
+        self._name.setText("/".join(strings))
+        
     @property
     def text(self):
         """
