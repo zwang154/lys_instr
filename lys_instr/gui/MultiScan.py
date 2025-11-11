@@ -705,6 +705,8 @@ class ScanWidget(QtWidgets.QWidget):
         self._storage.tagRequest.connect(self._setScanNames)
         self._name = self._nameBox.text
 
+        self._loopCounts = {i: [0, 0] for i, _ in enumerate(self._list) if self._list[i].scanName == "loop"}
+
         self._thread = _Executor(process)
         self._thread.finished.connect(self._scanFinished)
 
@@ -722,18 +724,28 @@ class ScanWidget(QtWidgets.QWidget):
         self._storage.name = self._oldName
         self._storage.numbered = True
 
+        if hasattr(self, "_loopCounts"):
+            del self._loopCounts
+
     def _updateName(self):
         """
         Update the storage filename using current scan parameter values.
         """
         name = str(self._name)
         for i, scan in enumerate(self._list):
-            value = scan.scanObj.get()[scan.scanName]
-            index = scan.scanIndex
-            if type(value) == str:
-                name = name.replace("{"+str(i+1)+"}", value)
+            if scan.scanName == "loop":
+                num = int(self._loopCounts[i][0])
+                value = num
+                index = num
+                n = np.prod([len(self._list[j].scanRange) for j in range(i)])
+                self._loopCounts[i][1] += 1
+                self._loopCounts[i][0] += self._loopCounts[i][1]//n
+                self._loopCounts[i][0] %= len(scan.scanRange)
+                self._loopCounts[i][1] %= n
             else:
-                name = name.replace("{"+str(i+1)+"}", f"{value:.5g}")
+                value = scan.scanObj.get()[scan.scanName]
+                index = scan.scanIndex
+            name = name.replace("{"+str(i+1)+"}", value) if type(value) == str else name.replace("{"+str(i+1)+"}", f"{value:.5g}")
             name = name.replace("["+str(i+1)+"]", str(index))
         self._storage.name = name
 
