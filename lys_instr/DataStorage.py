@@ -89,7 +89,7 @@ class DataStorage(QtCore.QObject):
     @name.setter
     def name(self, value):
         """
-        Set the base filename used for saved data files.
+        Set the base file name used for saved data files.
         """
         self._name = value
 
@@ -131,7 +131,7 @@ class DataStorage(QtCore.QObject):
         """
         Return the next available file number for saving.
 
-        If automatic numbering is enabled the returned number will be appended to the base filename (for example: ``<name>_<number>.npz``).
+        If automatic numbering is enabled the returned number will be appended to the base file name (for example: ``<name>_<number>.npz``).
         If numbering is disabled this method returns ``None``.
 
         Returns:

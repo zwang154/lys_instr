@@ -542,7 +542,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
     """
     File name configuration widget.
 
-    Provides a GUI for composing default filenames for scan runs.
+    Provides a GUI for composing default file names for scan runs.
     """
 
     def __init__(self, scans):
@@ -552,7 +552,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
         Args:
             scans (Iterable[object]): Iterable of scan row objects used to compose default file names.
         """
-        super().__init__("Filename")
+        super().__init__("File names for scan")
         self.__initLayout()
         self._scans = scans
         self._scans.changed.connect(self._changed)
@@ -578,8 +578,8 @@ class _FileNameBox(QtWidgets.QGroupBox):
         """
         Update the file name field when the default toggle changes.
 
-        Enable or disable the filename edit. 
-        When the default toggle is checked, compose a default filename by joining each scan's ``scanName_[index]`` (from last to first) and set it in the line edit.
+        Enable or disable the file name edit. 
+        When the default toggle is checked, compose a default file name by joining each scan's ``scanName_[index]`` (from last to first) and set it in the line edit.
         """
         self._name.setEnabled(not self._check.isChecked())
         if self._check.isChecked():
@@ -588,14 +588,14 @@ class _FileNameBox(QtWidgets.QGroupBox):
     def _changed(self):
         """
         Slot called when the underlying scan list changes. 
-        Recompute the default filename only when the Default checkbox is checked.
+        Recompute the default file name only when the Default checkbox is checked.
         """
         if self._check.isChecked():
             self._updateDefaultName()
 
     def _updateDefaultName(self):
         """
-        Compose and set the default filename from the current scans.
+        Compose and set the default file name from the current scans.
         """
         strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]
         self._name.setText("/".join(strings))
@@ -760,7 +760,7 @@ class ScanWidget(QtWidgets.QWidget):
 
     def _updateName(self):
         """
-        Update the storage filename using current scan parameter values.
+        Update the storage file name using current scan parameter values.
         """
         name = str(self._name)
         for i, scan in enumerate(self._list):

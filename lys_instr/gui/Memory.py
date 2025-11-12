@@ -16,7 +16,7 @@ class ControllerMemory(QtWidgets.QWidget):
 
         Args:
             objs (Sequence): Sequence of controller objects used to read/write positions.
-            path (str | None): Optional filename to use for saved positions (stored under ``.lys/.lys_instr``).
+            path (str | None): Optional file name to use for saved positions (stored under ``.lys/.lys_instr``).
             parent (QWidget | None): Optional parent widget.
         """
         super().__init__(parent)
@@ -69,7 +69,7 @@ class ControllerMemory(QtWidgets.QWidget):
         Import saved positions from disk and set the memory file path.
 
         Args:
-            path (str | None): Optional filename in the local memory directory (``.lys/.lys_instr``) to load. If ``None``, no file is loaded.
+            path (str | None): Optional file name in the local memory directory (``.lys/.lys_instr``) to load. If ``None``, no file is loaded.
         """
         if path is None:
             self._path = None
