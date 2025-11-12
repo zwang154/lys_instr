@@ -420,15 +420,3 @@ class _GeneralPanel(QtWidgets.QWidget):
         self._offsetEdits[name].setValue(0)
         obj.valueChanged.emit(obj.get())
         obj.save()
-
-
-if __name__ == "__main__":
-    import sys
-    from lys.Qt import QtWidgets
-    from lys_instr.dummy import MultiMotorDummy
-
-    app = QtWidgets.QApplication(sys.argv)
-    motor = MultiMotorDummy("x", "y", "z")
-    motorGUI = MultiMotorGUI(motor, axisNamesJoggable=("x"))
-    motorGUI.show()
-    sys.exit(app.exec_())

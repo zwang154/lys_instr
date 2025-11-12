@@ -253,19 +253,3 @@ class _GeneralPanel(QtWidgets.QWidget):
         """
         super().__init__()
         self._controllers = controllers
-
-
-
-
-if __name__ == "__main__":
-    import sys
-    from lys.Qt import QtWidgets
-    from lys_instr.dummy import MultiSwitchDummy
-
-    # Create a dummy switch with two axes named "A" and "B"
-    app = QtWidgets.QApplication(sys.argv)
-    switch = MultiSwitchDummy("A", "B")
-    gui = MultiSwitchGUI(switch)
-    gui.show()
-
-    sys.exit(app.exec_())

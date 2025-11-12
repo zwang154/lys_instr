@@ -597,7 +597,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
         """
         Compose and set the default filename from the current scans.
         """
-        strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]              
+        strings = [self._scans[i].scanName+"_["+str(i+1)+"]" for i in reversed(range(len(self._scans)))]
         self._name.setText("/".join(strings))
         
     @property
