@@ -158,7 +158,7 @@ It emits Qt signals to report saving state and to request metadata tags for save
 <dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.getNumber">
 <span class="sig-name descname"><span class="pre">getNumber</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.getNumber"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.getNumber" title="Link to this definition"></a></dt>
 <dd><p>Return the next available file number for saving.</p>
-<p>If automatic numbering is enabled the returned number will be appended to the base filename (for example: <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_&lt;number&gt;.npz</span></code>).
+<p>If automatic numbering is enabled the returned number will be appended to the base file name (for example: <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_&lt;number&gt;.npz</span></code>).
 If numbering is disabled this method returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -182,6 +182,12 @@ If numbering is disabled this method returns <code class="docutils literal notra
 <dd class="field-even"><p>str</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.numberChanged">
+<span class="sig-name descname"><span class="pre">numberChanged</span></span><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.numberChanged" title="Link to this definition"></a></dt>
+<dd><p>Signal emitted when the next available file number changes.</p>
 </dd></dl>
 
 <dl class="py property">

@@ -48,7 +48,7 @@ Install lys_instr from Source
 
     python -m pip install --upgrade pip
 
-4. Change to the folder where you want to store the project and then clone the repository::
+4. Go to the directory where you want to place the source code, then clone the repository::
 
     git clone https://github.com/zwang154/lys_instr.git
 
@@ -65,7 +65,7 @@ Install lys_instr from Source
 
        pip install -e .
 
-6. Go to the directory you want to use as your workspace and then launch *lys*::
+6. Go to the directory you want to use as your workspace, then launch *lys*::
 
     python -m lys
 
