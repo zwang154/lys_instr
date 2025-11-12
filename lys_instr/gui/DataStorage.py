@@ -29,6 +29,7 @@ class DataStorageGUI(QtWidgets.QWidget):
         self._obj.folder = self._folder.text()
         self._obj.name = self._name.text()
         self._obj.savingStateChanged.connect(self._savingStateChanged)
+        self._obj.numberChanged.connect(self._pathChanged)
 
     def _initLayout(self):
         """
@@ -132,17 +133,3 @@ class DataStorageGUI(QtWidgets.QWidget):
 
         icon = qta.icon("ri.loader-2-line", color="orange") if saving else qta.icon("ri.check-line", color="green")
         self._savedIndicator.setPixmap(icon.pixmap(24, 24))
-
-
-# To Test the GUI run in the src\python: python -m fstem.lys_instr.GUI.DataStorageGUI
-if __name__ == "__main__":
-    import sys
-    from fstem.lys_instr.DataStorage import DataStorage
-    from lys.Qt import QtWidgets
-    import numpy as np
-
-    app = QtWidgets.QApplication(sys.argv)
-    storage = DataStorage()
-    gui = DataStorageGUI(storage)
-    gui.show()
-    sys.exit(app.exec_())

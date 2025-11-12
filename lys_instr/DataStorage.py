@@ -18,6 +18,9 @@ class DataStorage(QtCore.QObject):
     #: Signal (dict) emitted to request metadata tags.
     tagRequest = QtCore.pyqtSignal(dict)
 
+    #: Signal emitted when the next available file number changes.
+    numberChanged = QtCore.pyqtSignal()
+
     def __init__(self, **kwargs):
         """
         Initialize the data storage instance.
@@ -142,6 +145,7 @@ class DataStorage(QtCore.QObject):
         while True:
             candidate = os.path.join(self.base, self.folder, f"{self.name}_{i}.npz")
             if not os.path.exists(candidate) and candidate not in reserved:
+                self.numberChanged.emit()
                 return i
             i += 1
 
