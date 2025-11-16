@@ -108,6 +108,7 @@ Implement ``_run()`` to sequentially fetch or generate frames, populate ``_data`
                 for idx, data in self._obj:
                     if self._shouldStop:
                         return
+                    import time
                     time.sleep(self.exposure * self._obj.nframes)
                     self._data[idx] = data
                     self.updated.emit()
@@ -197,4 +198,4 @@ For example:
     import time
 
     data = detector.startAcq(wait=True, output=True)   # Start acquisition of 1 frame
-    print(data)     # Returns a dictionary, e.g., {(0,): array([[0.1, 0.2, ...], [...], ...])}
+    print(data)     # Returns a dictionary, e.g., {(): array([[0.1, 0.2, ...], [...], ...])}
