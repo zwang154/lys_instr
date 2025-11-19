@@ -4,7 +4,7 @@ lys_instr documentation
 
 *lys_instr* is a Python package for automating scientific measurements.
 
-It enables users to quickly create custom GUIs for coordinating multiple instruments and managing measurement workflows with minimal coding required.
+It enables users to efficiently create custom GUIs for coordinating multiple instruments and managing measurement workflows with minimal coding required.
 
 .. image:: /lys_instr_/tutorial_/scan_1.png
 
