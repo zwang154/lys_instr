@@ -53,6 +53,7 @@ class TestDataStorage(unittest.TestCase):
             data = {(0, 0): np.ones((2, 2))}
             storage.update(data)
             axes = [np.arange(2), np.arange(2), np.arange(2), np.arange(2)]
+            arrSaving = storage._arr
             storage.save(axes)
             self.assertTrue(storage.saving, "Storage should be saving after save() is called.")
 
@@ -70,4 +71,4 @@ class TestDataStorage(unittest.TestCase):
                 arr_keys = npz.files
                 self.assertTrue(len(arr_keys) > 0, "No arrays found in saved file.")
                 arrFromFile = npz[arr_keys[0]]
-                self.assertTrue(np.array_equal(arrFromFile, storage._arr), "Saved array does not match the storage buffer.")
+                self.assertTrue(np.array_equal(arrFromFile, arrSaving), "Saved array does not match the storage buffer.")
