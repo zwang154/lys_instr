@@ -68,6 +68,9 @@ class DetectorInterface(HardwareInterface):
     #: Signal emitted by the acquisition thread when new data is acquired.
     updated = QtCore.pyqtSignal()
 
+    #: Signal emitted when acquisition is stopped.
+    stopped = QtCore.pyqtSignal()
+
     def __init__(self, exposure=1, **kwargs):
         """
         Initialize the interface.
@@ -112,7 +115,7 @@ class DetectorInterface(HardwareInterface):
         if self._busy:
             logging.warning("Detector is busy. Cannot start new acquisition.")
             return
-        
+
         self._busy = True
         self.busyStateChanged.emit(True)
 
@@ -174,6 +177,7 @@ class DetectorInterface(HardwareInterface):
             self._thread.quit()
             self._thread.wait()
         self.dataAcquired.emit(self._get())
+        self.stopped.emit()
 
     @property
     def exposure(self):
@@ -184,7 +188,7 @@ class DetectorInterface(HardwareInterface):
             float | None: The exposure time.
         """
         return self._exposure
-    
+
     @exposure.setter
     def exposure(self, value):
         """
@@ -206,7 +210,7 @@ class DetectorInterface(HardwareInterface):
             bool: True if the detector is busy, False otherwise.
         """
         return self._busy
-    
+
     @property
     def isAlive(self):
         """
@@ -218,7 +222,7 @@ class DetectorInterface(HardwareInterface):
             bool: True if the detector is alive, False otherwise.
         """
         return self._isAlive()
-    
+
     def _get(self):
         """
         Should be implemented in subclasses to provide device-specific logic for getting acquired data.
@@ -243,7 +247,7 @@ class DetectorInterface(HardwareInterface):
     def _isAlive(self):
         """
         Should be implemented in subclasses to provide device-specific logic for returning alive state.
-        
+
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
@@ -255,7 +259,7 @@ class DetectorInterface(HardwareInterface):
 
         Args:
             iter(int): Number of iterations. -1 means continuous run.
-        
+
         Raises:
             NotImplementedError: If the subclass does not implement this method.
         """
@@ -349,4 +353,3 @@ class MultiDetectorInterface(DetectorInterface):
             tuple[int, ...]: Combined shape of the full dataset.
         """
         return tuple([*self.indexShape, *self.frameShape])
-    
