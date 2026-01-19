@@ -160,6 +160,7 @@ class DataStorage(QtCore.QObject):
         """
         detector.dataAcquired.connect(lambda data: self.update(data, detector=detector))
         detector.busyStateChanged.connect(lambda b: self._busyStateChanged(detector, b))
+        detector.stopped.connect(lambda: self._stopped(detector))
 
     def _busyStateChanged(self, detector, busy):
         """
@@ -173,6 +174,15 @@ class DataStorage(QtCore.QObject):
             self.reserve(detector.dataShape)
 
         self._axes_cache = detector.axes
+
+    def _stopped(self, detector):
+        """
+        Save any remaining buffered data when the detector stops.
+
+        Args:
+            detector (``MultiDetectorInterface``): Detector that the data storage instance is connected to.
+        """
+        self.save(detector.axes)
 
     def reserve(self, shape, fillValue=None):
         """
@@ -221,12 +231,12 @@ class DataStorage(QtCore.QObject):
         if not self.enabled:
             return
         for idx, value in data.items():
-            self._arr[idx] = value
-            self._counter += 1
-            dim = len(idx)
+            if self._arr is not None:
+                self._arr[idx] = value
+                self._counter += 1
+                dim = len(idx)
 
             if idx == () or self._counter >= np.prod(self._arr.shape[0:dim]):
-                self._counter = 0
                 axes = detector.axes if detector is not None else self._axes_cache
                 self.save(axes)
 
@@ -241,8 +251,10 @@ class DataStorage(QtCore.QObject):
         Args:
             axes (Sequence[np.ndarray]): Coordinate arrays for each data axis used to construct the ``Wave``.
         """
-        if not self.enabled:
+        if not self.enabled or self._arr is None:
             return
+
+        self._counter = 0
 
         data_to_save = self._arr
         self._arr = None
