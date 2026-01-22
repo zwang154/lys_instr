@@ -256,13 +256,13 @@ class DataStorage(QtCore.QObject):
 
         self._counter = 0
 
-        data_to_save = self._arr
+        dataToSave = self._arr
         self._arr = None
 
         path = self._paths.pop(0)
         note = self._tags.pop(0)
 
-        thread = _SaveThread(data_to_save, axes, note, path)
+        thread = _SaveThread(dataToSave, axes, note, path)
         thread.finished.connect(self._savingFinished)
         self._threads.append(thread)
         thread.start()
