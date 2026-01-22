@@ -41,6 +41,8 @@ class DataStorage(QtCore.QObject):
         self._paths = []
         self._arr = None
         self._notes = None
+        self._counter = 0
+        self._axes_cache = None
 
     @property
     def base(self):
@@ -156,8 +158,9 @@ class DataStorage(QtCore.QObject):
         Args:
             detector (``MultiDetectorInterface``): Detector that emits ``dataAcquired`` and ``busyStateChanged`` signals.
         """
-        detector.dataAcquired.connect(self.update)
+        detector.dataAcquired.connect(lambda data: self.update(data, detector=detector))
         detector.busyStateChanged.connect(lambda b: self._busyStateChanged(detector, b))
+        detector.stopped.connect(lambda: self._stopped(detector))
 
     def _busyStateChanged(self, detector, busy):
         """
@@ -169,8 +172,17 @@ class DataStorage(QtCore.QObject):
         """
         if busy:
             self.reserve(detector.dataShape)
-        else:
-            self.save(detector.axes)
+
+        self._axes_cache = detector.axes
+
+    def _stopped(self, detector):
+        """
+        Save any remaining buffered data when the detector stops.
+
+        Args:
+            detector (``MultiDetectorInterface``): Detector that the data storage instance is connected to.
+        """
+        self.save(detector.axes)
 
     def reserve(self, shape, fillValue=None):
         """
@@ -206,19 +218,27 @@ class DataStorage(QtCore.QObject):
         self._arr = np.full(shape, np.nan if fillValue is None else fillValue, dtype=float)
         self.savingStateChanged.emit(self.saving)
 
-    def update(self, data):
+    def update(self, data, detector=None):
         """
         Update the buffered data array with new values.
 
-        Each entry in ``data`` maps an index tuple to a frame array; the buffer is updated in-place at those indices. 
+        Each entry in ``data`` maps an index tuple to a frame array; the buffer is updated in-place at those indices.
 
         Args:
             data (dict[tuple, np.ndarray]): Mapping from index tuples to frame arrays used to update the buffer.
+            detector (``MultiDetectorInterface``): Detector instance to query for axes information.
         """
         if not self.enabled:
             return
         for idx, value in data.items():
-            self._arr[idx] = value
+            if self._arr is not None:
+                self._arr[idx] = value
+                self._counter += 1
+                dim = len(idx)
+
+            if idx == () or self._counter >= np.prod(self._arr.shape[0:dim]):
+                axes = detector.axes if detector is not None else self._axes_cache
+                self.save(axes)
 
     def save(self, axes):
         """
@@ -231,18 +251,21 @@ class DataStorage(QtCore.QObject):
         Args:
             axes (Sequence[np.ndarray]): Coordinate arrays for each data axis used to construct the ``Wave``.
         """
-        if not self.enabled:
+        if not self.enabled or self._arr is None:
             return
 
-        wave = Wave(self._arr.copy(), *axes)
-        wave.note = self._tags.pop(0)
-        path = self._paths.pop(0)
+        self._counter = 0
 
-        thread = _SaveThread(wave, path)
+        data_to_save = self._arr
+        self._arr = None
+
+        path = self._paths.pop(0)
+        note = self._tags.pop(0)
+
+        thread = _SaveThread(data_to_save, axes, note, path)
         thread.finished.connect(self._savingFinished)
         self._threads.append(thread)
         thread.start()
-
         self.savingStateChanged.emit(self.saving)
 
     def _savingFinished(self):
@@ -271,21 +294,25 @@ class _SaveThread(QtCore.QThread):
     """
     Background thread that writes a ``lys.Wave`` to disk.
 
-    The thread calls ``lys.Wave.export`` on the provided ``Wave`` when started. 
+    The thread calls ``lys.Wave.export`` on the provided ``Wave`` when started.
     It is used by ``DataStorage`` to perform non-blocking file writes so the main application thread remains responsive.
     """
 
-    def __init__(self, wave, path):
+    def __init__(self, data, axes, note, path):
         """
         Initialize the save thread.
 
         Args:
-            wave (Wave): The ``lys.Wave`` instance to save.
+            data (np.ndarray): The data to write to disk.
+            axes (Sequence): The axes that the data belongs to.
+            note (str): The note to store with the data.
             path (str): Destination file path for the exported Wave.
         """
         super().__init__()
-        self.wave = wave
-        self.path = path
+        self._data = data
+        self._axes = axes
+        self._note = note
+        self._path = path
 
     def run(self):
         """
@@ -294,4 +321,6 @@ class _SaveThread(QtCore.QThread):
         Calls ``lys.Wave.export`` on ``self.wave`` to write the Wave to ``self.path``.
         This runs in the worker thread so the main application thread is not blocked by file I/O.
         """
-        self.wave.export(self.path)
+        wave = Wave(self._data, *self._axes)
+        wave.note = self._note
+        wave.export(self._path)
