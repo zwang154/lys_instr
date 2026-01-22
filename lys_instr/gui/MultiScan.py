@@ -578,7 +578,7 @@ class _FileNameBox(QtWidgets.QGroupBox):
         """
         Update the file name field when the default toggle changes.
 
-        Enable or disable the file name edit. 
+        Enables or disables the file name edit. 
         When the default toggle is checked, compose a default file name by joining each scan's ``scanName_[index]`` (from last to first) and set it in the line edit.
         """
         self._name.setEnabled(not self._check.isChecked())
@@ -588,7 +588,8 @@ class _FileNameBox(QtWidgets.QGroupBox):
     def _changed(self):
         """
         Slot called when the underlying scan list changes. 
-        Recompute the default file name only when the Default checkbox is checked.
+
+        Recomputes the default file name only when the Default checkbox is checked.
         """
         if self._check.isChecked():
             self._updateDefaultName()
@@ -810,9 +811,8 @@ class ScanWidget(QtWidgets.QWidget):
         """
         Event handler for window close event.
 
-        If the scan is running when the window is closed, this method will
-        force the scan to stop and wait for the thread to finish before
-        accepting the close event.
+        If the scan is running when the window is closed, 
+        this method will force the scan to stop and wait for the thread to finish before accepting the close event.
         """
         if hasattr(self, "_thread") and self._thread.isRunning():
             QtCore.QMetaObject.invokeMethod(self._worker, "forceStop", QtCore.Qt.BlockingQueuedConnection)
@@ -825,14 +825,15 @@ class _ScanWorker(QtCore.QObject):
     """
     Worker class to manage a scan process within a separate thread.
 
-    This class acts as a bridge between the GUI thread and the scan execution
-    logic. It handles signal forwarding and provides thread-safe methods
-    to control the lifecycle of a scan process.
+    Acts as a bridge between the GUI thread and the scan execution logic. 
+    Handles signal forwarding and provides thread-safe methods to control the lifecycle of a scan process.
     """
     # signal emitted to request scan start
     startRequested = QtCore.pyqtSignal()
-    # signal emitted when the scan is finished
+
+    # signal emitted when the current process has finished (either after all work is done or after a stop request, once the innermost operation completes)
     finished = QtCore.pyqtSignal()
+
     # signal emitted before each acquisition
     beforeAcquisition = QtCore.pyqtSignal()
 
@@ -846,13 +847,8 @@ class _ScanWorker(QtCore.QObject):
         """
         super().__init__()
         self._process = process
-
-        self._process.beforeAcquisition.connect(
-            self.beforeAcquisition.emit
-        )
-
-        if hasattr(self._process, "finished"):
-            self._process.finished.connect(self.finished.emit)
+        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
+        self._process.finished.connect(self.finished.emit)
 
     @QtCore.pyqtSlot()
     def run(self):
@@ -873,7 +869,6 @@ class _ScanWorker(QtCore.QObject):
         """
         Force the scan to stop by invoking the `stop()` method of the process with a blocking connection.
         """
-
         QtCore.QMetaObject.invokeMethod(self._process, "stop", QtCore.Qt.BlockingQueuedConnection)
 
 
@@ -931,6 +926,7 @@ class _DetectorProcess(QtCore.QObject):
 
     # signal emitted before starting acquisition
     beforeAcquisition = QtCore.pyqtSignal()
+
     # signal emitted after acquisition is finished
     finished = QtCore.pyqtSignal()
 
@@ -985,7 +981,8 @@ class _ScanProcess(QtCore.QObject):
 
     #: Signal emitted before each acquisition.
     beforeAcquisition = QtCore.pyqtSignal()
-    #: Signal emitted after all acquisitions are complete.
+
+    #: Signal emitted when current scan has finished (either after all work is done or after a stop request).
     finished = QtCore.pyqtSignal()
 
     def __init__(self, name, obj, values, process):
@@ -1004,21 +1001,19 @@ class _ScanProcess(QtCore.QObject):
         self._values = list(values)
         self._process = process
         self._index = 0
-        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
         self._shouldStop = False
         self._finished = False
-
-        if hasattr(process, "finished"):
-            process.finished.connect(self._next)
+        self._stopPending = False
+        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
+        self._process.finished.connect(self._next)
 
     @QtCore.pyqtSlot()
     def start(self):
         """
-        Start the scan process by iterating over the sequence of values and delegating to the nested process for acquisition at each value.
+        Start the scan process by iterating over the sequence of values, delegating acquisition to the nested process at each step.
 
-        Emits the ``beforeAcquisition`` signal before each acquisition and the ``finished`` signal after all acquisitions.
-
-        Can be stopped by calling the ``stop()`` method.
+        This method emits ``beforeAcquisition`` before each acquisition and ``finished`` after all acquisitions complete or a stop is requested.
+        Call ``stop()`` to interrupt the scan.
         """
         self._index = 0
         self._shouldStop = False
@@ -1029,28 +1024,37 @@ class _ScanProcess(QtCore.QObject):
         """
         Advance the scan process by one step.
 
-        If the scan has been requested to stop or the end of the sequence has been reached, emit the ``finished`` signal and return.
-
-        Otherwise, set the axis controller to the next value in the sequence and start the nested process for acquisition at that value.
+        If a stop has been requested or all values have been processed, emit ``finished`` and return.
+        Otherwise, set the axis to the next value and start the nested process for acquisition at that value.
+        Waits for the nested process to finish before proceeding.
         """
         if self._shouldStop or self._index >= len(self._values):
-            self._emitFinished()
+            if self._stopPending:
+                self._emitFinished()
+            elif self._shouldStop:
+                self._stopPending = True
+                self._process.finished.connect(self._emitFinished)
+                self._process.stop()
+            else:
+                self._emitFinished()
             return
 
         value = self._values[self._index]
         self._index += 1
-
         self._obj.set(**{self._name: value})
         self._process.start()
 
     @QtCore.pyqtSlot()
     def stop(self):
         """
-        Request the scan to stop and stop the nested process.
+        Request a stop and forward the stop request to the nested process.
+
+        The ``finished`` signal is emitted only after each level of the nested process has completed its stop procedure in response to a stop request.
         """
         self._shouldStop = True
+        self._stopPending = True
+        self._process.finished.connect(self._emitFinished)
         self._process.stop()
-        self._emitFinished()
 
     def _emitFinished(self):
         """
