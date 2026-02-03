@@ -1041,7 +1041,7 @@ class _ScanProcess(QtCore.QObject):
 
         value = self._values[self._index]
         self._index += 1
-        self._obj.set(**{self._name: value})
+        self._obj.set(**{self._name: value}, wait=True)
         self._process.start()
 
     @QtCore.pyqtSlot()
