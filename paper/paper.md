@@ -50,7 +50,7 @@ Several software frameworks address specific aspects of the issue. Open-source l
 In contrast, `lys_instr` introduces an explicit workflow layer that abstracts common control patterns from experiment-specific implementations. By structurally separating instrument interfaces, workflow coordination, and GUI components within a multi-layered architecture, it enables reusable workflow definitions, encapsulated concurrency management, and flexible system assembly, thereby reducing experiment-specific procedural code while preserving extensibility.
 
 
-# Design philosophy
+# Software design
 
 `lys_instr` adopts a three-layer architecture organized by functional separation: Base Layer for device controller abstraction, Top Layer for workflow coordination, and Connection Layer in between for complete control-system assembly (\autoref{fig:fig1}). Each layer applies object-oriented design patterns from GoF [@Gamma:1994], according to its responsibilities, enhancing flexibility, modularity, and usability. The framework builds on the `lys` platform, leveraging its powerful multidimensional data visualization capabilities.
 
@@ -71,7 +71,7 @@ In contrast, `lys_instr` introduces an explicit workflow layer that abstracts co
 Overall, `lys_instr` provides prebuilt support for standard device controllers, common experimental workflows, and GUI components and assemblies, so users generally need to implement only device-specific subclasses to handle communication with their hardware. This enables rapid integration of new instruments into automated measurement workflows with minimal coding and design effort.
 
 
-# Example of Constructed GUI
+# Example of constructed GUI
 
 With `lys_instr`, users can easily construct a GUI like the one shown in \autoref{fig:fig2}. In this example, the `lys_instr` window is embedded in the `lys` platform, with Sector A for storage, Sector B for detector, and Sector C for controllers. Multi-dimensional, nested scan sequences can be defined via the visual interface in the `Scan` tab in Sector C. `lys` tools in the outer window tabs allow customization of data display, enabling advanced, on-the-fly customization of data visualization.
 
@@ -83,6 +83,11 @@ With `lys_instr`, users can easily construct a GUI like the one shown in \autore
 `lys_instr` has been deployed in complex, real-world scientific experiments, supporting multiple peer-reviewed publications. It automates ultrafast electron diffraction (UED) and ultrafast transmission electron microscopy (UTEM) systems, coordinating ultrafast laser excitation and pulsed electron beam detection in pump–probe experiments [@Nakamura:2020; @Nakamura:2021a; @Nakamura:2022; @Nakamura:2023a; @Shimojima:2021; @Shimojima:2023a; @Shimojima:2023b; @Koga:2024]. It enables precise control of electromagnetic lenses and electron deflectors for advanced microscopy involving electron-beam precession, a capability that would be difficult to achieve without `lys_instr` [@Shiratori:2024; @Hayashi:2025].
 
 The software has demonstrated seamless control of transmission electron microscopes from different manufacturers across multiple institutes (RIKEN Center for Emergent Matter Science and Nagoya University), illustrating its reproducible performance and hardware-independent workflow management capability. Through integration with sister packages in the `lys` family, such as `lys_em` [@lys_em] and `lys_fem` [@lys_fem], `lys_instr` facilitates complex multi-instrument automation in a research-driven ecosystem, allowing advanced workflows to be deployed efficiently while maintaining modular, extensible design.
+
+
+# AI usage disclosure
+
+Generative AI tools were used to provide debugging suggestions during the final stages of software development. All code was implemented, reviewed, and verified on real hardware, with functionality confirmed through unit tests and experimental validation.
 
 
 # Acknowledgements
