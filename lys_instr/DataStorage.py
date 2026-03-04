@@ -312,7 +312,7 @@ class _SaveThread(QtCore.QThread):
         self._data = data
         self._axes = axes
         self._note = note
-        self._path = path
+        self.path = path
 
     def run(self):
         """
@@ -323,4 +323,4 @@ class _SaveThread(QtCore.QThread):
         """
         wave = Wave(self._data, *self._axes)
         wave.note = self._note
-        wave.export(self._path)
+        wave.export(self.path)
