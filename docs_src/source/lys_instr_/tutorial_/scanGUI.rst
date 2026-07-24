@@ -1,6 +1,8 @@
-
 Scan GUI
 ========
+
+This page explains how to build a scan GUI for coordinating controllers, detectors, and storage in the Top Layer.
+The scan GUI lets users configure repeated or nested control-and-detect workflows without rewriting the underlying scan logic.
 
 Creating a Scan GUI
 -------------------

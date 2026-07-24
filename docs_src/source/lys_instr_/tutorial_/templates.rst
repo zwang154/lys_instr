@@ -1,9 +1,8 @@
-
 Templates
 =========
 
-The following templates provide quick setup of GUIs for common instrument components.
-These GUIs are designed to be intuitive and self-explanatory.
+This page introduces ready-made templates for assembling common measurement GUIs in the Connection Layer.
+Each template combines device interfaces, storage, scan controls, and detector display components for a typical data-acquisition scenario.
 See the Advanced section for detailed user guides on each GUI component, if needed.
 
 

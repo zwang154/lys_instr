@@ -65,8 +65,6 @@ Install lys_instr from Source
 
        pip install -e .
 
-6. Go to the directory you want to use as your workspace, then launch *lys*::
 
-    python -m lys
-
-*lys_instr* is now ready to use within the *lys* platform.
+*lys_instr* is now ready to use.
+See the :doc:`Getting Started </tutorial>` guide for instructions on launching and using *lys_instr*.
