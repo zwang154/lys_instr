@@ -42,7 +42,7 @@ Overall, `lys_instr` is especially useful for multi-parameter experiments where 
 The tutorial follows this architecture in practice. 
 After launching `lys_instr`, the **hands-on example** shows a complete assembled measurement GUI.
 
-The **Basics** section continues with the Base Layer interfaces and provides templates for assembling common systems quickly.
+The **Basics** section continues with adding Base-Layer interfaces, such as motors and detectors, and provides templates for assembling common systems quickly.
 
 The **Advanced** sections move into the Top and Connection Layers, covering reusable GUI components for motors, switches, detectors, and storage, followed by scan coordination and axis-dependency tools for coupled control.
 

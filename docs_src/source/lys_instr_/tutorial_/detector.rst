@@ -1,5 +1,5 @@
-Detector
-========
+Adding a Detector
+=================
 
 This page explains how to define a detector in the Base Layer. 
 A detector represents any device or process that returns acquired data, such as an image, spectrum, waveform, or multi-dimensional frame set.
