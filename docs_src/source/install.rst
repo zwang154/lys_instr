@@ -1,11 +1,27 @@
 Installation
 ============
 
-System Requirements
--------------------
+Requirements
+------------
 
-- Python (version >= 3.11).
+*lys_instr* requires Python 3.11 or later and dependencies:
 
+- ``lys-python >= 0.3.6``
+- ``qtawesome >= 1.4.0``
+
+These dependencies are installed automatically when *lys_instr* is installed with ``pip`` (See :ref:`install-from-source` below). 
+The ``lys-python`` package provides the Qt-based *lys* platform and installs its scientific and GUI dependencies, including NumPy, SciPy, PyQtGraph, QtPy, and PyQt5. 
+Users do not need to install these packages separately.
+
+*lys_instr* does not bundle vendor-specific hardware drivers. 
+The included dummy devices and tutorials can be used without additional drivers.
+
+To control real hardware, users must separately install the driver or communication library required by the instrument. 
+Device-specific communication is then implemented by subclassing the appropriate *lys_instr* controller or detector interface. 
+See :doc:`Getting Started </tutorial>` for implementation examples.
+
+
+.. _install-from-source:
 
 Install lys_instr from Source
 -----------------------------
