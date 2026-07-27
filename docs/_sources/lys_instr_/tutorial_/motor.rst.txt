@@ -1,6 +1,8 @@
+Adding a Motor
+==============
 
-Motor
-=====
+This page explains how to define a motor-like controller in the Base Layer. 
+A motor can represent any continuous parameter controller, such as a positioner, voltage source, magnetic field, or temperature setpoint.
 
 Creating a Motor Instance
 -------------------------

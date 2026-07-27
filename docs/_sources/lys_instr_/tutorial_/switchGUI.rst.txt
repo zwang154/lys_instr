@@ -1,7 +1,8 @@
-
 Switch GUI
 ==========
 
+This page explains how to create a reusable GUI panel for a switch, meaning any discrete-state controller implemented through the standard switch interface.
+The same GUI can be used to control dummy switches or real hardware subclasses.
 
 Creating a Switch GUI
 ---------------------
