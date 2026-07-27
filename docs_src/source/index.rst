@@ -12,11 +12,12 @@ It enables users to efficiently create custom GUIs for coordinating multiple ins
 What can you do with lys_instr?
 ----------------------------------
 
-Most scientific measurements follow a *control-and-detect* pattern—parameters are changed via physical or digital controls (the *control* step) and data are recorded by detectors (the *detect* step).
-A measurement sequence that combines *control* and *detect* is called a *scan*; a complete workflow may consist of nested *scans*.
-*lys_instr* helps you construct, control, and automate such workflows efficiently.
-In principle, you only need to provide minimal code for device-specific communication—the package handles the rest.
+Many scientific measurements can be described using a *control-and-detect* pattern:
+physical or digital parameters are changed by controllers, and data are recorded by detectors.
+In *lys_instr*, a sequence combining these operations is called a *scan*, and nested scans can be used to construct multi-parameter workflows.
 
+For workflows that fit this model, users implement hardware-specific communication, while *lys_instr* provides reusable interfaces, asynchronous coordination, GUI components, visualization, and storage.
+Hardware-timed operations, including pulse-sequence generation, remain under the control of the instrument or its software and can be integrated with *lys_instr* through a controller or detector interface.
 
 Key functionalities of *lys_instr*:
 
