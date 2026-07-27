@@ -56,7 +56,7 @@ See :doc:`/lys_instr_/tutorial_/motorGUI`. Check that:
 
 - Jog, offset, settings, and bookmark controls behave as expected when enabled.
 
-- Alive and busy indicators reflect the device state.
+- Alive indicators and control availability reflect each axis's alive and busy states.
 
 
 Switch GUI
@@ -70,7 +70,7 @@ See :doc:`/lys_instr_/tutorial_/switchGUI`. Check that:
 
 - Selecting a state and clicking **Apply** updates the switch.
 
-- Alive and busy indicators reflect the switch state.
+- Alive indicators and control availability reflect each axis's alive and busy states.
 
 
 Detector GUI
@@ -90,7 +90,7 @@ See :doc:`/lys_instr_/tutorial_/detectorGUI`. Check that:
 
 - Acquired data are displayed and updated in the viewer.
 
-- Alive and busy indicators reflect the detector state.
+- The alive indicator and acquisition-button states reflect the detector's alive and busy states.
 
 
 Storage GUI
@@ -122,3 +122,20 @@ See :doc:`/lys_instr_/tutorial_/scanGUI`. Check that:
 
 - During a scan, motor values, detector acquisition, and storage updates proceed in the expected order.
 
+
+Axis Dependency GUI
+~~~~~~~~~~~~~~~~~~~
+
+See :doc:`/lys_instr_/tutorial_/preCorrection`. Check that:
+
+- The window opens without errors.
+
+- Target and variable axes can be added and configured.
+
+- Entering an expression such as ``x/2`` for target ``y`` creates the expected correction.
+
+- Moving the variable axis updates the target axis according to the correction.
+
+- Data-based corrections can be imported from a NumPy ``.npz`` file and applied.
+
+- Selecting **Enable/Disable** from a target's context menu controls whether the correction is applied.
