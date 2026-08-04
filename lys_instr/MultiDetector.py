@@ -171,6 +171,9 @@ class DetectorInterface(HardwareInterface):
 
         This method waits for the acquisition worker thread to finish if it is running.
         """
+        if not self._busy:
+            return
+        
         self._stop()
 
         if self._thread is not None and self._thread.isRunning():
