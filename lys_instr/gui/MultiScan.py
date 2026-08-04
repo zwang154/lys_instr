@@ -47,6 +47,7 @@ class _MotorScanRow(QtWidgets.QWidget):
         self._from.setDecimals(4)
         self._from.setEnabled(False)
         self._step = QtWidgets.QDoubleSpinBox(objectName="ScanRange_step_" + title)
+        self._step.setValue(1)
         self._step.setRange(-np.inf, np.inf)
         self._step.setDecimals(4)
         self._step.setEnabled(False)
@@ -165,8 +166,19 @@ class _MotorScanRow(QtWidgets.QWidget):
         Returns:
             int: Index of the value in ``scanRange`` closest to the current scanner reading (motor-axis value).
         """
+        if self._counter is not None:
+            return self._counter.get_count()
         value = self.scanObj.get()[self.scanName]
         return np.argmin(abs(np.array(self.scanRange) - value))
+
+    def setCounter(self, counter):
+        """
+        Set the counter for this scan row.
+
+        Args:
+            counter (_Counter): Counter for tracking scan indices.
+        """
+        self._counter = counter
 
     def setIndex(self, index):
         """
@@ -314,8 +326,19 @@ class _SwitchScanRow(QtWidgets.QWidget):
         Returns:
             int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis label).
         """
+        if self._counter is not None:
+            return self._counter.get_count()
         value = self.scanObj.get()[self.scanName]
         return self.scanRange.index(value)
+
+    def setCounter(self, counter):
+        """
+        Set the counter for this scan row.
+
+        Args:
+            counter (_Counter): Counter for tracking scan indices.
+        """
+        self._counter = counter
 
     def setIndex(self, index):
         """
@@ -619,6 +642,8 @@ class ScanWidget(QtWidgets.QWidget):
     Provides a list-based GUI for composing a sequence of motor and switch scans, configuring detector/process settings, and starting/stopping scan execution.
     """
 
+    _stop_requested = QtCore.pyqtSignal()
+
     def __init__(self, storage, motors, switches, detectors):
         """
         Initialize the Scan widget.
@@ -727,9 +752,15 @@ class ScanWidget(QtWidgets.QWidget):
 
         Builds the nested process chain from the configured scan list and starts the worker thread.
         """
-        process = _DetectorProcess(self._detectors[self._detectorsBox.currentText()], self._exposure.value())
-        for s in self._list:
-            process = _ScanProcess(s.scanName, s.scanObj, s.scanRange, process)
+
+        self._currentDetector = self._detectors[self._detectorsBox.currentText()]
+        process = _DetectorProcess(self._currentDetector, self._exposure.value())
+        for i, s in enumerate(self._list):
+            counter = _Counter()
+            s.setCounter(counter)
+            process = _ScanProcess(s.scanName, s.scanObj, s.scanRange, process, counter)
+
+        process.beforeAcquisition.connect(self._updateName)
 
         self._storage.numbered = False
         self._storage.enabled = True
@@ -744,13 +775,11 @@ class ScanWidget(QtWidgets.QWidget):
         self._worker.moveToThread(self._thread)
 
         self._thread.started.connect(self._worker.run)
-        self._worker.startRequested.connect(process.start, QtCore.Qt.QueuedConnection)
         self._worker.finished.connect(self._thread.quit)
         self._worker.finished.connect(self._worker.deleteLater)
         self._thread.finished.connect(self._thread.deleteLater)
         self._thread.finished.connect(self._scanFinished)
-
-        self._worker.beforeAcquisition.connect(self._updateName)
+        self._stop_requested.connect(self._worker.stop)
 
         self._startBtn.setEnabled(False)
         self._stopBtn.setEnabled(True)
@@ -775,18 +804,8 @@ class ScanWidget(QtWidgets.QWidget):
         """
         name = str(self._name)
         for i, scan in enumerate(self._list):
-            if scan.scanName == "loop":
-                num = int(self._loopCounts[i][0])
-                value = num
-                index = num
-                n = np.prod([len(self._list[j].scanRange) for j in range(i)])
-                self._loopCounts[i][1] += 1
-                self._loopCounts[i][0] += self._loopCounts[i][1] // n
-                self._loopCounts[i][0] %= len(scan.scanRange)
-                self._loopCounts[i][1] %= n
-            else:
-                value = scan.scanObj.get()[scan.scanName]
-                index = scan.scanIndex
+            value = scan.scanObj.get()[scan.scanName]
+            index = scan.scanIndex
             name = name.replace("{" + str(i + 1) + "}", value) if type(value) == str else name.replace("{" + str(i + 1) + "}", f"{value:.5g}")
             name = name.replace("[" + str(i + 1) + "]", str(index))
         self._storage.name = name
@@ -795,8 +814,7 @@ class ScanWidget(QtWidgets.QWidget):
         """
         Request the running scan to stop.
         """
-        if hasattr(self, "_worker"):
-            QtCore.QMetaObject.invokeMethod(self._worker, "stop", QtCore.Qt.QueuedConnection)
+        self._stop_requested.emit()
 
     def _setScanNames(self, scanNamesDict):
         """
@@ -823,53 +841,32 @@ class ScanWidget(QtWidgets.QWidget):
 
 class _ScanWorker(QtCore.QObject):
     """
-    Worker class to manage a scan process within a separate thread.
-
-    Acts as a bridge between the GUI thread and the scan execution logic. 
-    Handles signal forwarding and provides thread-safe methods to control the lifecycle of a scan process.
+    Worker for executing a scan process.
     """
-    # signal emitted to request scan start
-    startRequested = QtCore.pyqtSignal()
-
-    # signal emitted when the current process has finished (either after all work is done or after a stop request, once the innermost operation completes)
     finished = QtCore.pyqtSignal()
-
-    # signal emitted before each acquisition
-    beforeAcquisition = QtCore.pyqtSignal()
 
     def __init__(self, process):
         """
-        Initialize a scan worker with a given process.
+        Create a new executor for the given process.
 
         Args:
-            process (object): Process exposing ``start()``, ``stop()``, and ``beforeAcquisition`` and ``finished`` signals.
-
+            process (object): Object exposing ``execute()`` and ``stop()`` used by the executor.
         """
         super().__init__()
         self._process = process
-        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
-        self._process.finished.connect(self.finished.emit)
 
-    @QtCore.pyqtSlot()
     def run(self):
         """
-        Start the scan process by emitting the startRequested signal.
+        Run the wrapped process's ``execute()`` in this thread.
         """
-        self.startRequested.emit()
+        self._process.execute()
+        self.finished.emit()
 
-    @QtCore.pyqtSlot()
     def stop(self):
         """
-        Request the scan to stop by emitting the stop signal and invoking the `stop()` method of the process with a queued connection.
+        Request the running scan process to stop.
         """
-        QtCore.QMetaObject.invokeMethod(self._process, "stop", QtCore.Qt.QueuedConnection)
-
-    @QtCore.pyqtSlot()
-    def forceStop(self):
-        """
-        Force the scan to stop by invoking the `stop()` method of the process with a blocking connection.
-        """
-        QtCore.QMetaObject.invokeMethod(self._process, "stop", QtCore.Qt.BlockingQueuedConnection)
+        self._process.stop()
 
 
 class _Loop(QtCore.QObject):
@@ -916,11 +913,49 @@ class _Loop(QtCore.QObject):
         return {self._name: self._value}
 
 
+class _Counter:
+    """
+    Counter for tracking scan indices for a single scan process.
+    """
+
+    def __init__(self):
+        """
+        Initialize the counter.
+        """
+        self._count = -1
+        self.reset()
+
+    def increment(self):
+        """
+        Increment the counter.
+
+        Returns:
+            int: The new count value.
+        """
+        self._count += 1
+        return self._count
+
+    def get_count(self):
+        """
+        Get the current count.
+
+        Returns:
+            int: The current count value.
+        """
+        return self._count
+
+    def reset(self):
+        """
+        Reset the count to -1.
+        """
+        self._count = -1
+
+
 class _DetectorProcess(QtCore.QObject):
     """
     Detector process wrapper.
 
-    Wraps a detector and exposure value and exposes ``start()`` and ``stop()`` used by the scan executor.
+    Wraps a detector and exposure value and exposes ``execute()`` and ``stop()`` used by the scan executor.
     Emits ``beforeAcquisition`` before starting acquisition.
     """
 
@@ -941,19 +976,26 @@ class _DetectorProcess(QtCore.QObject):
         super().__init__()
         self._detector = detector
         self._exposure = exposure
+        self._shouldStop = False
+        self._mutex = QtCore.QMutex()
 
         detector.busyStateChanged.connect(self._busyChanged)
 
-    def start(self):
+    def execute(self):
         """
-        Start the detector process.
+        Execute the detector process.
 
         Configures exposure if provided, emits ``beforeAcquisition`` and starts the detector.
         """
-        if self._detector.exposure is not None:
-            self._detector.exposure = self._exposure
-        self.beforeAcquisition.emit()
-        self._detector.startAcq()
+        self._shouldStop = False
+        with QtCore.QMutexLocker(self._mutex):
+            if self._shouldStop:
+                return
+            if self._detector.exposure is not None:
+                self._detector.exposure = self._exposure
+            self.beforeAcquisition.emit()
+        
+        self._detector.startAcq(wait=True)
 
     def _busyChanged(self, busy):
         """
@@ -968,7 +1010,9 @@ class _DetectorProcess(QtCore.QObject):
         """
         Stop the wrapped detector acquisition.
         """
-        self._detector.stop()
+        with QtCore.QMutexLocker(self._mutex):
+            self._shouldStop = True
+            self._detector.stop()
 
 
 class _ScanProcess(QtCore.QObject):
@@ -976,16 +1020,13 @@ class _ScanProcess(QtCore.QObject):
     Scan process wrapper.
 
     Iterates a sequence of values for a single scan axis and delegates to the nested process for acquisition at each value.
-    Exposes ``start()`` and ``stop()``.
+    Exposes ``execute()`` and ``stop()``.
     """
 
     #: Signal emitted before each acquisition.
     beforeAcquisition = QtCore.pyqtSignal()
 
-    #: Signal emitted when current scan has finished (either after all work is done or after a stop request).
-    finished = QtCore.pyqtSignal()
-
-    def __init__(self, name, obj, values, process):
+    def __init__(self, name, obj, values, process, counter=None):
         """
         Create a scan process for a single axis.
 
@@ -993,76 +1034,39 @@ class _ScanProcess(QtCore.QObject):
             name (str): Axis name used in ``set()`` calls.
             obj (object): Controller exposing ``set(..., wait=True)`` and ``get()``.
             values (Iterable[float | str]): Sequence of values to iterate over (elements are numeric or label strings).
-            process (object): Nested process exposing ``start()`` and ``stop()``.
+            process (object): Nested process exposing ``execute()`` and ``stop()``.
+            counter (_Counter | None): Counter for tracking scan indices. If None, no counting is performed.
         """
         super().__init__()
         self._name = name
         self._obj = obj
-        self._values = list(values)
+        self._values = values
         self._process = process
-        self._index = 0
+        self._counter = counter if counter is not None else _Counter()
         self._shouldStop = False
-        self._finished = False
-        self._stopPending = False
         self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
-        self._process.finished.connect(self._next)
+        self._mutex = QtCore.QMutex()
 
-    @QtCore.pyqtSlot()
-    def start(self):
+    def execute(self):
         """
-        Start the scan process by iterating over the sequence of values, delegating acquisition to the nested process at each step.
-
-        This method emits ``beforeAcquisition`` before each acquisition and ``finished`` after all acquisitions complete or a stop is requested.
-        Call ``stop()`` to interrupt the scan.
+        Iterate values, set the axis value and delegate to the nested process.
         """
-        self._index = 0
-        self._shouldStop = False
-        self._finished = False
-        self._next()
+        self._counter.reset()
 
-    def _next(self):
-        """
-        Advance the scan process by one step.
+        for value in self._values:
+            if self._shouldStop:
+                return
+            self._obj.set(**{self._name: value}, wait=True)
+            self._counter.increment()
+            if self._shouldStop:
+                return
+            self._process.execute()
 
-        If a stop has been requested or all values have been processed, emit ``finished`` and return.
-        Otherwise, set the axis to the next value and start the nested process for acquisition at that value.
-        Waits for the nested process to finish before proceeding.
-        """
-        if self._shouldStop or self._index >= len(self._values):
-            if self._stopPending:
-                self._emitFinished()
-            elif self._shouldStop:
-                self._stopPending = True
-                self._process.finished.connect(self._emitFinished)
-                self._process.stop()
-            else:
-                self._emitFinished()
-            return
-
-        value = self._values[self._index]
-        self._index += 1
-        self._obj.set(**{self._name: value}, wait=True)
-        self._process.start()
-
-    @QtCore.pyqtSlot()
     def stop(self):
         """
-        Request a stop and forward the stop request to the nested process.
-
-        The ``finished`` signal is emitted only after each level of the nested process has completed its stop procedure in response to a stop request.
+        Request the scan to stop and stop the nested process.
         """
-        self._shouldStop = True
-        self._stopPending = True
-        self._process.finished.connect(self._emitFinished)
+        with QtCore.QMutexLocker(self._mutex):
+            self._shouldStop = True
         self._process.stop()
 
-    def _emitFinished(self):
-        """
-        Emit the ``finished`` signal if the scan has not already been marked as finished.
-
-        This method is idempotent and does not emit the ``finished`` signal if the scan has already been marked as finished.
-        """
-        if self._finished:
-            return
-        self._finished = True
-        self.finished.emit()

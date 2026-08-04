@@ -164,6 +164,7 @@ class DetectorInterface(HardwareInterface):
                 return
             self.busyStateChanged.connect(on_busy_changed, QtCore.Qt.QueuedConnection)
         loop.exec_()
+        self.busyStateChanged.disconnect(on_busy_changed)
 
     def stop(self):
         """
@@ -171,6 +172,9 @@ class DetectorInterface(HardwareInterface):
 
         This method waits for the acquisition worker thread to finish if it is running.
         """
+        if not self._busy:
+            return
+        
         self._stop()
 
         if self._thread is not None and self._thread.isRunning():
