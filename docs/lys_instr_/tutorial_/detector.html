@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Detector &mdash; lys_instr  documentation</title>
+  <title>Adding a Detector &mdash; lys_instr  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
@@ -20,7 +20,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Templates" href="templates.html" />
-    <link rel="prev" title="Motor" href="motor.html" /> 
+    <link rel="prev" title="Adding a Motor" href="motor.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,11 +45,12 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Tutorial</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#essential">Essential</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#launch">Launch</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#basics">Basics</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="handsOn.html">A Simple Hands-On Example</a></li>
-<li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Detector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="motor.html">Adding a Motor</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Adding a Detector</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#creating-a-detector-instance">Creating a Detector Instance</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#step-by-step-demonstration">Step-by-Step Demonstration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#checking-operations">Checking Operations</a></li>
@@ -79,8 +80,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
-      <li class="breadcrumb-item active">Detector</li>
+          <li class="breadcrumb-item"><a href="../../tutorial.html">Getting Started</a></li>
+      <li class="breadcrumb-item active">Adding a Detector</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/lys_instr_/tutorial_/detector.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -90,8 +91,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="detector">
-<h1>Detector<a class="headerlink" href="#detector" title="Link to this heading"></a></h1>
+  <section id="adding-a-detector">
+<h1>Adding a Detector<a class="headerlink" href="#adding-a-detector" title="Link to this heading"></a></h1>
+<p>This page explains how to define a detector in the Base Layer.
+A detector represents any device or process that returns acquired data, such as an image, spectrum, waveform, or multi-dimensional frame set.</p>
 <section id="creating-a-detector-instance">
 <h2>Creating a Detector Instance<a class="headerlink" href="#creating-a-detector-instance" title="Link to this heading"></a></h2>
 <p>A detector instance is created by subclassing <code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code>, which provides essential features for a multi-dimensional detector.</p>
@@ -262,7 +265,7 @@ For example:</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="motor.html" class="btn btn-neutral float-left" title="Motor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="motor.html" class="btn btn-neutral float-left" title="Adding a Motor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="templates.html" class="btn btn-neutral float-right" title="Templates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

@@ -1,7 +1,8 @@
-
 Storage GUI
 ===========
 
+This page explains how to create a reusable GUI panel for data storage.
+Storage can be connected to a detector so acquired data are saved automatically while the measurement workflow runs.
 
 Creating a Storage GUI
 ----------------------

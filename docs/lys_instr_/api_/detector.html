@@ -45,7 +45,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../api.html">Python API</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../api.html#core-elements">Core Elements</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="base.html">Base Classes</a></li>
@@ -206,6 +206,12 @@ The <code class="docutils literal notranslate"><span class="pre">updated</span><
 <span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/MultiDetector.html#DetectorInterface.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.MultiDetector.DetectorInterface.stop" title="Link to this definition"></a></dt>
 <dd><p>Stop the acquisition and emit the latest acquired data.</p>
 <p>This method waits for the acquisition worker thread to finish if it is running.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="lys_instr.MultiDetector.DetectorInterface.stopped">
+<span class="sig-name descname"><span class="pre">stopped</span></span><a class="headerlink" href="#lys_instr.MultiDetector.DetectorInterface.stopped" title="Link to this definition"></a></dt>
+<dd><p>Signal emitted when acquisition is stopped.</p>
 </dd></dl>
 
 <dl class="py attribute">

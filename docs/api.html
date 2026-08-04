@@ -45,8 +45,9 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Python API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#package-overview">Package Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#core-elements">Core Elements</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="lys_instr_/api_/base.html">Base Classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lys_instr_/api_/motor.html">Motor</a></li>
@@ -99,6 +100,83 @@
              
   <section id="python-api">
 <h1>Python API<a class="headerlink" href="#python-api" title="Link to this heading"></a></h1>
+<section id="package-overview">
+<h2>Package Overview<a class="headerlink" href="#package-overview" title="Link to this heading"></a></h2>
+<p>The package is organized into hardware interfaces, reusable workflow
+components, GUI widgets, and example implementations.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Package modules</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 24.0%" />
+<col style="width: 46.0%" />
+<col style="width: 30.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Module or package</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Main public entry points</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.Interfaces</span></code></p></td>
+<td><p>Provides the threaded hardware base class, state monitoring, Qt
+signals, and synchronization used by device interfaces.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">HardwareInterface</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.MultiController</span></code></p></td>
+<td><p>Defines common interfaces for multi-axis continuous controllers,
+such as motors, and discrete-state controllers, such as switches.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MultiControllerInterface</span></code>, <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code>,
+<code class="docutils literal notranslate"><span class="pre">MultiSwitchInterface</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.MultiDetector</span></code></p></td>
+<td><p>Defines the detector acquisition interface, including threaded
+acquisition, detector state, multidimensional data, and axis metadata.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.DataStorage</span></code></p></td>
+<td><p>Manages file naming, output directories, and automatic storage of
+acquired data.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DataStorage</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.PreCorrection</span></code></p></td>
+<td><p>Describes dependencies between controller axes using functions or
+interpolated calibration data.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PreCorrector</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.gui</span></code></p></td>
+<td><p>Provides reusable Qt widgets for controllers, detectors, storage,
+scans, controller memory, and axis dependency.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MultiMotorGUI</span></code>, <code class="docutils literal notranslate"><span class="pre">MultiSwitchGUI</span></code>, <code class="docutils literal notranslate"><span class="pre">MultiDetectorGUI</span></code>,
+<code class="docutils literal notranslate"><span class="pre">DataStorageGUI</span></code>, <code class="docutils literal notranslate"><span class="pre">ScanWidget</span></code>, <code class="docutils literal notranslate"><span class="pre">ControllerMemory</span></code>,
+<code class="docutils literal notranslate"><span class="pre">PreCorrectorGUI</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.dummy</span></code></p></td>
+<td><p>Provides simulated devices for tutorials, development, and testing
+without physical hardware.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MultiMotorDummy</span></code>, <code class="docutils literal notranslate"><span class="pre">MultiSwitchDummy</span></code>,
+<code class="docutils literal notranslate"><span class="pre">MultiDetectorDummy</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.templates</span></code></p></td>
+<td><p>Provides examples of complete measurement windows assembled from
+dummy devices, storage, scan logic, and GUI components.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Window</span></code> and <code class="docutils literal notranslate"><span class="pre">TemplateWindow</span></code> examples</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lys_instr.Utilities</span></code></p></td>
+<td><p>Provides a timing utility used internally by the interfaces.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">preciseSleep</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p>The principal device classes can be imported directly from <code class="docutils literal notranslate"><span class="pre">lys_instr</span></code>.
+GUI classes and dummy devices are available from their respective
+subpackages:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorInterface</span><span class="p">,</span> <span class="n">MultiDetectorInterface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.gui</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorGUI</span><span class="p">,</span> <span class="n">MultiDetectorGUI</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lys_instr.dummy</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiMotorDummy</span><span class="p">,</span> <span class="n">MultiDetectorDummy</span>
+</pre></div>
+</div>
+</section>
 <section id="core-elements">
 <h2>Core Elements<a class="headerlink" href="#core-elements" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">

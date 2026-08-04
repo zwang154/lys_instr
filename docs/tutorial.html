@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tutorial &mdash; lys_instr  documentation</title>
+  <title>Getting Started &mdash; lys_instr  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
 
@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="A Simple Hands-On Example" href="lys_instr_/tutorial_/handsOn.html" />
+    <link rel="next" title="Launch lys_instr" href="lys_instr_/tutorial_/launch.html" />
     <link rel="prev" title="Installation" href="install.html" /> 
 </head>
 
@@ -45,11 +45,15 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#essential">Essential</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#launch">Launch</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/launch.html">Launch <em>lys_instr</em></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#basics">Basics</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/handsOn.html">A Simple Hands-On Example</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/motor.html">Motor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/detector.html">Detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/motor.html">Adding a Motor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/detector.html">Adding a Detector</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lys_instr_/tutorial_/templates.html">Templates</a></li>
 </ul>
 </li>
@@ -82,7 +86,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Tutorial</li>
+      <li class="breadcrumb-item active">Getting Started</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/tutorial.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -92,20 +96,68 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="tutorial">
-<h1>Tutorial<a class="headerlink" href="#tutorial" title="Link to this heading"></a></h1>
-<section id="essential">
-<h2>Essential<a class="headerlink" href="#essential" title="Link to this heading"></a></h2>
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<p><cite>lys_instr</cite> is built around a three-layer architecture that separates device communication, measurement workflow, and GUI assembly.</p>
+<p>This separation is the central design principle of the package: hardware-specific code stays in small device classes, while parameter scans, data handling, and GUI components remain reusable across different instruments and experimental setups.</p>
+<img alt="_images/hierarchy.png" src="_images/hierarchy.png" />
+<ol class="arabic simple">
+<li><p><strong>Base Layer: Device Controller Abstraction</strong></p></li>
+</ol>
+<blockquote>
+<div><p>Most measurement systems contain <em>controllers</em>, which change parameters such as field, temperature, or position, and <em>detectors</em>, which acquire data such as images, spectra, or time traces.</p>
+<p><cite>lys_instr</cite> provides standard interfaces for these roles.
+Users implement device-specific subclasses only for hardware-dependent operations, such as connecting to instruments, sending commands, and reading values or acquired data.
+The shared interfaces handle state monitoring, busy/alive checks, Qt signals, and threaded operation, so higher layers can control different instruments through the same methods.</p>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p><strong>Top Layer: Workflow Coordination</strong></p></li>
+</ol>
+<blockquote>
+<div><p>The Top Layer implements reusable measurement logic on top of the Base Layer interfaces.
+A typical experiment repeatedly changes one or more parameters and records data after each change;
+in <cite>lys_instr</cite>, this pattern is represented as a <em>scan</em>.</p>
+<p>Because scans call only the standard controller and detector methods, the same scan logic can be reused across many hardware configurations.
+A scan can sweep motor axes, iterate switch states, trigger detector acquisition, and combine these steps as nested workflows.
+The package also provides GUI components for motors, switches, detectors, storage, and scans, all built on the same abstract interfaces.</p>
+<p>This event-driven design keeps the GUI responsive during asynchronous instrument operations.
+Device states, acquired data, and saving status are updated through Qt signals rather than blocking GUI actions.</p>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p><strong>Connection Layer: Control-System Assembly</strong></p></li>
+</ol>
+<blockquote>
+<div><p>The Connection Layer brings controllers, detectors, storage, scan logic, and GUI widgets into a complete measurement system.
+It manages the links between components so that data and state changes flow automatically between them.</p>
+<p>In this layer, users assemble applications from existing components rather than writing low-level coordination code.
+For example, a detector can be connected to storage for automatic saving, and the corresponding GUI widgets can be placed into a single <cite>lys</cite> subwindow.
+Prebuilt templates are provided for common experimental layouts, while custom assemblies can be created from the same building blocks.</p>
+</div></blockquote>
+<p>Overall, <cite>lys_instr</cite> is especially useful for multi-parameter experiments where the same control-and-detect pattern appears across different devices and laboratories.</p>
+<p>The tutorial follows this architecture in practice.
+After launching <cite>lys_instr</cite>, the <strong>hands-on example</strong> shows a complete assembled measurement GUI.</p>
+<p>The <strong>Basics</strong> section continues with adding Base-Layer interfaces, such as motors and detectors, and provides templates for assembling common systems quickly.</p>
+<p>The <strong>Advanced</strong> sections move into the Top and Connection Layers, covering reusable GUI components for motors, switches, detectors, and storage, followed by scan coordination and axis-dependency tools for coupled control.</p>
+<section id="launch">
+<h2>Launch<a class="headerlink" href="#launch" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="lys_instr_/tutorial_/launch.html">Launch <em>lys_instr</em></a></li>
+</ul>
+</div>
+</section>
+<section id="basics">
+<h2>Basics<a class="headerlink" href="#basics" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="lys_instr_/tutorial_/handsOn.html">A Simple Hands-On Example</a></li>
-<li class="toctree-l1"><a class="reference internal" href="lys_instr_/tutorial_/motor.html">Motor</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lys_instr_/tutorial_/motor.html">Adding a Motor</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lys_instr_/tutorial_/motor.html#creating-a-motor-instance">Creating a Motor Instance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lys_instr_/tutorial_/motor.html#step-by-step-demonstration">Step-by-Step Demonstration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lys_instr_/tutorial_/motor.html#checking-operations">Checking Operations</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="lys_instr_/tutorial_/detector.html">Detector</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="lys_instr_/tutorial_/detector.html">Adding a Detector</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="lys_instr_/tutorial_/detector.html#creating-a-detector-instance">Creating a Detector Instance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lys_instr_/tutorial_/detector.html#step-by-step-demonstration">Step-by-Step Demonstration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lys_instr_/tutorial_/detector.html#checking-operations">Checking Operations</a></li>
@@ -169,7 +221,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="install.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="lys_instr_/tutorial_/handsOn.html" class="btn btn-neutral float-right" title="A Simple Hands-On Example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="lys_instr_/tutorial_/launch.html" class="btn btn-neutral float-right" title="Launch lys_instr" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

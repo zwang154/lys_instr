@@ -1,6 +1,8 @@
-
 Axis Dependency
 ===============
+
+This page explains how to define dependencies between motor axes for coupled control.
+Pre-correction updates a dependent axis automatically from function- or data-based relations while the user controls another axis.
 
 By Functions
 ------------

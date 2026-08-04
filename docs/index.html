@@ -44,7 +44,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
 </ul>
@@ -80,10 +80,11 @@
 <img alt="_images/scan_1.png" src="_images/scan_1.png" />
 <section id="what-can-you-do-with-lys-instr">
 <h2>What can you do with lys_instr?<a class="headerlink" href="#what-can-you-do-with-lys-instr" title="Link to this heading"></a></h2>
-<p>Most scientific measurements follow a <em>control-and-detect</em> pattern—parameters are changed via physical or digital controls (the <em>control</em> step) and data are recorded by detectors (the <em>detect</em> step).
-A measurement sequence that combines <em>control</em> and <em>detect</em> is called a <em>scan</em>; a complete workflow may consist of nested <em>scans</em>.
-<em>lys_instr</em> helps you construct, control, and automate such workflows efficiently.
-In principle, you only need to provide minimal code for device-specific communication—the package handles the rest.</p>
+<p>Many scientific measurements can be described using a <em>control-and-detect</em> pattern:
+physical or digital parameters are changed by controllers, and data are recorded by detectors.
+In <em>lys_instr</em>, a sequence combining these operations is called a <em>scan</em>, and nested scans can be used to construct multi-parameter workflows.</p>
+<p>For workflows that fit this model, users implement hardware-specific communication, while <em>lys_instr</em> provides reusable interfaces, asynchronous coordination, GUI components, visualization, and storage.
+Hardware-timed operations, including pulse-sequence generation, remain under the control of the instrument or its software and can be integrated with <em>lys_instr</em> through a controller or detector interface.</p>
 <p>Key functionalities of <em>lys_instr</em>:</p>
 <ul class="simple">
 <li><p>Asynchronous device control and monitoring</p></li>
@@ -101,7 +102,7 @@ In principle, you only need to provide minimal code for device-specific communic
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api.html">Python API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
 </ul>

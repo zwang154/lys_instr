@@ -1,0 +1,218 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testing &mdash; lys_instr  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="Contributing" href="../../contributing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            lys_instr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../contributing.html">Contributing</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#bug-reports">Bug Reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#pull-requests">Pull Requests</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../contributing.html#testing">Testing</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">lys_instr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../contributing.html">Contributing</a></li>
+      <li class="breadcrumb-item active">Testing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/lys_instr_/contributing_/testing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="testing">
+<h1>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h1>
+<p>Testing in <em>lys_instr</em> follows the same separation as the package design: automated tests check core, non-GUI interface behavior, while manual checks verify GUI components and combined GUI-based workflows.</p>
+<section id="automated-tests-non-gui-behavior">
+<h2>Automated Tests (Non-GUI Behavior)<a class="headerlink" href="#automated-tests-non-gui-behavior" title="Link to this heading"></a></h2>
+<p>Using the dummy devices included with the package, the automated tests verify that the Base Layer interfaces and other core non-GUI components behave as expected.
+They can also be used as references when writing pytest files for user-defined device subclasses.</p>
+<p>Before running the tests, ensure <em>lys_instr</em> is installed from source (see <a class="reference internal" href="../../install.html"><span class="doc">Installation</span></a>).</p>
+<p>Install <code class="docutils literal notranslate"><span class="pre">pytest</span></code> and <code class="docutils literal notranslate"><span class="pre">pytest-cov</span></code> if they are not already installed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">pytest</span> <span class="n">pytest</span><span class="o">-</span><span class="n">cov</span>
+</pre></div>
+</div>
+<p>Go to the <em>lys_instr</em> source directory and run the tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pytest</span>
+</pre></div>
+</div>
+<p>To check code coverage, run:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pytest</span> <span class="o">--</span><span class="n">cov</span><span class="o">=</span><span class="n">lys_instr</span>
+</pre></div>
+</div>
+</section>
+<section id="manual-checks-gui-components-and-workflows">
+<h2>Manual Checks (GUI Components and Workflows)<a class="headerlink" href="#manual-checks-gui-components-and-workflows" title="Link to this heading"></a></h2>
+<p>Manual GUI checks complement the automated tests by verifying behavior that depends on interactive Qt widgets and user operations.
+The tutorial pages provide exemplary screenshots for each GUI component; key operations to check are summarized below.
+You can replace the dummy devices with your own implementations for real hardware checks as necessary.</p>
+<p>Start <em>lys</em> from the source or working directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">lys</span>
+</pre></div>
+</div>
+<p>Then follow the corresponding tutorial page to launch the component and perform the checks below.</p>
+<section id="motor-gui">
+<h3>Motor GUI<a class="headerlink" href="#motor-gui" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../tutorial_/motorGUI.html"><span class="doc">Motor GUI</span></a>. Check that:</p>
+<ul class="simple">
+<li><p>The window opens without errors.</p></li>
+<li><p>Motor axes and current positions are displayed and updated.</p></li>
+<li><p>Entering target values and clicking <strong>Go</strong> starts motion.</p></li>
+<li><p>Clicking <strong>Stop</strong> interrupts ongoing motion.</p></li>
+<li><p>Jog, offset, settings, and bookmark controls behave as expected when enabled.</p></li>
+<li><p>Alive indicators and control availability reflect each axis’s alive and busy states.</p></li>
+</ul>
+</section>
+<section id="switch-gui">
+<h3>Switch GUI<a class="headerlink" href="#switch-gui" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../tutorial_/switchGUI.html"><span class="doc">Switch GUI</span></a>. Check that:</p>
+<ul class="simple">
+<li><p>The window opens without errors.</p></li>
+<li><p>Switch states are displayed for each axis.</p></li>
+<li><p>Selecting a state and clicking <strong>Apply</strong> updates the switch.</p></li>
+<li><p>Alive indicators and control availability reflect each axis’s alive and busy states.</p></li>
+</ul>
+</section>
+<section id="detector-gui">
+<h3>Detector GUI<a class="headerlink" href="#detector-gui" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../tutorial_/detectorGUI.html"><span class="doc">Detector GUI</span></a>. Check that:</p>
+<ul class="simple">
+<li><p>The window opens without errors.</p></li>
+<li><p>Exposure and acquisition settings can be changed.</p></li>
+<li><p>Clicking <strong>Acquire</strong> starts a single acquisition.</p></li>
+<li><p>Clicking <strong>Stream</strong> starts repeated or continuous acquisition.</p></li>
+<li><p>Clicking <strong>Stop</strong> stops acquisition.</p></li>
+<li><p>Acquired data are displayed and updated in the viewer.</p></li>
+<li><p>The alive indicator and acquisition-button states reflect the detector’s alive and busy states.</p></li>
+</ul>
+</section>
+<section id="storage-gui">
+<h3>Storage GUI<a class="headerlink" href="#storage-gui" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../tutorial_/storageGUI.html"><span class="doc">Storage GUI</span></a>. Check that:</p>
+<ul class="simple">
+<li><p>The window opens without errors.</p></li>
+<li><p>The base folder, folder name, and file name fields can be changed.</p></li>
+<li><p>The <strong>Enabled</strong> and <strong>Numbered</strong> options update the storage behavior.</p></li>
+<li><p>When storage is connected to a detector, acquired data are saved to the selected path.</p></li>
+<li><p>The saving status updates during and after file writing.</p></li>
+</ul>
+</section>
+<section id="scan-gui">
+<h3>Scan GUI<a class="headerlink" href="#scan-gui" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../tutorial_/scanGUI.html"><span class="doc">Scan GUI</span></a>. Check that:</p>
+<ul class="simple">
+<li><p>The window opens without errors.</p></li>
+<li><p>Motor and switch scan rows can be added and configured.</p></li>
+<li><p>A scan can be started and stopped.</p></li>
+<li><p>During a scan, motor values, detector acquisition, and storage updates proceed in the expected order.</p></li>
+</ul>
+</section>
+<section id="axis-dependency-gui">
+<h3>Axis Dependency GUI<a class="headerlink" href="#axis-dependency-gui" title="Link to this heading"></a></h3>
+<p>See <a class="reference internal" href="../tutorial_/preCorrection.html"><span class="doc">Axis Dependency</span></a>. Check that:</p>
+<ul class="simple">
+<li><p>The window opens without errors.</p></li>
+<li><p>Target and variable axes can be added and configured.</p></li>
+<li><p>Entering an expression such as <code class="docutils literal notranslate"><span class="pre">x/2</span></code> for target <code class="docutils literal notranslate"><span class="pre">y</span></code> creates the expected correction.</p></li>
+<li><p>Moving the variable axis updates the target axis according to the correction.</p></li>
+<li><p>Data-based corrections can be imported from a NumPy <code class="docutils literal notranslate"><span class="pre">.npz</span></code> file and applied.</p></li>
+<li><p>Selecting <strong>Enable/Disable</strong> from a target’s context menu controls whether the correction is applied.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../contributing.html" class="btn btn-neutral float-left" title="Contributing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Ziqian Wang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

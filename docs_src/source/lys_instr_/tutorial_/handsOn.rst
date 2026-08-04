@@ -1,6 +1,9 @@
 A Simple Hands-On Example
 -------------------------
 
+This page shows a complete assembled measurement GUI before introducing the individual components in detail.
+The example uses dummy devices, but follows the same control-and-detect structure used with real instruments.
+
 Suppose we want to automate taking a series of photos of a sample while sweeping the applied electric field, 
 that is, control a camera to capture images after setting the source meter to specific voltage values.
 

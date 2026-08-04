@@ -45,8 +45,9 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Tutorial</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#essential">Essential</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#launch">Launch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#basics">Basics</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#advanced">Advanced</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="motorGUI.html">Motor GUI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="switchGUI.html">Switch GUI</a></li>
@@ -82,7 +83,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
+          <li class="breadcrumb-item"><a href="../../tutorial.html">Getting Started</a></li>
       <li class="breadcrumb-item active">Scan GUI</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/lys_instr_/tutorial_/scanGUI.rst.txt" rel="nofollow"> View page source</a>
@@ -95,6 +96,8 @@
              
   <section id="scan-gui">
 <h1>Scan GUI<a class="headerlink" href="#scan-gui" title="Link to this heading"></a></h1>
+<p>This page explains how to build a scan GUI for coordinating controllers, detectors, and storage in the Top Layer.
+The scan GUI lets users configure repeated or nested control-and-detect workflows without rewriting the underlying scan logic.</p>
 <section id="creating-a-scan-gui">
 <h2>Creating a Scan GUI<a class="headerlink" href="#creating-a-scan-gui" title="Link to this heading"></a></h2>
 <p>A “scan” coordinates multiple devices to repeatedly execute a sequence of operations while systematically varying one or more parameters.
