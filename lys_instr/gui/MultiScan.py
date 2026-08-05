@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from lys.Qt import QtWidgets, QtCore, QtGui
-from lys_instr import Loop, ScanRow, Scanner
+from lys_instr import Loop, ScanRow, MultiScan
 
 
 class _MotorScanRow(QtWidgets.QWidget):
@@ -673,7 +673,7 @@ class ScanWidget(QtWidgets.QWidget):
         self._startBtn.setEnabled(False)
         self._stopBtn.setEnabled(True)
 
-        self._scanner = Scanner(self._storage, self._list.get(), self._detectors[self._detectorsBox.currentText()], self._exposure.value(), self._nameBox.text)
+        self._scanner = MultiScan(self._storage, self._list.get(), self._detectors[self._detectorsBox.currentText()], self._exposure.value(), self._nameBox.text)
         self._scanner.finished.connect(self._scanFinished)
         self._scanner.start()
 

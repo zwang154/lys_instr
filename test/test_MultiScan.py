@@ -22,6 +22,8 @@ import tempfile
 import numpy as np
 
 from PyQt5 import QtTest
+from lys_instr import MultiScan
+
 
 class TestMultiScan(unittest.TestCase):
     def test_init(self):

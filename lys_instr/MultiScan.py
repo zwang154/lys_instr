@@ -66,7 +66,8 @@ class ScanRow(QtCore.QObject):
         """
         self._counter = counter
 
-class Scanner(QtCore.QObject):
+
+class MultiScan(QtCore.QObject):
     """
     Scan configuration and execution panel.
 
@@ -190,6 +191,7 @@ class Scanner(QtCore.QObject):
             self._thread.wait()
         event.accept()
 
+
 class Loop(QtCore.QObject):
     """
     Dummy loop scanner.
@@ -234,36 +236,6 @@ class Loop(QtCore.QObject):
         return {self._name: self._value}
 
 
-class _ScanWorker(QtCore.QObject):
-    """
-    Thread wrapper for executing a scan process.
-    """
-    finished = QtCore.pyqtSignal()
-
-    def __init__(self, process):
-        """
-        Create a new executor for the given process.
-
-        Args:
-            process (object): Object exposing ``execute()`` and ``stop()`` used by the executor.
-        """
-        super().__init__()
-        self._process = process
-
-    def run(self):
-        """
-        Run the wrapped process's ``execute()`` in this thread.
-        """
-        self._process.execute()
-        self.finished.emit()
-
-    def stop(self):
-        """
-        Request the running scan process to stop.
-        """
-        self._process.stop()
-
-
 class _Counter:
     """
     Counter for tracking scan indices for a single scan process.
@@ -300,6 +272,36 @@ class _Counter:
         Reset the count to -1.
         """
         self._count = -1
+
+
+class _ScanWorker(QtCore.QObject):
+    """
+    Thread wrapper for executing a scan process.
+    """
+    finished = QtCore.pyqtSignal()
+
+    def __init__(self, process):
+        """
+        Create a new executor for the given process.
+
+        Args:
+            process (object): Object exposing ``execute()`` and ``stop()`` used by the executor.
+        """
+        super().__init__()
+        self._process = process
+
+    def run(self):
+        """
+        Run the wrapped process's ``execute()`` in this thread.
+        """
+        self._process.execute()
+        self.finished.emit()
+
+    def stop(self):
+        """
+        Request the running scan process to stop.
+        """
+        self._process.stop()
 
 
 class _DetectorProcess(QtCore.QObject):

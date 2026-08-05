@@ -2,4 +2,4 @@ from .MultiController import MultiControllerInterface, MultiSwitchInterface, Mul
 from .MultiDetector import MultiDetectorInterface
 from .DataStorage import DataStorage
 from .PreCorrection import PreCorrector
-from .MultiScan import Loop, ScanRow, Scanner
+from .MultiScan import Loop, ScanRow, MultiScan
