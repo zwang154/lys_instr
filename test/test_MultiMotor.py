@@ -9,16 +9,25 @@ from lys_instr.dummy.MultiMotor import MultiMotorDummy
 class TestMultiMotorDummy(unittest.TestCase):
 
     def test_init(self):
+        """
+        Test that the MultiMotorDummy object is initialized correctly.
+        """
         motor = MultiMotorDummy()
         self.assertTrue(all(v == 0 for v in motor.get().values()), "All axis values should be zero after initialization.")
         self.assertTrue(all(motor.isAlive.values()), "All axes should be alive after initialization.")
         self.assertFalse(any(motor.isBusy.values()), "No axis should be busy after initialization.")
 
     def test_nameList(self):
+        """
+        Test that the nameList property returns the correct axis names.
+        """
         motor = MultiMotorDummy('x', 'y')
         self.assertEqual(motor.nameList, ['x', 'y'], "Axis names should match initialization.")
 
     def test_set_get_isBusy(self):
+        """
+        Test that the set, get, and isBusy properties work correctly.
+        """
         motor = MultiMotorDummy('x', 'y')
 
         # Set axis values. Equivalent: motor.set(x=1, y=2) or motor.set(**{'x': 1, 'y': 2})
@@ -45,6 +54,9 @@ class TestMultiMotorDummy(unittest.TestCase):
         self.assertTrue(all(v == t for v, t in zip(val.values(), [1, 2])), "Axis values should match targets after both axes reach their targets.")
 
     def test_stop(self):
+        """
+        Test that the stop method works correctly.
+        """
         motor = MultiMotorDummy('x', 'y')
         motor.set(x=1, y=2)
         
@@ -60,13 +72,20 @@ class TestMultiMotorDummy(unittest.TestCase):
         self.assertEqual(val1, val2, "Axis values should not change after stop.")
 
     def test_waitForReady_get(self):
+        """
+        Test that the waitForReady method works correctly with get.
+        """
         motor = MultiMotorDummy('x', 'y')
         motor.set(x=1, y=2, wait=True)
         val = motor.get()
         self.assertTrue(all(v == t for v, t in zip(val.values(), [1, 2])), "Axis values should match targets after waitForReady.")
         self.assertFalse(any(motor.isBusy.values()), "No axis should be busy after waitForReady.")
+        # check that waitForReady did not take too long
 
     def test_waitForReady_set(self):
+        """
+        Test that the waitForReady method works correctly with set.
+        """
         motor = MultiMotorDummy('x', 'y')
         motor.set(x=1, y=2, wait=True)
         motor.set(x=2, y=3)
@@ -74,6 +93,9 @@ class TestMultiMotorDummy(unittest.TestCase):
         self.assertTrue(all(v > t for v, t in zip(val.values(), [1, 2])), "Axis values should be greater than previous targets after new set.")
 
     def test_waitForReady_stop(self):
+        """
+        Test that the waitForReady method works correctly with stop.
+        """
         motor = MultiMotorDummy('x', 'y')
         motor.set(x=1, y=2, wait=True)
         val = motor.get()
@@ -81,6 +103,9 @@ class TestMultiMotorDummy(unittest.TestCase):
         self.assertTrue(all(v == t for v, t in zip(val.values(), [1, 2])), "Axis values should match targets after waitForReady and stop.")
 
     def test_isAlive_errorRecovery(self):
+        """
+        Test that the isAlive method works correctly with error recovery.
+        """
         motor = MultiMotorDummy('x', 'y')
         motor.set(x=1, y=2)
         QtTest.QTest.qWait(100)
@@ -104,6 +129,9 @@ class TestMultiMotorDummy(unittest.TestCase):
 
 
     def test_lock(self):
+        """
+        Test that motor axes report `isBusy` correctly during asynchronous movement using `SlowMultiMotorDummy`.
+        """
         slowMotor = SlowMultiMotorDummy('x', 'y')
         slowMotor.set(x=1, y=2)
         self.assertTrue(any(slowMotor.isBusy.values()), "At least one axis should be busy right after set() on slow motor.")

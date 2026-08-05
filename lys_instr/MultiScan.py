@@ -74,7 +74,9 @@ class Scanner(QtCore.QObject):
     """
 
     _stop_requested = QtCore.pyqtSignal()
+
     finished = QtCore.pyqtSignal()
+    stopped = QtCore.pyqtSignal()
 
     def __init__(self, storage, scanlist, detector, exposure, fileName=None):
         """
