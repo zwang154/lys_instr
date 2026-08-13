@@ -76,26 +76,34 @@
   <section id="lys-instr-documentation">
 <h1>lys_instr documentation<a class="headerlink" href="#lys-instr-documentation" title="Link to this heading"></a></h1>
 <p><em>lys_instr</em> is a Python package for automating scientific measurements.</p>
-<p>It enables users to efficiently create custom GUIs for coordinating multiple instruments and managing measurement workflows with minimal coding required.</p>
+<p>It provides reusable interfaces, workflows, and GUI components for coordinating
+multiple instruments and assembling custom measurement systems.</p>
 <img alt="_images/scan_1.png" src="_images/scan_1.png" />
 <section id="what-can-you-do-with-lys-instr">
 <h2>What can you do with lys_instr?<a class="headerlink" href="#what-can-you-do-with-lys-instr" title="Link to this heading"></a></h2>
-<p>Many scientific measurements can be described using a <em>control-and-detect</em> pattern:
-physical or digital parameters are changed by controllers, and data are recorded by detectors.
-In <em>lys_instr</em>, a sequence combining these operations is called a <em>scan</em>, and nested scans can be used to construct multi-parameter workflows.</p>
-<p>For workflows that fit this model, users implement hardware-specific communication, while <em>lys_instr</em> provides reusable interfaces, asynchronous coordination, GUI components, visualization, and storage.
-Hardware-timed operations, including pulse-sequence generation, remain under the control of the instrument or its software and can be integrated with <em>lys_instr</em> through a controller or detector interface.</p>
+<p>The primary use case of <em>lys_instr</em> is custom laboratory automation based on
+reusable, hardware-independent workflows. Users implement hardware-specific
+operations through common controller and detector interfaces, then reuse
+workflow and GUI components across instruments and experimental setups.</p>
+<p>This allows measurement environments combining instrument control, workflow
+execution, storage, visualization, and graphical interaction to be assembled
+with little additional coordination code. Users can therefore focus on
+instrument-specific communication and measurement-specific strategies and
+algorithms rather than rebuilding the underlying control infrastructure.</p>
+<p>A common workflow follows a <em>control-and-detect</em> pattern: controllers change
+physical or digital parameters, and detectors acquire data. In <em>lys_instr</em>,
+these operations can be combined into sequential or nested scans.</p>
 <p>Key functionalities of <em>lys_instr</em>:</p>
 <ul class="simple">
 <li><p>Asynchronous device control and monitoring</p></li>
 <li><p>Real-time data visualization and automatic data storage</p></li>
-<li><p>Efficient management of nested, multi-dimensional workflows</p></li>
+<li><p>Efficient management of nested, multidimensional workflows</p></li>
 </ul>
 <p>Standout features of <em>lys_instr</em>:</p>
 <ul class="simple">
 <li><p>Lightweight and efficient: designed to be fast and resource-friendly</p></li>
 <li><p>Modular and extensible: easy to reconfigure measurement workflows directly in the GUI</p></li>
-<li><p>Seamless integration with <a class="reference external" href="https://github.com/lys-devel/lys">lys</a> for analysis and visualization</p></li>
+<li><p>Seamless integration with <a class="reference external" href="https://github.com/lys-devel/lys">lys</a> for visualization and analysis</p></li>
 </ul>
 <p>Start with the <a class="reference internal" href="tutorial.html"><span class="doc">Tutorial</span></a> guide for a short walkthrough and practical examples that demonstrate common use cases.</p>
 <div class="toctree-wrapper compound">
