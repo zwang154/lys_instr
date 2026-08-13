@@ -18,7 +18,7 @@ authors:
     orcid: 0000-0002-3010-9475
     affiliation: 2, 3
 affiliations:
- - name: Research Institute for Quantum and Chemical Innovation, Institutes of Innovation for Future Society, Nagoya University, Japan
+ - name: Institutes of Innovation for Future Society, Nagoya University, Japan
    index: 1
    ror: 04chrp450
  - name: RIKEN Center for Emergent Matter Science, Japan
