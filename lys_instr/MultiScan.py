@@ -2,7 +2,7 @@ import numpy as np
 from lys.Qt import QtCore
 
 
-class ScanRow(QtCore.QObject):
+class ScanAxis(QtCore.QObject):
     def __init__(self, name, obj, range):
         super().__init__()
         self._name = name
@@ -11,7 +11,7 @@ class ScanRow(QtCore.QObject):
         self._counter = None
     
     @property
-    def scanName(self):
+    def name(self):
         """
         Currently selected scan axis name.
 
@@ -21,7 +21,7 @@ class ScanRow(QtCore.QObject):
         return self._name
 
     @property
-    def scanObj(self):
+    def obj(self):
         """
         Scanner corresponding to the currently selected axis.
 
@@ -31,7 +31,7 @@ class ScanRow(QtCore.QObject):
         return self._obj
 
     @property
-    def scanRange(self):
+    def range(self):
         """
         List of labels that this row will iterate over when executed.
 
@@ -41,21 +41,21 @@ class ScanRow(QtCore.QObject):
         return self._range
 
     @property
-    def scanIndex(self):
+    def index(self):
         """
         Index of the current switch state within the scan range.
 
         Returns:
-            int: Index of the value in ``scanRange`` equal to the current scanner reading (switch-axis label).
+            int: Index of the value in ``range`` equal to the current scanner reading (switch-axis label).
         """
         if self._counter is not None:
-            return self._counter.get_count()
+            return self._counter.get()
 
-        value = self.scanObj.get()[self.scanName]
+        value = self.obj.get()[self.name]
 
         if isinstance(value, str):
-            return self.scanRange.index(value)
-        return np.argmin(abs(np.array(self.scanRange) - value))
+            return self.range.index(value)
+        return np.argmin(abs(np.array(self.range) - value))
 
     def setCounter(self, counter):
         """
@@ -96,6 +96,8 @@ class MultiScan(QtCore.QObject):
         self._detector = detector
         self._exposure = exposure
         self._fileName = fileName if fileName is not None else self.defaultFileName
+        self._busy = False
+        self._stopped = False
     
     def start(self):
         """
@@ -104,19 +106,20 @@ class MultiScan(QtCore.QObject):
         Builds the nested process chain from the configured scan list and starts the worker thread.
         """
 
+        self._busy = True
+        self._stopped = False
+
         process = _DetectorProcess(self._detector, self._exposure)
         for s in self._list:
             counter = _Counter()
             s.setCounter(counter)
-            process = _ScanProcess(s.scanName, s.scanObj, s.scanRange, process, counter)
+            process = _ScanProcess(s.name, s.obj, s.range, process, counter)
 
-        process.beforeAcquisition.connect(self._updateName)
+        process.beforeAcquisition.connect(self._updateName, QtCore.Qt.DirectConnection)
 
         self._storage.numbered = False
         self._storage.enabled = True
         self._storage.tagRequest.connect(self._setScanNames)
-
-        self._loopCounts = {i: [0, 0] for i, _ in enumerate(self._list) if self._list[i].scanName == "loop"}
 
         self._worker = _ScanWorker(process)
         self._thread = QtCore.QThread(self)
@@ -124,31 +127,36 @@ class MultiScan(QtCore.QObject):
         self._worker.moveToThread(self._thread)
 
         self._thread.started.connect(self._worker.run)
-        self._worker.finished.connect(self._thread.quit)
-        self._worker.finished.connect(self._worker.deleteLater)
+        self._worker.finished.connect(self._workerFinished, QtCore.Qt.DirectConnection)
+        self._worker.finished.connect(lambda b: self._thread.quit())
+        self._worker.finished.connect(lambda b: self._worker.deleteLater())
         self._thread.finished.connect(self._thread.deleteLater)
-        self._thread.finished.connect(self._scanFinished)
+        self._thread.finished.connect(self._scanThreadFinished)
         self._stop_requested.connect(self._worker.stop)
 
         self._oldName = self._storage.name      
 
         self._thread.start()
 
-    def _scanFinished(self):
+    def _workerFinished(self, b):
+        self._stopped = not b
+
+    def _scanThreadFinished(self):
         """
         Handle scan completion and restore GUI and storage state.
         """
         self._storage.name = self._oldName
         self._storage.numbered = True
 
-        if hasattr(self, "_loopCounts"):
-            del self._loopCounts
-        
-        self.finished.emit()
+        self._busy = False
+        if self._stopped:
+            self.stopped.emit()
+        else:
+            self.finished.emit()
     
     @property
     def defaultFileName(self):
-        strings = [self._list[i].scanName + "_[" + str(i + 1) + "]" for i in reversed(range(len(self._list)))]
+        strings = [self._list[i].name + "_[" + str(i + 1) + "]" for i in reversed(range(len(self._list)))]
         return "/".join(strings)
 
     def _updateName(self):
@@ -157,8 +165,8 @@ class MultiScan(QtCore.QObject):
         """
         name = str(self._fileName)
         for i, scan in enumerate(self._list):
-            value = scan.scanObj.get()[scan.scanName]
-            index = scan.scanIndex
+            value = scan.obj.get()[scan.name]
+            index = scan.index
             name = name.replace("{" + str(i + 1) + "}", value) if type(value) == str else name.replace("{" + str(i + 1) + "}", f"{value:.5g}")
             name = name.replace("[" + str(i + 1) + "]", str(index))
         self._storage.name = name
@@ -176,7 +184,7 @@ class MultiScan(QtCore.QObject):
         Args:
             scanNamesDict (dict): Mutable mapping that will be updated by this method. The key ``'scanNames'`` is set to a list[str] containing the current scan axis names in order.
         """
-        scanNamesDict["scanNames"] = [s.scanName for s in self._list]
+        scanNamesDict["scanNames"] = [s.name for s in self._list]
 
     def closeEvent(self, event):
         """
@@ -258,7 +266,7 @@ class _Counter:
         self._count += 1
         return self._count
 
-    def get_count(self):
+    def get(self):
         """
         Get the current count.
 
@@ -278,7 +286,7 @@ class _ScanWorker(QtCore.QObject):
     """
     Thread wrapper for executing a scan process.
     """
-    finished = QtCore.pyqtSignal()
+    finished = QtCore.pyqtSignal(bool)
 
     def __init__(self, process):
         """
@@ -294,8 +302,8 @@ class _ScanWorker(QtCore.QObject):
         """
         Run the wrapped process's ``execute()`` in this thread.
         """
-        self._process.execute()
-        self.finished.emit()
+        b = self._process.execute()
+        self.finished.emit(b)
 
     def stop(self):
         """
@@ -343,12 +351,13 @@ class _DetectorProcess(QtCore.QObject):
         self._shouldStop = False
         with QtCore.QMutexLocker(self._mutex):
             if self._shouldStop:
-                return
+                return False
             if self._detector.exposure is not None:
                 self._detector.exposure = self._exposure
             self.beforeAcquisition.emit()
         
         self._detector.startAcq(wait=True)
+        return not self._shouldStop
 
     def _busyChanged(self, busy):
         """
@@ -398,24 +407,26 @@ class _ScanProcess(QtCore.QObject):
         self._process = process
         self._counter = counter if counter is not None else _Counter()
         self._shouldStop = False
-        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit)
+        self._process.beforeAcquisition.connect(self.beforeAcquisition.emit, QtCore.Qt.DirectConnection)
         self._mutex = QtCore.QMutex()
 
     def execute(self):
         """
         Iterate values, set the axis value and delegate to the nested process.
         """
-        self._index = 0
         self._counter.reset()
 
         for value in self._values:
             if self._shouldStop:
-                return
-            self._obj.set(**{self._name: value}, wait=True)
+                return False
             self._counter.increment()
+            self._obj.set(**{self._name: value}, wait=True)
             if self._shouldStop:
-                return
-            self._process.execute()
+                return False
+            b = self._process.execute()
+        
+        return b
+        
 
     def stop(self):
         """
