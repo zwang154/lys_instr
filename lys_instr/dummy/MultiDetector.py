@@ -47,9 +47,11 @@ class MultiDetectorDummy(MultiDetectorInterface):
         i = 0
         while i != iter:
             for idx, data in self._obj:
-                if self._shouldStop:
-                    return
-                time.sleep(self.exposure * self._obj.nframes)
+                start = time.time()
+                while time.time() - start < self.exposure * self._obj.nframes:
+                    if self._shouldStop:
+                        return
+                    time.sleep(min(0.01, max(0, self.exposure * self._obj.nframes - (time.time() - start))))
                 self._data[idx] = data
                 self.updated.emit()
             i += 1
