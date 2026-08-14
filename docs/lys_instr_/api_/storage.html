@@ -45,8 +45,9 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../api.html">Python API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../api.html#package-overview">Package Overview</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../api.html#core-elements">Core Elements</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="base.html">Base Classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
@@ -266,12 +267,15 @@ Actual file write occurs in a <code class="docutils literal notranslate"><span c
 
 <dl class="py method">
 <dt class="sig sig-object py" id="lys_instr.DataStorage.DataStorage.update">
-<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.update" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detector</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/lys_instr/DataStorage.html#DataStorage.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#lys_instr.DataStorage.DataStorage.update" title="Link to this definition"></a></dt>
 <dd><p>Update the buffered data array with new values.</p>
 <p>Each entry in <code class="docutils literal notranslate"><span class="pre">data</span></code> maps an index tuple to a frame array; the buffer is updated in-place at those indices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<em>dict</em><em>[</em><em>tuple</em><em>, </em><em>np.ndarray</em><em>]</em>) – Mapping from index tuples to frame arrays used to update the buffer.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em><em>[</em><em>tuple</em><em>, </em><em>np.ndarray</em><em>]</em>) – Mapping from index tuples to frame arrays used to update the buffer.</p></li>
+<li><p><strong>detector</strong> (<code class="docutils literal notranslate"><span class="pre">MultiDetectorInterface</span></code>) – Detector instance to query for axes information.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

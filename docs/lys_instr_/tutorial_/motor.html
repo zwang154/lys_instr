@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Motor &mdash; lys_instr  documentation</title>
+  <title>Adding a Motor &mdash; lys_instr  documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
 
@@ -19,7 +19,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Detector" href="detector.html" />
+    <link rel="next" title="Adding a Detector" href="detector.html" />
     <link rel="prev" title="A Simple Hands-On Example" href="handsOn.html" /> 
 </head>
 
@@ -45,16 +45,17 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Tutorial</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#essential">Essential</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#launch">Launch</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#basics">Basics</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="handsOn.html">A Simple Hands-On Example</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Motor</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Adding a Motor</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#creating-a-motor-instance">Creating a Motor Instance</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#step-by-step-demonstration">Step-by-Step Demonstration</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#checking-operations">Checking Operations</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="detector.html">Detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detector.html">Adding a Detector</a></li>
 <li class="toctree-l3"><a class="reference internal" href="templates.html">Templates</a></li>
 </ul>
 </li>
@@ -79,8 +80,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
-      <li class="breadcrumb-item active">Motor</li>
+          <li class="breadcrumb-item"><a href="../../tutorial.html">Getting Started</a></li>
+      <li class="breadcrumb-item active">Adding a Motor</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/lys_instr_/tutorial_/motor.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -90,8 +91,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="motor">
-<h1>Motor<a class="headerlink" href="#motor" title="Link to this heading"></a></h1>
+  <section id="adding-a-motor">
+<h1>Adding a Motor<a class="headerlink" href="#adding-a-motor" title="Link to this heading"></a></h1>
+<p>This page explains how to define a motor-like controller in the Base Layer.
+A motor can represent any continuous parameter controller, such as a positioner, voltage source, magnetic field, or temperature setpoint.</p>
 <section id="creating-a-motor-instance">
 <h2>Creating a Motor Instance<a class="headerlink" href="#creating-a-motor-instance" title="Link to this heading"></a></h2>
 <p>A motor instance is created by subclassing <code class="docutils literal notranslate"><span class="pre">MultiMotorInterface</span></code>, which provides essential features for a generic multi-axis motor.</p>
@@ -228,7 +231,7 @@ For example:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="handsOn.html" class="btn btn-neutral float-left" title="A Simple Hands-On Example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="detector.html" class="btn btn-neutral float-right" title="Detector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="detector.html" class="btn btn-neutral float-right" title="Adding a Detector" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

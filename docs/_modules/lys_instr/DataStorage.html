@@ -42,7 +42,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
@@ -117,6 +117,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_axes_cache</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">base</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -237,8 +239,9 @@
 <span class="sd">        Args:</span>
 <span class="sd">            detector (``MultiDetectorInterface``): Detector that emits ``dataAcquired`` and ``busyStateChanged`` signals.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">detector</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
-        <span class="n">detector</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busyStateChanged</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span></div>
+        <span class="n">detector</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">detector</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">b</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busyStateChanged</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">b</span><span class="p">))</span>
+        <span class="n">detector</span><span class="o">.</span><span class="n">stopped</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopped</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_busyStateChanged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">busy</span><span class="p">):</span>
@@ -251,8 +254,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">busy</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reserve</span><span class="p">(</span><span class="n">detector</span><span class="o">.</span><span class="n">dataShape</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">detector</span><span class="o">.</span><span class="n">axes</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_axes_cache</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">axes</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_stopped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save any remaining buffered data when the detector stops.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            detector (``MultiDetectorInterface``): Detector that the data storage instance is connected to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">detector</span><span class="o">.</span><span class="n">axes</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DataStorage.reserve">
 <a class="viewcode-back" href="../../lys_instr_/api_/storage.html#lys_instr.DataStorage.DataStorage.reserve">[docs]</a>
@@ -293,19 +305,27 @@
 
 <div class="viewcode-block" id="DataStorage.update">
 <a class="viewcode-back" href="../../lys_instr_/api_/storage.html#lys_instr.DataStorage.DataStorage.update">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the buffered data array with new values.</span>
 
-<span class="sd">        Each entry in ``data`` maps an index tuple to a frame array; the buffer is updated in-place at those indices. </span>
+<span class="sd">        Each entry in ``data`` maps an index tuple to a frame array; the buffer is updated in-place at those indices.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            data (dict[tuple, np.ndarray]): Mapping from index tuples to frame arrays used to update the buffer.</span>
+<span class="sd">            detector (``MultiDetectorInterface``): Detector instance to query for axes information.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">&gt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">dim</span><span class="p">]):</span>
+                <span class="n">axes</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">axes</span> <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes_cache</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">axes</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DataStorage.save">
@@ -321,18 +341,21 @@
 <span class="sd">        Args:</span>
 <span class="sd">            axes (Sequence[np.ndarray]): Coordinate arrays for each data axis used to construct the ``Wave``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="n">wave</span> <span class="o">=</span> <span class="n">Wave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_arr</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="o">*</span><span class="n">axes</span><span class="p">)</span>
-        <span class="n">wave</span><span class="o">.</span><span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="n">thread</span> <span class="o">=</span> <span class="n">_SaveThread</span><span class="p">(</span><span class="n">wave</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+        <span class="n">dataToSave</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arr</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paths</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tags</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">thread</span> <span class="o">=</span> <span class="n">_SaveThread</span><span class="p">(</span><span class="n">dataToSave</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
         <span class="n">thread</span><span class="o">.</span><span class="n">finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_savingFinished</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_threads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">thread</span><span class="p">)</span>
         <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">savingStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saving</span><span class="p">)</span></div>
 
 
@@ -363,21 +386,25 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Background thread that writes a ``lys.Wave`` to disk.</span>
 
-<span class="sd">    The thread calls ``lys.Wave.export`` on the provided ``Wave`` when started. </span>
+<span class="sd">    The thread calls ``lys.Wave.export`` on the provided ``Wave`` when started.</span>
 <span class="sd">    It is used by ``DataStorage`` to perform non-blocking file writes so the main application thread remains responsive.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wave</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the save thread.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            wave (Wave): The ``lys.Wave`` instance to save.</span>
+<span class="sd">            data (np.ndarray): The data to write to disk.</span>
+<span class="sd">            axes (Sequence): The axes that the data belongs to.</span>
+<span class="sd">            note (str): The note to store with the data.</span>
 <span class="sd">            path (str): Destination file path for the exported Wave.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wave</span> <span class="o">=</span> <span class="n">wave</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_note</span> <span class="o">=</span> <span class="n">note</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">path</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -386,7 +413,9 @@
 <span class="sd">        Calls ``lys.Wave.export`` on ``self.wave`` to write the Wave to ``self.path``.</span>
 <span class="sd">        This runs in the worker thread so the main application thread is not blocked by file I/O.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wave</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">wave</span> <span class="o">=</span> <span class="n">Wave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">)</span>
+        <span class="n">wave</span><span class="o">.</span><span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_note</span>
+        <span class="n">wave</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">)</span>
 </pre></div>
 
            </div>

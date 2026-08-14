@@ -42,7 +42,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
@@ -283,7 +283,8 @@
             <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_isBusy</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                 <span class="k">return</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">on_busy_changed</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">)</span>
-        <span class="n">loop</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
+        <span class="n">loop</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">on_busy_changed</span><span class="p">)</span></div>
 
         
     <span class="nd">@property</span>

@@ -19,8 +19,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Motor" href="motor.html" />
-    <link rel="prev" title="Tutorial" href="../../tutorial.html" /> 
+    <link rel="next" title="Adding a Motor" href="motor.html" />
+    <link rel="prev" title="Launch lys_instr" href="launch.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -45,11 +45,12 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Tutorial</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#essential">Essential</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../tutorial.html">Getting Started</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../tutorial.html#launch">Launch</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../tutorial.html#basics">Basics</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">A Simple Hands-On Example</a></li>
-<li class="toctree-l3"><a class="reference internal" href="motor.html">Motor</a></li>
-<li class="toctree-l3"><a class="reference internal" href="detector.html">Detector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="motor.html">Adding a Motor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="detector.html">Adding a Detector</a></li>
 <li class="toctree-l3"><a class="reference internal" href="templates.html">Templates</a></li>
 </ul>
 </li>
@@ -74,7 +75,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../tutorial.html">Tutorial</a></li>
+          <li class="breadcrumb-item"><a href="../../tutorial.html">Getting Started</a></li>
       <li class="breadcrumb-item active">A Simple Hands-On Example</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../_sources/lys_instr_/tutorial_/handsOn.rst.txt" rel="nofollow"> View page source</a>
@@ -87,6 +88,8 @@
              
   <section id="a-simple-hands-on-example">
 <h1>A Simple Hands-On Example<a class="headerlink" href="#a-simple-hands-on-example" title="Link to this heading"></a></h1>
+<p>This page shows a complete assembled measurement GUI before introducing the individual components in detail.
+The example uses dummy devices, but follows the same control-and-detect structure used with real instruments.</p>
 <p>Suppose we want to automate taking a series of photos of a sample while sweeping the applied electric field,
 that is, control a camera to capture images after setting the source meter to specific voltage values.</p>
 <p>With <em>lys_instr</em>, we can easily build a GUI to manage this measurement workflow.
@@ -125,8 +128,8 @@ In practical use, these dummy objects are replaced by concrete implementations t
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../../tutorial.html" class="btn btn-neutral float-left" title="Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="motor.html" class="btn btn-neutral float-right" title="Motor" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="launch.html" class="btn btn-neutral float-left" title="Launch lys_instr" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="motor.html" class="btn btn-neutral float-right" title="Adding a Motor" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

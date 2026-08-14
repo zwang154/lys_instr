@@ -1,7 +1,8 @@
-
 Detector GUI
 ============
 
+This page explains how to create a reusable GUI panel for a detector.
+The panel acquires and displays data through the standard detector interface, so the same GUI can be used with dummy devices or real hardware subclasses.
 
 Creating a Detector GUI
 -----------------------

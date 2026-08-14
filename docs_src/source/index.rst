@@ -4,7 +4,8 @@ lys_instr documentation
 
 *lys_instr* is a Python package for automating scientific measurements.
 
-It enables users to efficiently create custom GUIs for coordinating multiple instruments and managing measurement workflows with minimal coding required.
+It provides reusable interfaces, workflows, and GUI components for coordinating
+multiple instruments and assembling custom measurement systems.
 
 .. image:: /lys_instr_/tutorial_/scan_1.png
 
@@ -12,11 +13,20 @@ It enables users to efficiently create custom GUIs for coordinating multiple ins
 What can you do with lys_instr?
 ----------------------------------
 
-Most scientific measurements follow a *control-and-detect* pattern—parameters are changed via physical or digital controls (the *control* step) and data are recorded by detectors (the *detect* step).
-A measurement sequence that combines *control* and *detect* is called a *scan*; a complete workflow may consist of nested *scans*.
-*lys_instr* helps you construct, control, and automate such workflows efficiently.
-In principle, you only need to provide minimal code for device-specific communication—the package handles the rest.
+The primary use case of *lys_instr* is custom laboratory automation based on
+reusable, hardware-independent workflows. Users implement hardware-specific
+operations through common controller and detector interfaces, then reuse
+workflow and GUI components across instruments and experimental setups. 
 
+This allows measurement environments combining instrument control, workflow
+execution, storage, visualization, and graphical interaction to be assembled
+with little additional coordination code. Users can therefore focus on
+instrument-specific communication and measurement-specific strategies and
+algorithms rather than rebuilding the underlying control infrastructure.
+
+A common workflow follows a *control-and-detect* pattern: controllers change
+physical or digital parameters, and detectors acquire data. In *lys_instr*,
+these operations can be combined into sequential or nested scans.
 
 Key functionalities of *lys_instr*:
 
@@ -24,7 +34,7 @@ Key functionalities of *lys_instr*:
 
 - Real-time data visualization and automatic data storage
 
-- Efficient management of nested, multi-dimensional workflows
+- Efficient management of nested, multidimensional workflows
 
 
 Standout features of *lys_instr*:
@@ -33,7 +43,7 @@ Standout features of *lys_instr*:
 
 - Modular and extensible: easy to reconfigure measurement workflows directly in the GUI
 
-- Seamless integration with `lys <https://github.com/lys-devel/lys>`_ for analysis and visualization
+- Seamless integration with `lys <https://github.com/lys-devel/lys>`_ for visualization and analysis
 
 
 Start with the :doc:`Tutorial </tutorial>` guide for a short walkthrough and practical examples that demonstrate common use cases.

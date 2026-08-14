@@ -42,7 +42,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">Python API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
 </ul>
@@ -144,6 +144,9 @@
     <span class="c1">#: Signal emitted by the acquisition thread when new data is acquired.</span>
     <span class="n">updated</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
 
+    <span class="c1">#: Signal emitted when acquisition is stopped.</span>
+    <span class="n">stopped</span> <span class="o">=</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">pyqtSignal</span><span class="p">()</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exposure</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the interface.</span>
@@ -190,7 +193,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Detector is busy. Cannot start new acquisition.&quot;</span><span class="p">)</span>
             <span class="k">return</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 
@@ -241,7 +244,8 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
                 <span class="k">return</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">on_busy_changed</span><span class="p">,</span> <span class="n">QtCore</span><span class="o">.</span><span class="n">Qt</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">)</span>
-        <span class="n">loop</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span></div>
+        <span class="n">loop</span><span class="o">.</span><span class="n">exec_</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">busyStateChanged</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">on_busy_changed</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DetectorInterface.stop">
@@ -252,12 +256,16 @@
 
 <span class="sd">        This method waits for the acquisition worker thread to finish if it is running.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span><span class="p">:</span>
+            <span class="k">return</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">isRunning</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">())</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataAcquired</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span></div>
 
 
     <span class="nd">@property</span>
@@ -269,7 +277,7 @@
 <span class="sd">            float | None: The exposure time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exposure</span>
-    
+
     <span class="nd">@exposure</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">exposure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -291,7 +299,7 @@
 <span class="sd">            bool: True if the detector is busy, False otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -303,7 +311,7 @@
 <span class="sd">            bool: True if the detector is alive, False otherwise.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isAlive</span><span class="p">()</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Should be implemented in subclasses to provide device-specific logic for getting acquired data.</span>
@@ -328,7 +336,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_isAlive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Should be implemented in subclasses to provide device-specific logic for returning alive state.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -340,7 +348,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            iter(int): Number of iterations. -1 means continuous run.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Raises:</span>
 <span class="sd">            NotImplementedError: If the subclass does not implement this method.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -441,7 +449,6 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">indexShape</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">frameShape</span><span class="p">])</span></div>
 
-    
 </pre></div>
 
            </div>

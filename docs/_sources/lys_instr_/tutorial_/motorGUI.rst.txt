@@ -1,7 +1,8 @@
-
 Motor GUI
 =========
 
+This page explains how to create a reusable GUI panel for a motor, meaning any continuous parameter controller implemented through the standard motor interface.
+The same GUI can be used with dummy devices or real hardware subclasses.
 
 Creating a Motor GUI
 --------------------
