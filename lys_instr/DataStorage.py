@@ -158,8 +158,8 @@ class DataStorage(QtCore.QObject):
         Args:
             detector (``MultiDetectorInterface``): Detector that emits ``dataAcquired`` and ``busyStateChanged`` signals.
         """
-        detector.dataAcquired.connect(lambda data: self.update(data, detector=detector))
-        detector.busyStateChanged.connect(lambda b: self._busyStateChanged(detector, b))
+        detector.dataAcquired.connect(lambda data: self.update(data, detector=detector), QtCore.Qt.DirectConnection)
+        detector.busyStateChanged.connect(lambda b: self._busyStateChanged(detector, b), QtCore.Qt.DirectConnection)
         detector.stopped.connect(lambda: self._stopped(detector))
 
     def _busyStateChanged(self, detector, busy):
