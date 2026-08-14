@@ -5,6 +5,7 @@ import tempfile
 import numpy as np
 
 from PyQt5 import QtTest
+from lys.Qt import QtCore
 from lys_instr.DataStorage import DataStorage
 
 
@@ -76,8 +77,11 @@ class TestDataStorage(unittest.TestCase):
             storage.update(data)
             axes = [np.arange(2), np.arange(2), np.arange(2), np.arange(2)]
             arrSaving = storage._arr
+
+            current_thread = QtCore.QThread.currentThread()
             storage.save(axes)
             self.assertTrue(storage.saving, "Storage should be saving after save() is called.")
+            self.assertNotEqual(current_thread, storage._threads[0], "Save thread should be different from main thread.")
 
             timeout = 5  # seconds
             start = time.time()

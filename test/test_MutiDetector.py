@@ -3,6 +3,7 @@ import time
 import numpy as np
 
 from PyQt5 import QtTest
+from lys.Qt import QtCore
 from lys_instr.dummy.MultiDetector import MultiDetectorDummy
 
 
@@ -119,3 +120,28 @@ class TestMultiDetectorDummy(unittest.TestCase):
         """
         detector = MultiDetectorDummy(indexShape=(2, 2), frameShape=(3,), exposure=0.1)
         self.assertEqual(detector.dataShape, (2, 2, 3), "Data shape does not match expected shape.")
+    
+    def test_acquire_thread(self):
+        """
+        Test that acquisition runs in a separate thread.
+        """
+        detector = _ThreadCaptureDetector(indexShape=(2, 2), frameShape=(3,), exposure=0.1)
+        detector.thread_id.connect(lambda thread_id: self.assertNotEqual(thread_id, QtCore.QThread.currentThreadId(), "Acquisition should run in a separate thread."))
+
+        detector.startAcq()
+        timeout = 5  # seconds
+        start = time.time()
+        while len(detector._data) == 0 and (time.time() - start < timeout):
+            QtTest.QTest.qWait(10)
+
+
+class _ThreadCaptureDetector(MultiDetectorDummy):
+    thread_id = QtCore.pyqtSignal(int)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _run(self, iter=1):
+        self.thread_id.emit(QtCore.QThread.currentThreadId())
+        super()._run(iter)
+
