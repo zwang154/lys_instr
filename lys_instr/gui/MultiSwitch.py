@@ -97,7 +97,7 @@ class MultiSwitchGUI(QtWidgets.QWidget):
         """
         Open the settings dialog.
         """
-        settingsWindow = _SettingsDialog(self)
+        settingsWindow = _SettingsDialog(self, self._objs)
         settingsWindow.exec_()
 
 
@@ -221,7 +221,7 @@ class _SettingsDialog(QtWidgets.QDialog):
     Provides a tabbed interface for general and optional settings.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent, objs):
         """
         Create the switch settings dialog with general and optional tabs.
 
@@ -232,8 +232,9 @@ class _SettingsDialog(QtWidgets.QDialog):
         self.setWindowTitle("Switch Settings")
 
         tabWidget = QtWidgets.QTabWidget()
-        tabWidget.addTab(_GeneralPanel(parent.controllers), "General")
-        #tabWidget.addTab(obj.settingsWidget(), "Optional")
+#        tabWidget.addTab(_GeneralPanel(parent.controllers), "General")
+        for i, c in enumerate(objs, 1):
+            tabWidget.addTab(c.settingsWidget(), f"Optional {i}")
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(tabWidget)

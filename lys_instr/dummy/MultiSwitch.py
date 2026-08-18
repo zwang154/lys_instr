@@ -139,6 +139,28 @@ class MultiSwitchDummy(MultiSwitchInterface):
         """
         return {name: not d.error for name, d in self._data.items()}
 
+    @property
+    def error(self):
+        """
+        Per-axis error states.
+
+        Returns:
+            dict[str, bool]: Mapping of axis names to error flags.
+        """
+        return {name: d.error for name, d in self._data.items()}
+    
+    @error.setter
+    def error(self, value):
+        """
+        Set per-axis error states.
+
+        Args:
+            value (dict[str, bool]): Mapping of axis names to error flags.
+        """
+        for name, err in value.items():
+            if name in self._data:
+                self._data[name].error = err
+
     def settingsWidget(self):
         """
         Create and return an optional settings widget.
@@ -147,4 +169,3 @@ class MultiSwitchDummy(MultiSwitchInterface):
             QtWidgets.QWidget: The settings panel widget.
         """
         return _OptionalPanel(self)
-    
