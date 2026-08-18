@@ -78,6 +78,7 @@ class MultiScan(QtCore.QObject):
 
     finished = QtCore.pyqtSignal()
     stopped = QtCore.pyqtSignal()
+    statusChanged = QtCore.pyqtSignal(str)
 
     def __init__(self, storage, scanlist, detector, exposure, fileName=None):
         """
@@ -116,6 +117,7 @@ class MultiScan(QtCore.QObject):
             process = _ScanProcess(s.name, s.obj, s.range, process, counter)
 
         process.beforeAcquisition.connect(self._updateName, QtCore.Qt.DirectConnection)
+        process.statusChanged.connect(self.statusChanged.emit, QtCore.Qt.DirectConnection)
 
         self._storage.numbered = False
         self._storage.enabled = True
@@ -153,6 +155,7 @@ class MultiScan(QtCore.QObject):
             self.stopped.emit()
         else:
             self.finished.emit()
+        self.statusChanged.emit("Waiting")
     
     @property
     def defaultFileName(self):
@@ -388,6 +391,9 @@ class _ScanProcess(QtCore.QObject):
     #: Signal emitted before each acquisition.
     beforeAcquisition = QtCore.pyqtSignal()
 
+    #: Signal emitted when the scan process status changes.
+    statusChanged = QtCore.pyqtSignal(str)
+
     def __init__(self, name, obj, values, process, counter=None):
         """
         Create a scan process for a single axis.
@@ -408,6 +414,9 @@ class _ScanProcess(QtCore.QObject):
         self._counter = counter if counter is not None else _Counter()
         self._shouldStop = False
         self._process.beforeAcquisition.connect(self.beforeAcquisition.emit, QtCore.Qt.DirectConnection)
+        if hasattr(self._process, 'statusChanged'):
+            self._process.statusChanged.connect(lambda status: self.statusChanged.emit(self._status + ", " + status), QtCore.Qt.DirectConnection)
+        self._status = ""
         self._mutex = QtCore.QMutex()
 
     def execute(self):
@@ -420,6 +429,8 @@ class _ScanProcess(QtCore.QObject):
             if self._shouldStop:
                 return False
             self._counter.increment()
+            self._status = f"{self._name}: {value}"
+            self.statusChanged.emit(self._status)
             self._obj.set(**{self._name: value}, wait=True)
             if self._shouldStop:
                 return False

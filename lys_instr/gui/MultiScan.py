@@ -613,6 +613,8 @@ class ScanWidget(QtWidgets.QWidget):
             switchScanners (dict[str, object]): Mapping of switch-axis name to switch objects.
             process (dict): Detector/process mapping passed to the detector configuration box.
         """
+        self._status = QtWidgets.QLabel("[Status] Waiting")
+
         label = QtWidgets.QLabel("List of parameters (right click to edit)")
 
         self._list = _ScanList(motorScanners, switchScanners)
@@ -629,6 +631,7 @@ class ScanWidget(QtWidgets.QWidget):
         btnsLayout.addWidget(self._stopBtn)
 
         layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self._status)
         layout.addWidget(label)
         layout.addWidget(self._list)
         layout.addWidget(processBox)
@@ -675,9 +678,19 @@ class ScanWidget(QtWidgets.QWidget):
         self._stopBtn.setEnabled(True)
 
         self._scanner = MultiScan(self._storage, self._list.get(), self._detectors[self._detectorsBox.currentText()], self._exposure.value(), self._nameBox.text)
+        self._scanner.statusChanged.connect(self._statusChanged)
         self._scanner.finished.connect(self._scanFinished)
         self._scanner.stopped.connect(self._scanFinished)
         self._scanner.start()
+
+    def _statusChanged(self, status):
+        """
+        Update the GUI to reflect the current scan status.
+        
+        Args:
+            status (str): Current scan status.
+        """
+        self._status.setText(f"[Status] {status}")
 
     def _scanFinished(self):
         """
