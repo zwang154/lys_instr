@@ -1,6 +1,5 @@
 import unittest
 import time
-import os
 import tempfile
 import numpy as np
 from pathlib import Path
@@ -118,7 +117,7 @@ class TestMultiScan(unittest.TestCase):
             self.assertFalse(scan._busy, "Scan should not be busy after completion")
             self.assertTrue(finish_emitted, "Finish signal should be emitted")
 
-            count = len(list(scan_axis(os.path.join(storage.base, storage.folder)).glob("*.npz")))
+            count = len(list(Path(storage.base, storage.folder).glob("*.npz")))
             self.assertEqual(count, 3, "Should have saved all files")
     
     def test_stop(self):
@@ -145,7 +144,7 @@ class TestMultiScan(unittest.TestCase):
             self.assertFalse(scan._busy, "Scan should not be busy after stopping")
             self.assertTrue(stopped_emitted, "Stopped signal should be emitted")
 
-            count = len(list(Path(os.path.join(storage.base, storage.folder)).glob("*.npz")))
+            count = len(list(Path(storage.base, storage.folder).glob("*.npz")))
             self.assertLess(count, 5, "Should have saved less than five files")
     
     def test_move(self):
@@ -190,8 +189,8 @@ class TestMultiScan(unittest.TestCase):
             scan.start()
             self._qWait(scan)
             
-            base = Path(os.path.join(storage.base, storage.folder))
-            files = [str(p.relative_to(base)) for p in base.rglob("*.npz")]
+            base = Path(storage.base, storage.folder)
+            files = [p.relative_to(base).as_posix() for p in base.rglob("*.npz")]
             self.assertCountEqual(files, ["motor_0.npz", "motor_1.npz", "motor_2.npz", "motor_3.npz"], "Should have saved all files with correct names: [number] should be replaced by the index of the scan")
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -203,8 +202,8 @@ class TestMultiScan(unittest.TestCase):
             scan.start()
             self._qWait(scan)
             
-            base = Path(os.path.join(storage.base, storage.folder))
-            files = [str(p.relative_to(base)) for p in base.rglob("*.npz")]
+            base = Path(storage.base, storage.folder)
+            files = [p.relative_to(base).as_posix() for p in base.rglob("*.npz")]
             self.assertCountEqual(files, ["test/motor_0.1.npz", "test/motor_0.2.npz", "test/motor_0.3.npz", "test/motor_0.4.npz"], "Should have saved all files with correct names: {number} should be replaced by the value of the scan and the folder should be created.")
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -217,8 +216,8 @@ class TestMultiScan(unittest.TestCase):
             scan.start()
             self._qWait(scan)
             
-            base = Path(os.path.join(storage.base, storage.folder))
-            files = [str(p.relative_to(base)) for p in base.rglob("*.npz")]
+            base = Path(storage.base, storage.folder)
+            files = [p.relative_to(base).as_posix() for p in base.rglob("*.npz")]
             self.assertCountEqual(files, ["switch_A/test.npz", "switch_B/test.npz", "switch_C/test.npz", "switch_D/test.npz"], "Should have saved all files with correct names: It should be possible to use a substituted name as a folder name.")
 
     def test_hierarchy(self):
@@ -236,8 +235,8 @@ class TestMultiScan(unittest.TestCase):
             scan.start()
             self._qWait(scan)
             
-            base = Path(os.path.join(storage.base, storage.folder))
-            files = [str(p.relative_to(base)) for p in base.rglob("*.npz")]
+            base = Path(storage.base, storage.folder)
+            files = [p.relative_to(base).as_posix() for p in base.rglob("*.npz")]
             self.assertCountEqual(files, ["motor2_0/A/motor1_0.npz", "motor2_0/A/motor1_1.npz", "motor2_0/A/motor1_2.npz",
                                         "motor2_0/B/motor1_0.npz", "motor2_0/B/motor1_1.npz", "motor2_0/B/motor1_2.npz", 
                                         "motor2_1/A/motor1_0.npz", "motor2_1/A/motor1_1.npz", "motor2_1/A/motor1_2.npz", 
@@ -258,8 +257,8 @@ class TestMultiScan(unittest.TestCase):
             scan.start()
             self._qWait(scan)
             
-            base = Path(os.path.join(storage.base, storage.folder))
-            files = [str(p.relative_to(base)) for p in base.rglob("*.npz")]
+            base = Path(storage.base, storage.folder)
+            files = [p.relative_to(base).as_posix() for p in base.rglob("*.npz")]
             self.assertCountEqual(files, ["OFF/0.npz", "OFF/1.npz", "OFF/2.npz", "ON/0.npz", "ON/1.npz", "ON/2.npz"], "Even when a motor and a switch control the same device, the index must be obtained correctly.")
     
     def test_highspeed_scan(self):
@@ -273,8 +272,8 @@ class TestMultiScan(unittest.TestCase):
             scan.start()
             self._qWait(scan)
             
-            base = Path(os.path.join(storage.base, storage.folder))
-            files = [str(p.relative_to(base)) for p in base.rglob("*.npz")]
+            base = Path(storage.base, storage.folder)
+            files = [p.relative_to(base).as_posix() for p in base.rglob("*.npz")]
             self.assertCountEqual(files, [f"test_{i}.npz" for i in range(10)], "The scan must operate correctly even when motor movement and detector exposure are extremely fast.")
 
     def test_runs_in_separate_thread(self):
