@@ -215,6 +215,28 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="ow">not</span> <span class="n">d</span><span class="o">.</span><span class="n">error</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Per-axis error states.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict[str, bool]: Mapping of axis names to error flags.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">d</span><span class="o">.</span><span class="n">error</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    
+    <span class="nd">@error</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set per-axis error states.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value (dict[str, bool]): Mapping of axis names to error flags.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="n">err</span>
+
 <div class="viewcode-block" id="MultiSwitchDummy.settingsWidget">
 <a class="viewcode-back" href="../../../lys_instr_/api_/dummyMotor.html#lys_instr.dummy.MultiSwitch.MultiSwitchDummy.settingsWidget">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">settingsWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -227,7 +249,6 @@
         <span class="k">return</span> <span class="n">_OptionalPanel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
 
-    
 </pre></div>
 
            </div>
