@@ -56,6 +56,7 @@ class MultiControllerInterface(HardwareInterface):
         super().__init__(**kwargs)
         self._info = {name: _AxisInfo() for name in axisNamesAll}
         self._mutex = QtCore.QMutex()
+        self._value = {}
 
     @lock
     def _loadState(self):
@@ -71,7 +72,7 @@ class MultiControllerInterface(HardwareInterface):
 
             # Emit valueChanged signal if any axis is busy
             if any(bs.values()) or len(busyUpdate) > 0:
-                vs = self.get()
+                vs = self.get(force=True)
                 self.valueChanged.emit({name: vs[name] for name, b in bs.items() if b or name in busyUpdate})
 
             # Update busy state log and emit busyStateChanged signal if any axis has changed its busy state
@@ -118,6 +119,7 @@ class MultiControllerInterface(HardwareInterface):
 
         if wait:
             self.waitForReady()
+            self.get(force=True)
 
     def _set_impl(self, **kwargs):
         """
@@ -148,12 +150,13 @@ class MultiControllerInterface(HardwareInterface):
         # Set actual values for the axes in kwargs
         self._set(**kwargs)
 
-    def get(self, type=dict):
+    def get(self, type=dict, force=False):
         """
         Get the current values of all axes in the specified data type.
 
         Args:
             type (type, optional): Output type (`dict`, `list`, or `np.ndarray`). Defaults to `dict`.
+            force (bool, optional): If True, force a refresh of the values from the hardware. Defaults to `False`.
 
         Returns:
             dict or list or np.ndarray: Axis values in the requested format.
@@ -161,7 +164,11 @@ class MultiControllerInterface(HardwareInterface):
         Raises:
             TypeError: If an unsupported output type is requested.
         """
-        valueDict = self._get()
+        if force or len(self._value) == 0:
+            valueDict = self._get()
+            self._value = valueDict
+        else:
+            valueDict = self._value
         if type is dict:
             return valueDict
         elif type is list:
@@ -397,14 +404,6 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
             self.offsetChanged.connect(self.save)
         self.offsetChanged.connect(lambda: self.valueChanged.emit(self.get()))
 
-    def _valueChanged(self):
-        """
-        Notify listeners that current axis values changed (offsets applied).
-
-        Emit the ``valueChanged`` signal with the current output of ``get()`` (offsets applied).
-        """
-        self.valueChanged.emit(self.get())
-
     def set(self, **kwargs):
         """
         Set target values for axes in user coordinates (stored offsets subtracted).
@@ -421,7 +420,7 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
         kwargs = {key: value + self.offset.get(key, 0) for key, value in kwargs.items()}
         super().set(**kwargs)
 
-    def get(self, type=dict):
+    def get(self, type=dict, force=False):
         """
         Get current axis values in user coordinates (stored offsets subtracted).
 
@@ -434,7 +433,7 @@ class OffsettableMultiMotorInterface(MultiControllerInterface):
         Raises:
             TypeError: If an unsupported output type is requested.
         """
-        valueDict = {key: value - self.offset.get(key, 0) for key, value in super().get().items()}
+        valueDict = {key: value - self.offset.get(key, 0) for key, value in super().get(force=force).items()}
         if type is dict:
             return valueDict
         elif type is list:

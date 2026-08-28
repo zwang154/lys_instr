@@ -23,7 +23,7 @@ class _LevelInfo(QtCore.QObject):
         self._interval = interval
         self.error = False
 
-    def set(self, state):
+    def set(self, state, immediate=False):
         """
         Set a target for the switch axis.
 
@@ -33,8 +33,11 @@ class _LevelInfo(QtCore.QObject):
         Args:
             state (str): Target level to switch to.
         """
-        self._target = state
-        self._timing = time.perf_counter()
+        if immediate:
+            self._state = state
+        else:
+            self._target = state
+            self._timing = time.perf_counter()
 
     def _update(self):
         """
@@ -99,7 +102,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
         self._data = {name: _LevelInfo(levelNames[0], interval) for name in self.nameList}
         self.start()
 
-    def _set(self, **target):
+    def _set(self, immediate=False, **target):
         """
         Set target levels for the specified axes.
 
@@ -110,7 +113,7 @@ class MultiSwitchDummy(MultiSwitchInterface):
         """
         for name, d in self._data.items():
             if name in target:
-                d.set(target[name])
+                d.set(target[name], immediate=immediate)
 
     def _get(self):
         """

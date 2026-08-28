@@ -18,12 +18,7 @@ class TestMultiSwitchDummy(unittest.TestCase):
         Test that the set and get methods work correctly.
         """
         switch = MultiSwitchDummy('A', 'B', levelNames=['OFF', 'ON'])
-        switch.set(A='ON', B='OFF')
-        # Wait for state to update
-        timeout = 1
-        start = time.time()
-        while any(switch.isBusy.values()) and (time.time() - start < timeout):
-            QtTest.QTest.qWait(10)
+        switch.set(A='ON', B='OFF', wait=True)
         state = switch.get()
         self.assertEqual(state['A'], 'ON')
         self.assertEqual(state['B'], 'OFF')

@@ -51,6 +51,9 @@ class MultiSwitchGUI(QtWidgets.QWidget):
         """
         self._items = {name: _SwitchRowLayout(c, name) for name, c in self.controllers.items()}
 
+        self._refresh = QtWidgets.QPushButton("Update", clicked=self._update)
+        self._refresh.setEnabled(True)
+
         self._execute = QtWidgets.QPushButton("Apply", clicked=self._setMoveToValue)
         self._execute.setEnabled(True)
 
@@ -62,10 +65,15 @@ class MultiSwitchGUI(QtWidgets.QWidget):
         gl.addWidget(QtWidgets.QLabel("Move to"), 0, 3)
         for i, (key, item) in enumerate(self._items.items()):
             item.addTo(gl, i+1, key in settable)
+        gl.addWidget(self._refresh, 2 + len(self._items), 2)
         gl.addWidget(self._execute, 2 + len(self._items), 3)
         gl.addWidget(SettingsButton(clicked=self._showSettings), 2 + len(self._items), 0)
 
         self.setLayout(gl)
+
+    def _update(self):
+        for obj in self._objs:
+            obj.valueChanged.emit(obj.get(force=True))
 
     def _setMoveToValue(self):
         """
@@ -159,8 +167,10 @@ class _SwitchRowLayout(QtCore.QObject):
         grid.addWidget(self._alive, 1 + i, 0, alignment=QtCore.Qt.AlignCenter)
         grid.addWidget(self._label, 1 + i, 1)
         grid.addWidget(self._now, 1 + i, 2)
+        grid.setColumnStretch(2, 1)
         if settable:
             grid.addWidget(self._moveTo, 1 + i, 3)
+            grid.setColumnStretch(3, 1)
 
     def _valueChanged(self, value):
         """
