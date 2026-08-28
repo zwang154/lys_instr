@@ -23,7 +23,7 @@ class _ValueInfo(QtCore.QObject):
         self._target = None
         self.error = False
 
-    def set(self, target):
+    def set(self, target, immediate=False):
         """
         Set a target for the motor axis.
 
@@ -31,10 +31,15 @@ class _ValueInfo(QtCore.QObject):
 
         Args:
             target (float): Target position to move toward.
+            immediate (bool): If True, set the position immediately without waiting for motion to complete.
         """
-        self._before = self._position
-        self._target = target
-        self._timing = time.perf_counter()
+        if immediate:
+            self._position = target
+            self._target = None
+        else:
+            self._before = self._position
+            self._target = target
+            self._timing = time.perf_counter()
 
     def _update(self):
         """
@@ -109,7 +114,7 @@ class MultiMotorDummy(MultiMotorInterface):
         self._data = {name: _ValueInfo(speed) for name in self.nameList}
         self.start()
 
-    def _set(self, **target):
+    def _set(self, immediate=False, **target):
         """
         Set target positions for the specified axes.
 
@@ -117,10 +122,11 @@ class MultiMotorDummy(MultiMotorInterface):
 
         Args:
             target (dict[str, float]): Mapping of axis names to respective target positions.
+            immediate (bool): If True, set the position immediately without waiting for motion to complete.
         """
         for name, d in self._data.items():
             if name in target:
-                d.set(target[name])
+                d.set(target[name], immediate=immediate)
 
     def _get(self):
         """
