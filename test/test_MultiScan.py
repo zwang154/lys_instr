@@ -169,7 +169,7 @@ class TestMultiScan(unittest.TestCase):
                 elif busy:
                     busy = False
                     count += 1
-                    now = motor.get()["scan1"]
+                    now = motor.get(force=True)["scan1"]
                     self.assertAlmostEqual(now, values[count], delta=0.01, msg="Motor should move to the correct position")
                 time.sleep(0.01)
 

@@ -1,5 +1,6 @@
 import unittest
 import time
+import math
 from PyQt5 import QtTest
 
 from lys.Qt import QtCore
@@ -28,10 +29,11 @@ class TestMultiMotorDummy(unittest.TestCase):
         """
         Test that the set, get, and isBusy properties work correctly.
         """
-        motor = MultiMotorDummy('x', 'y')
+        motor = MultiMotorDummy('x', 'y', interval=0.01)
 
         # Set axis values. Equivalent: motor.set(x=1, y=2) or motor.set(**{'x': 1, 'y': 2})
         motor.set(x=1, y=2)
+        time.sleep(0.02)
         val = motor.get()
         self.assertTrue(all(0 < v < t for v, t in zip(val.values(), [1, 2])), "Axis values should be between start and target during motion.")
         self.assertTrue(all(motor.isBusy.values()), "All axes should be busy during motion.")
@@ -57,11 +59,11 @@ class TestMultiMotorDummy(unittest.TestCase):
         """
         Test that the stop method works correctly.
         """
-        motor = MultiMotorDummy('x', 'y')
+        motor = MultiMotorDummy('x', 'y', interval=0.01)
         motor.set(x=1, y=2)
-        
         QtTest.QTest.qWait(1)
         motor.stop()
+        time.sleep(0.01)
         val1 = motor.get()
         self.assertTrue(all(v < t for v, t in zip(val1.values(), [1, 2])), "Axis values should be less than targets after stop.")
         self.assertFalse(any(motor.isBusy.values()), "No axis should be busy after stop.")
@@ -86,9 +88,10 @@ class TestMultiMotorDummy(unittest.TestCase):
         """
         Test that the waitForReady method works correctly with set.
         """
-        motor = MultiMotorDummy('x', 'y')
+        motor = MultiMotorDummy('x', 'y', interval=0.01)
         motor.set(x=1, y=2, wait=True)
         motor.set(x=2, y=3)
+        time.sleep(0.01)
         val = motor.get()
         self.assertTrue(all(v > t for v, t in zip(val.values(), [1, 2])), "Axis values should be greater than previous targets after new set.")
 
@@ -106,7 +109,7 @@ class TestMultiMotorDummy(unittest.TestCase):
         """
         Test that the isAlive method works correctly with error recovery.
         """
-        motor = MultiMotorDummy('x', 'y')
+        motor = MultiMotorDummy('x', 'y', interval=0.01)
         motor.set(x=1, y=2)
         QtTest.QTest.qWait(100)
 
@@ -135,6 +138,18 @@ class TestMultiMotorDummy(unittest.TestCase):
         slowMotor = SlowMultiMotorDummy('x', 'y')
         slowMotor.set(x=1, y=2)
         self.assertTrue(any(slowMotor.isBusy.values()), "At least one axis should be busy right after set() on slow motor.")
+
+    def test_get_force(self):
+        """
+        Test that the get method works correctly with force parameter.
+        """
+        motor = MultiMotorDummy('x', 'y', interval=0.01)
+        ini = motor.get()
+        motor._set(x=1, y=2, immediate=True)
+        self.assertTrue(all(math.isclose(i, v, abs_tol=1e-3) for i, v in zip(ini.values(), motor.get().values())), "get() should return the original value if the value has been manually changed.")
+        val = motor.get(force=True)
+        self.assertFalse(all(math.isclose(i, v, abs_tol=1e-3) for i, v in zip(ini.values(), val.values())), "get(force=True) should return the current value, which should be different from the original value.")
+        self.assertTrue(all(math.isclose(v, v2, abs_tol=1e-3) for v, v2 in zip(val.values(), motor.get().values())), "get() should return the same value that get(force=True) previously returned.")
 
 
 class SlowMultiMotorDummy(MultiMotorDummy):
